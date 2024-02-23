@@ -1,0 +1,13 @@
+{
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "zf_common_headfile.h": "c"
+        }
+    },
+    "extensions": {}
+}
