@@ -43,7 +43,7 @@ void Read_Encoder(void)
   encoder[1] = encoder_get_count(ENCODER_LB);
   encoder[2] = -encoder_get_count(ENCODER_RF);
   encoder[3] = -encoder_get_count(ENCODER_RB);
-
+  //dasdas
   //Çå¿Õ±àÂëÆ÷¼ÆÊý
   encoder_clear_count(ENCODER_LF);
   encoder_clear_count(ENCODER_LB);
