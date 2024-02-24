@@ -1,4 +1,4 @@
-/*********************************************************************************************************************
+\/*********************************************************************************************************************
 * RT1064DVL6A Opensourec Library 即（RT1064DVL6A 开源库）是一个基于官方 SDK 接口的第三方开源库
 * Copyright (c) 2022 SEEKFREE 逐飞科技
 * 
@@ -50,7 +50,7 @@ int main(void)
 	  
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
-    Motor_Init();                  // 电机初始?
+    Motor_Init();                  // 电机初始化
 	Encoder_Init();  // 编码器初始化
 	ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
@@ -73,11 +73,11 @@ int main(void)
 
             ips114_full(RGB565_GRAY);
             ips114_show_string( 0 , 16*1,   "SUCCESS");                          // 显示字符串
-            ips114_show_int(    0 , 16*4,   encoder[0],         4);
-            ips114_show_int(    0 , 16*4,   encoder[1],         4);
-            ips114_show_int(    0 , 16*4,   encoder[2],         4);
-            ips114_show_int(    0 , 16*4,   encoder[3],         4);
-// 			Speed_Control( 1.0, 0.0, 0.0);                                            //测试麦轮运行,1.0可以，但是2.0就动都不会动，与是否调用Read_Encoder函数无关，函数逻辑存在问题
+            // ips114_show_int(    0 , 16*4,   encoder[0],         4);
+            // ips114_show_int(    0 , 16*4,   encoder[1],         4);
+            // ips114_show_int(    0 , 16*4,   encoder[2],         4);
+            // ips114_show_int(    0 , 16*4,   encoder[3],         4);
+// 			Speed_Control( 1.0, 0.0, 0.0);                                            //麦轮测试
 
         // 此处编写需要循环执行的代码
     }

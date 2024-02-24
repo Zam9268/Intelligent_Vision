@@ -28,7 +28,12 @@
 #define ENCODER_RB                       (QTIMER2_ENCODER2)
 #define ENCODER_RB_LSB                   (QTIMER2_ENCODER2_CH1_C5)
 #define ENCODER_RB_DIR                   (QTIMER2_ENCODER2_CH2_C25)
+
+extern float Velocity_KP;//增量式Kp
+extern float Velocity_KI;//增量式Ki
 extern int encoder[4];//存放编码器数值
+extern float target_motor[4];//存放四个麦轮计算出来的速度
+extern float pid_motor[4];//存放增量式pid闭环出的速度
 
 void Motor_Init(void);
 void Encoder_Init(void);

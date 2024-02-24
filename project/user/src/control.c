@@ -112,56 +112,56 @@ void motor_control(void)
 
   for (j = 0; j < 4; j++) //限幅
   {
-    if (PID_motor[j] > Amplitude_motor)
-      PID_motor[j] = Amplitude_motor;
-    if (PID_motor[j] < -Amplitude_motor)
-      PID_motor[j] = -Amplitude_motor;
+    if (target_motor[j] > Amplitude_motor)
+      target_motor[j] = Amplitude_motor;
+    if (target_motor[j] < -Amplitude_motor)
+      target_motor[j] = -Amplitude_motor;
   }
 
   // DIR1改成了0，0改1
 
-  if (PID_motor[0] > 0) //电机1   正转 设置占空比为 百分之 (1000/TIMER1_PWM_DUTY_MAX*100)
+  if (target_motor[0] > 0) //电机1   正转 设置占空比为 百分之 (1000/TIMER1_PWM_DUTY_MAX*100)
   {
     gpio_set_level(DIR_LF, 0);                 // DIR输出高电平
-    pwm_set_duty(motor_LF, (int)PID_motor[0]); // 计算占空比
+    pwm_set_duty(motor_LF, (int)target_motor[0]); // 计算占空比
   }
   else //电机1   反转
   {
     gpio_set_level(DIR_LF, 1);
-    pwm_set_duty(motor_LF, (int)-PID_motor[0]);
+    pwm_set_duty(motor_LF, (int)-target_motor[0]);
   }
 
   if (PID_motor[1] > 0) //电机2   正转
   {
     gpio_set_level(DIR_LB, 0);
-    pwm_set_duty(motor_LB, (int)PID_motor[1]);
+    pwm_set_duty(motor_LB, (int)target_motor[1]);
   }
   else //电机2   反转
   {
     gpio_set_level(DIR_LB, 1);
-    pwm_set_duty(motor_LB, (int)-PID_motor[1]);
+    pwm_set_duty(motor_LB, (int)-target_motor[1]);
   }
 
   if (PID_motor[2] > 0) //电机3   正转
   {
     gpio_set_level(DIR_RF, 1);
-    pwm_set_duty(motor_RF, (int)PID_motor[2]);
+    pwm_set_duty(motor_RF, (int)target_motor[2]);
   }
   else //电机3   反转
   {
     gpio_set_level(DIR_RF, 0);
-    pwm_set_duty(motor_RF, (int)-PID_motor[2]);
+    pwm_set_duty(motor_RF, (int)-target_motor[2]);
   }
 
   if (PID_motor[3] > 0) //电机4   正转
   {
     gpio_set_level(DIR_RB, 1);
-    pwm_set_duty(motor_RB, (int)PID_motor[3]);
+    pwm_set_duty(motor_RB, (int)target_motor[3]);
   }
   else //电机4   反转
   {
     gpio_set_level(DIR_RB, 0);
-    pwm_set_duty(motor_RB, (int)-PID_motor[3]);
+    pwm_set_duty(motor_RB, (int)-target_motor[3]);
   }
 }
 
