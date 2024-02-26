@@ -28,7 +28,8 @@ testabc=[0x07]
 # 初始化屏幕
 lcd = seekfree.LCD180(3)
 
-blob_threshold=(31, 100, -128, 127, -2, 127)#原来的反蓝色滤波，因为要检测，就暂时不用这个了
+blob_threshold=(31, 100, -128, 127, -2, 127)#
+black_threshold=(83, 100, -33, 127, -126, 127)#反黑色滤波（防止黑色）
 #blob_threshold=(-128,127,-128,127,-128,127)#检测时的无滤波
 # 初始化摄像头
 sensor.reset()
@@ -43,7 +44,7 @@ lcd = seekfree.LCD180(3)#初始化屏幕
 lcd.full()  # 将背景颜色显示到整个屏幕
 uart = UART(2, baudrate=115200)#初始化UART2，波特率设置为115200
 
-net_path = "mobilenet_v2_ABC.tflite"                                  # 定义模型的路径，这个模型由eiq进行提供，自己要训练
+net_path = "mobilenet_v2-2024-02-26T12-37-27.164Z_in-int8_out-int8_channel_ptq.tflite"                                  # 定义模型的路径，这个模型由eiq进行提供，自己要训练
 labels = [line.rstrip() for line in open("/sd/mobilenet_v2_ABC_labels.txt")]   # 加载标签
 net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路径 load_to_fb：模型会被加载到帧缓冲区
 
@@ -52,7 +53,7 @@ while(1):
     sensor.set_auto_whitebal(False)#关闭白平衡
     img = sensor.snapshot()
     #这个是通过色块来找图片
-    for blobs in img.find_blobs([blob_threshold]):
+    for blobs in img.find_blobs([black_threshold]):
         if blobs.h() < 70 or blobs.w() < 70:#当找到的色块大于一定值才会进行识别
             continue#小于的话会进行不断识别
         img = img.draw_rectangle(blobs.rect(),color = (255, 0, 0))    # 绘制矩形外框，便于在IDE上查看识别到的矩形位置，

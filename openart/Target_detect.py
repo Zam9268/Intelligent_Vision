@@ -28,6 +28,6 @@ while(True):
             y1 = int(y1*img.height())
             w = int(w*img.width())
             h = int(h*img.height())
-            img.draw_rectangle((x1,y1,w,h),thickness=2)
+            img.draw_rectangle((x1,y1,w,h),thickness=2)#thickness表示控制线的宽度，值越大线越粗。。
 
     print(clock.fps())
