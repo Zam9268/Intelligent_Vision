@@ -6,6 +6,7 @@ float Car_H = 0.8;//车身长度
 float Car_W = 0.6;//车身宽度，单位均为m,可随意调整
 float Velocity_KP = 0.8; //速度PID
 float Velocity_KI = 1.6; //速度PID；这里还没有确定最终方案，先用最简单的来写
+float turn_angle;//过弯转向角度
 int encoder[4];//存放编码器数值
 float PID_motor[4];//存放pid输出后的数值
 pid_info LF_motor_pid;//电机pid
@@ -292,6 +293,17 @@ void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
 //  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
   motor_control();
 	//motor_close_control();//闭环电机测试
+}
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief      过弯转向
+//  @param      void
+//  @return     void
+//  @since      v1.0
+//  Sample usage: value为转向角度，turn_speed为转向速度
+//-------------------------------------------------------------------------------------------------------------------
+void Turn_angle(float value,int16 turn_speed)//
+{
+    
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

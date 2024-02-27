@@ -69,8 +69,8 @@ int main(void)
 //			 pwm_set_duty(motor_LF, (int)PID_motor[0]);
             Read_Encoder();
             ips114_clear();//清屏
-            ips114_show_rgb565_image(0, 27, (const uint16 *)gImage_seekfree_logo, 240, 80, 240, 80, 0); // 显示一个RGB565色彩图片 原图240*80 显示240*80 低位在前
-			      system_delay_ms(1500);
+            ips114_show_rgb565_image(0, 27, (const uint16 *)gImage_seekfree_logo, 240, 80, 240, 80, 0); // 显示一个RGB565色彩图片 原图240*80 显示240*80 低位在前      
+            system_delay_ms(1500);
             ips114_full(RGB565_GRAY);
             ips114_show_string( 0 , 16*1,   "SUCCESS");                          // 显示字符串
             ips114_show_int(    0 , 16*4,   encoder[0],         4);
