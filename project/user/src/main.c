@@ -1,4 +1,4 @@
-\/*********************************************************************************************************************
+/*********************************************************************************************************************
 * RT1064DVL6A Opensourec Library 即（RT1064DVL6A 开源库）是一个基于官方 SDK 接口的第三方开源库
 * Copyright (c) 2022 SEEKFREE 逐飞科技
 * 
@@ -51,13 +51,14 @@ int main(void)
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
     Motor_Init();                  // 电机初始化
-	Encoder_Init();  // 编码器初始化
+	Encoder_Init();                // 编码器初始化
 	ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕显示初始化
     interrupt_global_enable(0);
     Read_Encoder();
+
 
     // 此处编写用户代码 例如外设初始化代码等
     
@@ -69,15 +70,13 @@ int main(void)
             Read_Encoder();
             ips114_clear();//清屏
             ips114_show_rgb565_image(0, 27, (const uint16 *)gImage_seekfree_logo, 240, 80, 240, 80, 0); // 显示一个RGB565色彩图片 原图240*80 显示240*80 低位在前
-			system_delay_ms(1500);
-            while(1);
+			      system_delay_ms(1500);
             ips114_full(RGB565_GRAY);
             ips114_show_string( 0 , 16*1,   "SUCCESS");                          // 显示字符串
-            // ips114_show_int(    0 , 16*4,   encoder[0],         4);
-            // ips114_show_int(    0 , 16*4,   encoder[1],         4);
-            // ips114_show_int(    0 , 16*4,   encoder[2],         4);
-            // ips114_show_int(    0 , 16*4,   encoder[3],         4);
-// 			Speed_Control( 1.0, 0.0, 0.0);                                            //麦轮测试
+            ips114_show_int(    0 , 16*4,   encoder[0],         4);
+            ips114_show_int(    0 , 16*4,   encoder[1],         4);
+            ips114_show_int(    0 , 16*4,   encoder[2],         4);
+            ips114_show_int(    0 , 16*4,   encoder[3],         4);
 
         // 此处编写需要循环执行的代码
     }

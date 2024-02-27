@@ -8,7 +8,10 @@ float Velocity_KP = 0.8; //速度PID
 float Velocity_KI = 1.6; //速度PID；这里还没有确定最终方案，先用最简单的来写
 int encoder[4];//存放编码器数值
 float PID_motor[4];//存放pid输出后的数值
-
+pid_info LF_motor_pid;//电机pid
+pid_info RF_motor_pid;
+pid_info LB_motor_pid;
+pid_info RB_motor_pid;
 
 
 /*******************************************电机初始化*************************************/
@@ -19,10 +22,10 @@ void Motor_Init(void)
   gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); //右前
   gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //右后
 
-  pwm_init(motor_LF, 15000, 1000); //左前pwm
-  pwm_init(motor_LB, 15000, 1000); //左后pwm
-  pwm_init(motor_RF, 15000, 1000); //右前pwm
-  pwm_init(motor_RB, 15000, 1000); //右后pwm
+  pwm_init(motor_LF, 15000, 0); //左前pwm
+  pwm_init(motor_LB, 15000, 0); //左后pwm
+  pwm_init(motor_RF, 15000, 0); //右前pwm
+  pwm_init(motor_RB, 15000, 0); //右后pwm
 }
 
 
@@ -103,8 +106,123 @@ void Incremental_PI(void)
   PID_last_err[2] = PID_err[2]; //更新上一次偏差
   PID_last_err[3] = PID_err[3]; //更新上一次偏差
 }
+//pid参数初始化
+void PidInit(pid_info * pid)
+{
+  pid->kp        = 0;
+  pid->ki        = 0;
+  pid->kd        = 0;
+  pid->error     = 0;
+  pid->lastError = 0;
+  pid->dError    = 0;
+  pid->output    = 0;
+  pid->output_last   = 0;
+}
+//增量式PID
+float increment_pid(float error,pid_info *pid)
+{
+	pid->error = error;
+	pid->dError = error - pid->lastError;//本次误差与上次误差的偏差值
+	pid->lastError = error;//记录下本次误差，以备下次使用
+	pid->output =(pid->kp*pid->dError)+(pid->ki*error); //速度pi控制闭环
+	pid->output_last = pid->output;//记录下本次的pid输出
+	return pid->output;//返回增量式的计算值
+}
 
-/************************************电机驱动函数*************************/
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief      PID赋值
+//  @param      void
+//  @return     void
+//  @since      v1.0
+//  Sample usage:pi调参
+//-------------------------------------------------------------------------------------------------------------------
+void PID_cale()
+{
+  PidInit(&LF_motor_pid);//初始化pid参数
+	PidInit(&LB_motor_pid);
+	PidInit(&RF_motor_pid);
+	PidInit(&RB_motor_pid);
+	
+	LF_motor_pid.kp=0.8;
+	LF_motor_pid.ki=1.6;
+	
+	RF_motor_pid.kp=0.8;
+	RF_motor_pid.ki=1.6;
+	
+	LB_motor_pid.kp=0.8;
+	LB_motor_pid.ki=1.6;
+	
+	LB_motor_pid.kp=0.8;
+	LB_motor_pid.ki=1.6;
+
+	PID_motor[0] += increment_pid(target_motor[0]-encoder[0],&LF_motor_pid);
+  PID_motor[1] += increment_pid(target_motor[1]-encoder[1],&LB_motor_pid);
+  PID_motor[2] += increment_pid(target_motor[2]-encoder[2],&RF_motor_pid);
+  PID_motor[3] += increment_pid(target_motor[3]-encoder[3],&RB_motor_pid);//计算四个轮子速度闭环后输出的pwm
+}
+
+
+/************************************电机闭环驱动函数*************************/
+void motor_close_control(void)
+{
+  int j;
+  int Amplitude_motor = 20000; //===PWM满幅是50000 限制在50000 最高速度在20000左右
+
+  for (j = 0; j < 4; j++) //限幅
+  {
+    if (PID_motor[j] > Amplitude_motor)
+      PID_motor[j] = Amplitude_motor;
+    if (PID_motor[j] < -Amplitude_motor)
+      PID_motor[j] = -Amplitude_motor;
+  }
+
+  // DIR1改成了0，0改1
+
+  if (target_motor[0] > 0) //电机1   正转 设置占空比为 百分之 (1000/TIMER1_PWM_DUTY_MAX*100)
+  {
+    gpio_set_level(DIR_LF, 0);                 // DIR输出高电平
+    pwm_set_duty(motor_LF, (int)PID_motor[0]); // 计算占空比
+  }
+  else //电机1   反转
+  {
+    gpio_set_level(DIR_LF, 1);
+    pwm_set_duty(motor_LF, (int)-PID_motor[0]);
+  }
+
+  if (PID_motor[1] > 0) //电机2   正转
+  {
+    gpio_set_level(DIR_LB, 0);
+    pwm_set_duty(motor_LB, (int)PID_motor[1]);
+  }
+  else //电机2   反转
+  {
+    gpio_set_level(DIR_LB, 1);
+    pwm_set_duty(motor_LB, (int)-PID_motor[1]);
+  }
+
+  if (PID_motor[2] > 0) //电机3   正转
+  {
+    gpio_set_level(DIR_RF, 1);
+    pwm_set_duty(motor_RF, (int)PID_motor[2]);
+  }
+  else //电机3   反转
+  {
+    gpio_set_level(DIR_RF, 0);
+    pwm_set_duty(motor_RF, (int)-PID_motor[2]);
+  }
+
+  if (PID_motor[3] > 0) //电机4   正转
+  {
+    gpio_set_level(DIR_RB, 1);
+    pwm_set_duty(motor_RB, (int)PID_motor[3]);
+  }
+  else //电机4   反转
+  {
+    gpio_set_level(DIR_RB, 0);
+    pwm_set_duty(motor_RB, (int)-PID_motor[3]);
+  }
+}
+/************************************电机开环驱动函数*************************/
 void motor_control(void)
 {
   int j;
@@ -170,9 +288,10 @@ void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
 {
 	Read_Encoder();
   Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//有待测试
+  PID_cale();//PID赋值给电机
 //  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
-  Incremental_PI();
   motor_control();
+	//motor_close_control();//闭环电机测试
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

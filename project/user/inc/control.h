@@ -1,5 +1,8 @@
 //#ifndef __CONTROL_H
 //#define __CONTROL_H
+
+#include "stdio.h"
+#include "stdint.h"
 #include "zf_common_headfile.h"
 
 #define DIR_LF D14//定义gpio口
@@ -29,11 +32,30 @@
 #define ENCODER_RB_LSB                   (QTIMER2_ENCODER2_CH1_C5)
 #define ENCODER_RB_DIR                   (QTIMER2_ENCODER2_CH2_C25)
 
+//定义pid结构体
+typedef struct{
+	float kp ;		        //比例系数
+	float ki ;		        //积分系数
+	float kd ;	          //微分系数
+	float error;          //误差值
+	float lastError;	    //上一个误差值
+	float dError;         //上次误差和这次误差的变化值
+	float output;         //输出值
+	float output_last;    //上次的输出值
+}pid_info;
+
+
 extern float Velocity_KP;//增量式Kp
 extern float Velocity_KI;//增量式Ki
 extern int encoder[4];//存放编码器数值
 extern float target_motor[4];//存放四个麦轮计算出来的速度
 extern float pid_motor[4];//存放增量式pid闭环出的速度
+extern pid_info LF_motor_pid;//电机pid
+extern pid_info RF_motor_pid;
+extern pid_info LB_motor_pid;
+extern pid_info RB_motor_pid;
+
+
 
 void Motor_Init(void);
 void Encoder_Init(void);
@@ -41,5 +63,9 @@ void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(double target_Vx, double target_Vy, double target_Vz);
 void Incremental_PI(void);
+void PidInit(pid_info * pid);
+float increment_pid(float error,pid_info *pid);
+void PID_cale();
+void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
