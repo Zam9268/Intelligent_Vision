@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "control.h": "c"
+        "control.h": "c",
+        "zf_common_headfile.h": "c"
     }
 }
