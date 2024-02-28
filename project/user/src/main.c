@@ -57,6 +57,7 @@ int main(void)
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕显示初始化
+    ips114_clear();//清屏 
     interrupt_global_enable(0);
     ips114_clear();//清屏  
 
