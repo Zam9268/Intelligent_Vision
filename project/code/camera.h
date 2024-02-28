@@ -3,7 +3,7 @@
 
 #include "zf_common_headfile.h"
 #include "control.h"
-
+#include "math.h"
 
 #define IMAGE_WIDTH 188 
 #define IMAGE_HEIGHT 120
