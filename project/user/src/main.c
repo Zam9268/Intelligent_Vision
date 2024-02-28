@@ -53,6 +53,7 @@ int main(void)
 
     Motor_Init();                  // 电机初始化
 	Encoder_Init();                // 编码器初始化
+    pit_init_ms(PIT_CH0, 1000);    // 定时器初始化
 	ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
@@ -65,18 +66,16 @@ int main(void)
     while(1)
     {
         // 此处编写需要循环执行的代码
-                
-            system_delay_ms(1500);
-			
-            ips114_full(RGB565_GRAY);
-            ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
-            system_delay_ms(1500);
             
+			
+//            ips114_full(RGB565_GRAY);
+            ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+        Read_Encoder();
             // Speed_Control(1000,1000,0);//测试编码器
-            // ips114_show_int(    0 , 16*4,   encoder[0],         4);//展示编码器数值，调试用
-            // ips114_show_int(    0 , 16*4,   encoder[1],         4);
-            // ips114_show_int(    0 , 16*4,   encoder[2],         4);
-            // ips114_show_int(    0 , 16*4,   encoder[3],         4);
+        ips114_show_int(    0 , 20,   encoder[0],         4);//展示编码器数值，调试用
+        ips114_show_int(    0 , 60,   encoder[1],         4);
+        ips114_show_int(    0 , 100,   encoder[2],         4);
+        ips114_show_int(   0 , 140,   encoder[3],         4);
             
         // 此处编写需要循环执行的代码
     }
