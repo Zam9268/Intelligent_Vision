@@ -50,6 +50,9 @@ extern float Velocity_KI;//增量式Ki
 extern int encoder[4];//存放编码器数值
 extern float target_motor[4];//存放四个麦轮计算出来的速度
 extern float pid_motor[4];//存放增量式pid闭环出的速度
+extern float turn_angle;//过弯转向角度
+extern int spin;//过弯时的平均中线
+extern int translation;
 extern pid_info LF_motor_pid;//电机pid
 extern pid_info RF_motor_pid;
 extern pid_info LB_motor_pid;

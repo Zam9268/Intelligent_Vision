@@ -1,5 +1,8 @@
 #include "control.h"
+#include "imu660ra.h"
 #include "zf_common_headfile.h"
+#define Row   180 //148
+#define Col   180
 float Vx, Vy, Vz;//Vx为整车x轴方向速度，Vy为整车y轴方向速度，Vz是整车饶车中心旋转的速度
 float target_motor[4];//四个轮子的目标pwm值
 float Car_H = 0.8;//车身长度
@@ -7,8 +10,12 @@ float Car_W = 0.6;//车身宽度，单位均为m,可随意调整
 float Velocity_KP = 0.8; //速度PID
 float Velocity_KI = 1.6; //速度PID；这里还没有确定最终方案，先用最简单的来写
 float turn_angle;//过弯转向角度
+int spin;//过弯时的平均中线
+int translation=0;//屏幕中线与赛道中线间的平行偏差量
 int encoder[4];//存放编码器数值
 float PID_motor[4];//存放pid输出后的数值
+int midline[Row];//存放中线数组
+float Keep_Bias;//车辆转向误差
 pid_info LF_motor_pid;//电机pid
 pid_info RF_motor_pid;
 pid_info LB_motor_pid;
@@ -288,22 +295,29 @@ void motor_control(void)
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
 {
 	Read_Encoder();
-  Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//有待测试
-  PID_cale();//PID赋值给电机
-//  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
+//  Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//通过测试
+//  PID_cale();//PID赋值给电机
+  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
   motor_control();
 	//motor_close_control();//闭环电机测试
 }
 //-------------------------------------------------------------------------------------------------------------------
-//  @brief      过弯转向
-//  @param      void
+//  @brief      获取过弯转向的转向速度及角度
+//  @param      mode (1为前后移动，2为转动)，value为转向角度（通过对赛道中线对比获取），turn_speed为转向速度(target_Vx)
 //  @return     void
 //  @since      v1.0
-//  Sample usage: value为转向角度，turn_speed为转向速度
+//  Sample usage: value为转向角度（通过对赛道中线对比获取），turn_speed为转向速度
 //-------------------------------------------------------------------------------------------------------------------
-void Turn_angle(float value,int16 turn_speed)//
+void move(int8 mode,float value,int16 stra_speed,int16 turn_speed)
 {
-    
+  int k = 0;
+  translation=midline[Row-1]-Col/2; //计算平移量小心数组越界
+  for(k = Row; k < 65; k--)
+  {
+     spin=spin+midline[k];//对过弯时的中线行数做累加
+     spin=spin/(Row-k)-Col/2;//求平均后减去屏幕中线求出偏差值
+  }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -324,32 +338,32 @@ void Turn_angle(float value,int16 turn_speed)//
 //}
 
 ///**************************************************************************
-//函数功能：18届视觉读取编码器数值并计算车轮速度并求出位移，单位m/s
-//(车轮速度 = ( (总脉冲数 / 编码器线数)  * 编码器齿数 / 车模齿数 ) * 轮周长 / 脉冲读取时间)
-//入口参数：无
-//返回值：无
-//**************************************************************************/
-//void Encoder_odometer(void)
-//{
-//  static float Angle_Bias = 0;//求角度位移？？？
-//  static float V_enco[4] = {0}, Vx_enco = 0, Vy_enco = 0;
+// 函数功能：18届视觉读取编码器数值并计算车轮速度并求出位移，单位m/s
+// (车轮速度 = ( (总脉冲数 / 编码器线数)  * 编码器齿数 / 车模齿数 ) * 轮周长 / 脉冲读取时间)
+// 入口参数：无
+// 返回值：无
+// **************************************************************************/
+void Encoder_odometer(void)
+{
+ static float Angle_Bias = 0;//角度误差
+ static float V_enco[4] = {0}, Vx_enco = 0, Vy_enco = 0;
 
-//  Angle_Bias = (90 - Angle_Z) * PI / 180;
+ Angle_Bias = (90 - Angle_Z) * PI / 180;//弧度制，车身姿态发生偏转
 
-///****求编码器速度******/
-//  V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637可以再精确多三位
-//  V_enco[1] = 0.2636719 * PI * (float)encoder[1];
-//  V_enco[2] = 0.2636719 * PI * (float)encoder[2];
-//  V_enco[3] = 0.2636719 * PI * (float)encoder[3];
-//  //下面的是原来的，没有负号
-//  //    Vx_enco=(V_enco[0]-V_enco[1]-V_enco[2]+V_enco[3])/4;//右移为正
-//  //    Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4;//前进为正
-//  Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //右移为正，这里回去看看车轮
-//  Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //前进为正
-//  //    Car_dis_x+=Vx_enco*0.01;
-//  //    Car_dis_y+=Vy_enco*0.01;
+/****求编码器速度******/
+ V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637可以再精确多三位
+ V_enco[1] = 0.2636719 * PI * (float)encoder[1];
+ V_enco[2] = 0.2636719 * PI * (float)encoder[2];
+ V_enco[3] = 0.2636719 * PI * (float)encoder[3];
+ //下面的是原来的，没有负号
+ //    Vx_enco=(V_enco[0]-V_enco[1]-V_enco[2]+V_enco[3])/4;//右移为正
+ //    Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4;//前进为正
+ Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //右移为正，这里回去看看车轮
+ Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //前进为正
+ //    Car_dis_x+=Vx_enco*0.01;
+ //    Car_dis_y+=Vy_enco*0.01;
 
-//#if 1
+// #if 1
 //  if (Angle_Bias >= 0)
 //  {
 //    Vx_1 = Vx_enco * sin(Angle_Bias);
@@ -369,10 +383,10 @@ void Turn_angle(float value,int16 turn_speed)//
 //    Vx_world = Vx_2 + Vy_2;
 //    Vy_world = -Vx_1 + Vy_1;
 //  }
-//#endif
+// #endif
 //  Car_dis_x += Vx_world * 0.01;
 //  Car_dis_y += Vy_world * 0.01;
 
 //  Car_dis_x2 += Vx_world * 0.01;
 //  Car_dis_y2 += Vy_world * 0.01;
-//}
+}

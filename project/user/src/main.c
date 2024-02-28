@@ -43,13 +43,14 @@
 // 本例程是开源库移植用空工程
 #define MAX_DUTY                    (50)
 int8 duty = 0;
-bool dir = true;
 float x, y, z;//
 int main(void)
 {
 	  
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
+    system_delay_ms(300);           //等待主板其他外设上电完成
+
     Motor_Init();                  // 电机初始化
 	Encoder_Init();                // 编码器初始化
 	ips114_set_dir(IPS114_CROSSWISE_180);
@@ -57,7 +58,7 @@ int main(void)
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕显示初始化
     interrupt_global_enable(0);
-    Read_Encoder();
+
 
 
     // 此处编写用户代码 例如外设初始化代码等
@@ -66,18 +67,19 @@ int main(void)
     while(1)
     {
         // 此处编写需要循环执行的代码
-//			 pwm_set_duty(motor_LF, (int)PID_motor[0]);
-            Read_Encoder();
-            ips114_clear();//清屏
-            ips114_show_rgb565_image(0, 27, (const uint16 *)gImage_seekfree_logo, 240, 80, 240, 80, 0); // 显示一个RGB565色彩图片 原图240*80 显示240*80 低位在前      
+            ips114_clear();//清屏     
             system_delay_ms(1500);
+			
             ips114_full(RGB565_GRAY);
-            ips114_show_string( 0 , 16*1,   "SUCCESS");                          // 显示字符串
-            ips114_show_int(    0 , 16*4,   encoder[0],         4);
-            ips114_show_int(    0 , 16*4,   encoder[1],         4);
-            ips114_show_int(    0 , 16*4,   encoder[2],         4);
-            ips114_show_int(    0 , 16*4,   encoder[3],         4);
-
+            ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+            system_delay_ms(1500);
+            
+            // Speed_Control(1000,1000,0);//测试编码器
+            // ips114_show_int(    0 , 16*4,   encoder[0],         4);//展示编码器数值，调试用
+            // ips114_show_int(    0 , 16*4,   encoder[1],         4);
+            // ips114_show_int(    0 , 16*4,   encoder[2],         4);
+            // ips114_show_int(    0 , 16*4,   encoder[3],         4);
+            
         // 此处编写需要循环执行的代码
     }
 }
