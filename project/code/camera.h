@@ -10,5 +10,6 @@
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
+uint8 Camera_Init(void);
 
 #endif
