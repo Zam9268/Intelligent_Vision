@@ -7,8 +7,8 @@ float Vx, Vy, Vz;//VxÎªÕû³µxÖá·½ÏòËÙ¶È£¬VyÎªÕû³µyÖá·½ÏòËÙ¶È£¬VzÊÇÕû³µÈÄ³µÖĞĞÄĞı×
 float target_motor[4];//ËÄ¸öÂÖ×ÓµÄÄ¿±êpwmÖµ
 float Car_H = 0.8;//³µÉí³¤¶È
 float Car_W = 0.6;//³µÉí¿í¶È£¬µ¥Î»¾ùÎªm,¿ÉËæÒâµ÷Õû
-float Velocity_KP = 0.8; //ËÙ¶ÈPID
-float Velocity_KI = 1.6; //ËÙ¶ÈPID£»ÕâÀï»¹Ã»ÓĞÈ·¶¨×îÖÕ·½°¸£¬ÏÈÓÃ×î¼òµ¥µÄÀ´Ğ´
+float Velocity_KP = 0.1; //ËÙ¶ÈPID
+float Velocity_KI = 0.1; //ËÙ¶ÈPID£»ÕâÀï»¹Ã»ÓĞÈ·¶¨×îÖÕ·½°¸£¬ÏÈÓÃ×î¼òµ¥µÄÀ´Ğ´
 float turn_angle;//¹ıÍä×ªÏò½Ç¶È
 int spin;//¹ıÍäÊ±µÄÆ½¾ùÖĞÏß
 int translation=0;//ÆÁÄ»ÖĞÏßÓëÈüµÀÖĞÏß¼äµÄÆ½ĞĞÆ«²îÁ¿
@@ -47,15 +47,14 @@ void Encoder_Init(void)
 }
 
 
-/*******************************************¶ÁÈ¡±àÂëÆ÷ÊıÖµ*********************************/
 void Read_Encoder(void)
 {
-  encoder[0] = encoder_get_count(ENCODER_LF);
-  encoder[1] = encoder_get_count(ENCODER_LB);
-  encoder[2] = -encoder_get_count(ENCODER_RF);
-  encoder[3] = -encoder_get_count(ENCODER_RB);
-  //dasdas
-  //Çå¿Õ±àÂëÆ÷¼ÆÊı
+  encoder[0] = -encoder_get_count(ENCODER_LF);//»ñÈ¡±àÂëÆ÷ÊıÖµ
+  encoder[1] = -encoder_get_count(ENCODER_LB);
+  encoder[2] = encoder_get_count(ENCODER_RF);
+  encoder[3] = encoder_get_count(ENCODER_RB);
+
+//Çå¿Õ±àÂëÆ÷¼ÆÊı
   encoder_clear_count(ENCODER_LF);
   encoder_clear_count(ENCODER_LB);
   encoder_clear_count(ENCODER_RF);
@@ -75,21 +74,14 @@ void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float tar
 }
 
 // Õû³µÒÆ¶¯Á¿×ª»»Îªµ¥ÂÖËÙ¶È  x:Ç°+ºó-  y:×ó+ÓÒ-  z:Äæ+Ë³-
-void Move_Transfrom(double target_Vx, double target_Vy, double target_Vz)
+void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 {
 	target_motor[0]= target_Vx + target_Vy - target_Vz*(Car_H/2+Car_W/2);
 	target_motor[1]= -target_Vx + target_Vy - target_Vz*(Car_H/2+Car_W/2);
 	target_motor[2]= -target_Vx + target_Vy + target_Vz*(Car_H/2+Car_W/2);
-	target_motor[3]= target_Vx + target_Vy + target_Vz*(Car_H/2+Car_W/2);
+	target_motor[3]= target_Vx + target_Vy + target_Vz*(Car_H/2+Car_W/2);//½ñÍíÔÚÑéÖ¤Ò»ÏÂ·½ÏòÊÇ·ñÕıÈ·
 }
-//void Move_Transfrom(double Vx,double Vy,double Vz)//×óÒÆÎªÕı£¬Ç°½øÎªÕı
-//{
-//	PID_motor[0]=Vx-Vy-Vz*(Car_H/2+Car_W/2);
-//	PID_motor[1]=Vx+Vy-Vz*(Car_H/2+Car_W/2);
-//	PID_motor[2]=Vx+Vy+Vz*(Car_H/2+Car_W/2);
-//	PID_motor[3]=Vx-Vy+Vz*(Car_H/2+Car_W/2);
-//}
-                    
+                 
 /**************************************************************************
 º¯Êı¹¦ÄÜ£ºÔöÁ¿Ê½ËÙ¶ÈPI ¼ÆËã³ö¸öÂÖ×ÓpidËùĞèÒªµÄÖµ
 Èë¿Ú²ÎÊı£ºPID_motor[4]   encoder[4]
@@ -130,9 +122,9 @@ void PidInit(pid_info * pid)
 float increment_pid(float error,pid_info *pid)
 {
 	pid->error = error;
-	pid->dError = error - pid->lastError;//±¾´ÎÎó²îÓëÉÏ´ÎÎó²îµÄÆ«²îÖµ
-	pid->lastError = error;//¼ÇÂ¼ÏÂ±¾´ÎÎó²î£¬ÒÔ±¸ÏÂ´ÎÊ¹ÓÃ
-	pid->output =(pid->kp*pid->dError)+(pid->ki*error); //ËÙ¶Èpi¿ØÖÆ±Õ»·
+	pid->dError = pid->error - pid->lastError;//±¾´ÎÎó²îÓëÉÏ´ÎÎó²îµÄÆ«²îÖµ
+	pid->output =(pid->kp*pid->dError)+(pid->ki*pid->error); //ËÙ¶Èpi¿ØÖÆ±Õ»·
+  pid->lastError = pid->error;//¼ÇÂ¼ÏÂ±¾´ÎÎó²î£¬ÒÔ±¸ÏÂ´ÎÊ¹ÓÃ
 	pid->output_last = pid->output;//¼ÇÂ¼ÏÂ±¾´ÎµÄpidÊä³ö
 	return pid->output;//·µ»ØÔöÁ¿Ê½µÄ¼ÆËãÖµ
 }
@@ -151,22 +143,28 @@ void PID_cale()
 	PidInit(&RF_motor_pid);
 	PidInit(&RB_motor_pid);
 	
-	LF_motor_pid.kp=0.8;
-	LF_motor_pid.ki=1.6;
+	LF_motor_pid.kp=Velocity_KP;
+	LF_motor_pid.ki=Velocity_KI;
 	
-	RF_motor_pid.kp=0.8;
-	RF_motor_pid.ki=1.6;
+	LB_motor_pid.kp=Velocity_KP;
+	LB_motor_pid.ki=Velocity_KI;
 	
-	LB_motor_pid.kp=0.8;
-	LB_motor_pid.ki=1.6;
+	RF_motor_pid.kp=Velocity_KP;
+	RF_motor_pid.ki=Velocity_KI;
 	
-	LB_motor_pid.kp=0.8;
-	LB_motor_pid.ki=1.6;
+	RB_motor_pid.kp=Velocity_KP;
+	RB_motor_pid.ki=Velocity_KI;//¸÷¸öÂÖ×Ópi¸³Öµ
 
-	PID_motor[0] += increment_pid(target_motor[0]-encoder[0],&LF_motor_pid);
-  PID_motor[1] += increment_pid(target_motor[1]-encoder[1],&LB_motor_pid);
-  PID_motor[2] += increment_pid(target_motor[2]-encoder[2],&RF_motor_pid);
-  PID_motor[3] += increment_pid(target_motor[3]-encoder[3],&RB_motor_pid);//¼ÆËãËÄ¸öÂÖ×ÓËÙ¶È±Õ»·ºóÊä³öµÄpwm
+  static float PID_err[4];
+  PID_err[0] = target_motor[0] - encoder[0]; //µ±Ç°Æ«²îÖµ
+  PID_err[1] = target_motor[1] - encoder[1]; //µ±Ç°Æ«²îÖµ
+  PID_err[2] = target_motor[2] - encoder[2]; //µ±Ç°Æ«²îÖµ
+  PID_err[3] = target_motor[3] - encoder[3]; //µ±Ç°Æ«²îÖµ
+
+	PID_motor[0] += increment_pid(PID_err[0], &LF_motor_pid);
+  PID_motor[1] += increment_pid(PID_err[1], &LB_motor_pid);
+  PID_motor[2] += increment_pid(PID_err[2], &RF_motor_pid);
+  PID_motor[3] += increment_pid(PID_err[3], &RB_motor_pid);//¼ÆËãËÄ¸öÂÖ×ÓËÙ¶È±Õ»·ºóÊä³öµÄpwm
 }
 
 
@@ -174,7 +172,7 @@ void PID_cale()
 void motor_close_control(void)
 {
   int j;
-  int Amplitude_motor = 20000; //===PWMÂú·ùÊÇ50000 ÏŞÖÆÔÚ50000 ×î¸ßËÙ¶ÈÔÚ20000×óÓÒ
+  int Amplitude_motor = 3000; //===PWMÂú·ùÊÇ50000 ÏŞÖÆÔÚ50000 ×î¸ßËÙ¶ÈÔÚ20000×óÓÒ
 
   for (j = 0; j < 4; j++) //ÏŞ·ù
   {
@@ -215,7 +213,7 @@ void motor_close_control(void)
   }
   else //µç»ú3   ·´×ª
   {
-    gpio_set_level(DIR_RF, 0);
+    gpio_set_level(DIR_RF, 0);//¿ÉÄÜÊÇÕâÀï³öÏÖÎÊÌâ£¬´Ë´¦DIR¿ÉÒÔ¸ü¸Ä£¿£¿
     pwm_set_duty(motor_RF, (int)-PID_motor[2]);
   }
 
@@ -294,12 +292,12 @@ void motor_control(void)
 /***********************************************·â×°ËÙ¶Èº¯Êı******************************************/
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
 {
-	Read_Encoder();
-//  Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//Í¨¹ı²âÊÔ
-//  PID_cale();//PID¸³Öµ¸øµç»ú
-  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
-  motor_control();
-	//motor_close_control();//±Õ»·µç»ú²âÊÔ
+// 	  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
+//     Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//Í¨¹ı²âÊÔ
+//     motor_control();
+ Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
+ PID_cale();//PID±Õ»·ºó¸³Öµ¸øµç»ú
+motor_close_control();//±Õ»·µç»ú²âÊÔ
 }
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      »ñÈ¡¹ıÍä×ªÏòµÄ×ªÏòËÙ¶È¼°½Ç¶È
@@ -317,7 +315,6 @@ void move(int8 mode,float value,int16 stra_speed,int16 turn_speed)
      spin=spin+midline[k];//¶Ô¹ıÍäÊ±µÄÖĞÏßĞĞÊı×öÀÛ¼Ó
      spin=spin/(Row-k)-Col/2;//ÇóÆ½¾ùºó¼õÈ¥ÆÁÄ»ÖĞÏßÇó³öÆ«²îÖµ
   }
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

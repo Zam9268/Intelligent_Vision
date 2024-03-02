@@ -41,9 +41,10 @@
 // 第二步 project->clean  等待下方进度条走完
 
 // 本例程是开源库移植用空工程
-#define MAX_DUTY                    (50)
-int8 duty = 0;
+#define PIT_CH_Enco (PIT_CH1)    // 编码器里程计中断
+#define PIT_PRIORITY (PIT_IRQn) // 对应周期中断的中断编号
 float x, y, z;//
+
 int main(void)
 {
 	  
@@ -52,14 +53,20 @@ int main(void)
     system_delay_ms(300);           //等待主板其他外设上电完成
 
     Motor_Init();                  // 电机初始化
-	Encoder_Init();                // 编码器初始化
-	ips114_set_dir(IPS114_CROSSWISE_180);
+	  Encoder_Init();                // 编码器初始化
+//    pit_ms_init(PIT_CH_Enco, 10);             // 控制pit中断，时间间隔为10ms
+
+	  ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕显示初始化
     ips114_clear();//清屏 
     interrupt_global_enable(0);
-    ips114_clear();//清屏  
+    ips114_clear();//清屏 
+    ips114_full(RGB565_GRAY);
+    
+    // interrupt_set_priority(PIT_PRIORITY, 2); // 定时器中断优先级 
+    // interrupt_global_enable(0);//开中断
 
 
 
@@ -68,17 +75,15 @@ int main(void)
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-        // 此处编写需要循环执行的代码
-			
-            ips114_full(RGB565_GRAY);
-            ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
-            system_delay_ms(1500);
-
-            Speed_Control(1000,1000,0);//测试编码器
-            ips114_show_int(    0 , 20,   encoder[0],         4);//展示编码器数值，调试用
-            ips114_show_int(    0 , 30,   encoder[1],         4);
-            ips114_show_int(    0 , 40,   encoder[2],         4);
-            ips114_show_int(    0 , 50,   encoder[3],         4);
+    //     // 此处编写需要循环执行的代码			
+      ips114_show_string( 0 , 0,   "SUCCESS");                           
+ 	 		Speed_Control( 1000, 0, 0);                                            //麦轮测试闭环
+		  Read_Encoder();//读取编码器
+	    ips114_show_int(    0 , 30,   encoder[0],         4);
+      ips114_show_int(    0 , 60,   encoder[1],         4);
+      ips114_show_int(    0 , 90,   encoder[2],         4);
+      ips114_show_int(    0 , 120,   encoder[3],         4);
+	 system_delay_ms(100);
             
         // 此处编写需要循环执行的代码
     }

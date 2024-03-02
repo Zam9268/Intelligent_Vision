@@ -19,14 +19,13 @@
 #define ENCODER_LF_LSB                   (QTIMER1_ENCODER2_CH1_C2)
 #define ENCODER_LF_DIR                   (QTIMER1_ENCODER2_CH2_C24)
 
-#define ENCODER_RF                       (QTIMER2_ENCODER1)
-#define ENCODER_RF_LSB                   (QTIMER2_ENCODER1_CH1_C3)
-#define ENCODER_RF_DIR                   (QTIMER2_ENCODER1_CH2_C4)
+#define ENCODER_LB                       (QTIMER2_ENCODER1)
+#define ENCODER_LB_LSB                   (QTIMER2_ENCODER1_CH1_C3)
+#define ENCODER_LB_DIR                   (QTIMER2_ENCODER1_CH2_C4)
 
-#define ENCODER_LB                       (QTIMER1_ENCODER1)
-#define ENCODER_LB_LSB                   (QTIMER1_ENCODER1_CH1_C0)
-#define ENCODER_LB_DIR                   (QTIMER1_ENCODER1_CH2_C1)
-
+#define ENCODER_RF                       (QTIMER1_ENCODER1)
+#define ENCODER_RF_LSB                   (QTIMER1_ENCODER1_CH1_C0)
+#define ENCODER_RF_DIR                   (QTIMER1_ENCODER1_CH2_C1)
 
 #define ENCODER_RB                       (QTIMER2_ENCODER2)
 #define ENCODER_RB_LSB                   (QTIMER2_ENCODER2_CH1_C5)
@@ -64,7 +63,7 @@ void Motor_Init(void);
 void Encoder_Init(void);
 void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
-void Move_Transfrom(double target_Vx, double target_Vy, double target_Vz);
+void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void Incremental_PI(void);
 void PidInit(pid_info * pid);
 float increment_pid(float error,pid_info *pid);
