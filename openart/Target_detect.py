@@ -12,6 +12,8 @@ face_detect = 'yolo3_iou_smartcar_final_with_post_processing.tflite'
 #载入模型
 net = tf.load(face_detect)
 
+#函数：计算透视W矩阵
+def cal_mtx()
 while(True):
     clock.tick()
     img = sensor.snapshot()
