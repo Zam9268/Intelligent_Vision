@@ -32,7 +32,16 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1,   // 图像最远端60 ——69 行权重
 };
 
-
+void Image_Change(void)
+{
+    for (int i = 0; i < IMAGE_HEIGHT; i++)
+    {
+        for (int j = 0; j < IMAGE_WIDTH; j++)
+        {
+            Image_Use[i][j] = mt9v03x_image[i][j];
+        }
+    }
+}
 volatile int White_Column[IMAGE_WIDTH];//每列白列长度
 /**
  * @brief 中线处理（这里用的大津法的最长白列法——sobel,canny的最长白列法还需要补充）
@@ -186,8 +195,7 @@ float Err_Handle(uint8 height)
  */
 void test(void)
 {
-	
-	ips114_show_char(0,0,'A');
-	ips114_show_uint(0,0,Image_Use[1][1],3);
-	ips114_displayimage03x(*Image_Use,100,100);
+    Image_Change();
+	ips114_show_char(188,120,'Q');
+	ips114_displayimage03x(*Image_Use,188,120);
 }
