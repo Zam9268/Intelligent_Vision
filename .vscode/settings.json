@@ -2,6 +2,7 @@
     "files.associations": {
         "control.h": "c",
         "zf_common_headfile.h": "c",
-        "zf_device_mt9v03x.h": "c"
+        "zf_device_mt9v03x.h": "c",
+        "zf_device_ips114.h": "c"
     }
 }

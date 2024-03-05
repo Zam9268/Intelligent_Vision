@@ -1,5 +1,7 @@
 #include "image.h"
 
+uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
+
 
 /*边线数组变量定义*/
 uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//左右边线数组
@@ -18,77 +20,18 @@ uint8 Boundry_Start_Left,Boundry_Start_Right;//左右边界起始行
 uint8 Road_Wide[IMAGE_HEIGHT];//定义赛道宽度数组
 RoadType Road_Type;//定义赛道类型
 
-/**
- * @brief 图像去噪（取周围8个邻域的点进行去噪）
- * @time_consuming：
- * @param bin_image
- * @return 无
- */
-void Image_denoising(uint8 *bin_image)
+//加权控制数组，可以利用该数组来调节前瞻
+const uint8 Weight[IMAGE_HEIGHT]=
 {
-    int bai;
-    for(int j=1;j<IMAGE_HEIGHT-1;j++)
-    {
-        for(int i=1;i<IMAGE_WIDTH-1;i++)
-        {
-            if(bin_image[i+j*IMAGE_WIDTH]==255) continue;
-            bin_image[i-1+j*IMAGE_WIDTH] 	+ bin_image[i+1+j*IMAGE_WIDTH] + 
-					bin_image[i-1+(j-1)*IMAGE_WIDTH] +	bin_image[i+(j-1)*IMAGE_WIDTH] 	+bin_image[i+1+(j-1)*IMAGE_WIDTH] +	
-					bin_image[i-1+(j+1)*IMAGE_WIDTH] +	bin_image[i+(j+1)*IMAGE_WIDTH] 	+bin_image[i+1+(j+1)*IMAGE_WIDTH] ;
-            if( bai >= 1785 )
-            bin_image[i+j*IMAGE_WIDTH] = 255;
-        }
-    }
-    for(int j=1;j<IMAGE_HEIGHT-1;j++)
-    {
-        for(int i=1;i<IMAGE_WIDTH-1;i++)
-        {
-            if(bin_image[i+j*IMAGE_WIDTH]==0) continue;
-            bin_image[i-1+j*IMAGE_WIDTH] 	+ bin_image[i+1+j*IMAGE_WIDTH] + 
-					bin_image[i-1+(j-1)*IMAGE_WIDTH] +	bin_image[i+(j-1)*IMAGE_WIDTH] 	+bin_image[i+1+(j-1)*IMAGE_WIDTH] +	
-					bin_image[i-1+(j+1)*IMAGE_WIDTH] +	bin_image[i+(j+1)*IMAGE_WIDTH] 	+bin_image[i+1+(j+1)*IMAGE_WIDTH] ;
-            if( bai <=255 )
-            bin_image[i+j*IMAGE_WIDTH] = 0;
-        }
-    }
-    /*扫描底下三行*/
-    for(x = IMAGE_HEIGHT-CENTER_LINE_START;x >= IMAGE_HEIGHT-CENTER_LINE_START-3;x--)    //x是减163-160  num是加0—4       
-    {
-        for(y = middle;y <= IMAGE_WIDTH-2;y++)    //中间向右找跳变
-        {
-            if(bin_image[x][y] == 0 && bin_image[x][y+1] == 0 && bin_image[x][y-1] == 255)  //两个连续黑点触发
-            {
-                right_line[0][num]=x;
-                right_line[1][num]=y; 
-                break;
-            }
-            else if(y==bin_width-2)       //到最右边了都没扫到黑点a
-            {
-                right_line[0][num]=x;
-                right_line[1][num]=y;
-                break;
-            }
-        }
-        
-        for(y = middle;y >= 1 ; y--)            //中间向左找跳变
-        {
-            if(bin_image[x][y] == 0 && bin_image[x][y-1] == 0 && bin_image[x][y+1] == 255)  //两个连续黑点触发
-            {
-                left_line[0][num]=x;
-                left_line[1][num]=y;
-                num=num+1;
-                break;
-            }
-            else if(y==1)                 //到最左边了都没扫到黑点
-            {
-                left_line[0][num]=x;
-                left_line[1][num]=y;
-                num=num+1;
-                break;
-            } 
-        }
-    }
-}
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 图像最远端00 ——09 行权重
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 图像最远端10 ——19 行权重
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 图像最远端20 ——29 行权重
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1,        // 图像最远端30 ——39 行权重
+    1, 1, 1, 1, 1, 1, 1, 3, 4, 5,        // 图像最远端40 ——49 行权重
+    6, 7, 9, 11, 13, 15, 17, 19, 20, 20, // 图像最远端50 ——59 行权重
+    19, 17, 15, 13, 11, 9, 7, 5, 3, 1,   // 图像最远端60 ——69 行权重
+};
+
 
 volatile int White_Column[IMAGE_WIDTH];//每列白列长度
 /**
@@ -96,26 +39,22 @@ volatile int White_Column[IMAGE_WIDTH];//每列白列长度
  * @param H（赛道长度）
  * @return 无
  */
-void Center_line_deal(uint8 start_column,uint8 end_column,uint8 *image)
+void Center_line_deal(uint8 start_column,uint8 end_column)
 {
-    /*数组清零*/
-    for(int i=0;i<H-CENTER_LINE_START;ql++)   //清零函数
-    {
-        left_line[0][i]=0;
-        left_line[1][i]=0;
-        right_line[0][i]=0;
-        right_line[1][i]=0;
-        center[i]=0;
-    }
+    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+	{
+		left_line[i]=0;
+		right_line[i]=0;
+	}
     int x=0,y=0;//设x为行,y为列
     uint8 middle=the_maxlen_position;//定义赛道最长位置
     uint8 x_num;
     /*寻找最长白列（待优化） */
-    for(j=start_column;j<end_column;j++)
+    for(uint8 j=start_column;j<end_column;j++)
     {
-        for(i=0;i<IMAGE_HEIGHT;i++)
+        for(uint8 i=0;i<IMAGE_HEIGHT;i++)
         {
-            if(bin_image[i][j]==0)
+            if(Image_Use[i][j]==0)
             {
                 White_Column[j]++;
             }
@@ -123,7 +62,7 @@ void Center_line_deal(uint8 start_column,uint8 end_column,uint8 *image)
     }
     /*从左到右寻找最长白列*/
     Longest_White_Column_Left[0]=0;//白列长度清零
-    for(i=start_column;i<end_column;i++)
+    for(uint8 i=start_column;i<end_column;i++)
     {
         if(White_Column[i]>Longest_White_Column_Left[0])//最大值更替
         {
@@ -133,7 +72,7 @@ void Center_line_deal(uint8 start_column,uint8 end_column,uint8 *image)
     }
     /*从右到左寻找最长白列*/
     Longest_White_Column_Right[0]=0;//白列长度清零
-    for(i=end_column;i>start_column;i--)
+    for(uint8 i=end_column;i>start_column;i--)
     {
         if(White_Column[i]>Longest_White_Column_Right[0])//最大值更替
         {
@@ -162,7 +101,7 @@ void Center_line_deal(uint8 start_column,uint8 end_column,uint8 *image)
                 break;
             }
         }
-        for(j=Longest_White_Column_Left[1];j>=2;j--)
+        for(uint8 j=Longest_White_Column_Left[1];j>=2;j--)
         {
             if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j-1]==BLACK_POINT&&Image_Use[i][j-2]==BLACK_POINT)
             {
@@ -214,6 +153,7 @@ void Outer_Analyse(void)
  */
 float Err_Handle(uint8 height)
 {
+    /*这种写法会使得前瞻不够远，故舍弃
     float err=0.00;//值为负，往左偏；值为正，往右偏
     int sum_err[IMAGE_HEIGHT]={0};
     int sum_hight=0;
@@ -226,5 +166,28 @@ float Err_Handle(uint8 height)
     {
         err+=sum_err[i]/sum_hight;//均值分配
     }
+    */
+    
+    float err=0.00;
+    int weight_count=0;//权重总值
+    for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)
+    {
+        err+=(IMAGE_WIDTH/2-((left_line[i]+right_line[i])>>1))*Weight[i];
+        weight_count+=Weight[i];//权重总值相加
+    }
+    err=err/weight_count;//权重均值
     return err;
+}
+
+/**
+ * @brief 测试函数（把测试的丢在这里）
+ * @param 无
+ * @return 无
+ */
+void test(void)
+{
+	
+	ips114_show_char(0,0,'A');
+	ips114_show_uint(0,0,Image_Use[1][1],3);
+	ips114_displayimage03x(*Image_Use,100,100);
 }

@@ -34,7 +34,10 @@
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
-#include "control.h"
+#include "image.h"
+#include "camera.h"
+
+extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
@@ -50,16 +53,17 @@ int main(void)
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
     system_delay_ms(300);           //等待主板其他外设上电完成
-
+	
     Motor_Init();                  // 电机初始化
 	Encoder_Init();                // 编码器初始化
-    pit_init_ms(PIT_CH0, 1000);    // 定时器初始化
+    pit_init(PIT_CH0, 1000);    // 定时器初始化
+	
 	ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
+	Camera_Init();
     ips114_init();//屏幕显示初始化
     ips114_clear();//清屏 
-    interrupt_global_enable(0);
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
@@ -67,16 +71,17 @@ int main(void)
     {
         // 此处编写需要循环执行的代码
             
-			
-//            ips114_full(RGB565_GRAY);
-            ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
-        Read_Encoder();
-            // Speed_Control(1000,1000,0);//测试编码器
-        ips114_show_int(    0 , 20,   encoder[0],         4);//展示编码器数值，调试用
-        ips114_show_int(    0 , 60,   encoder[1],         4);
-        ips114_show_int(    0 , 100,   encoder[2],         4);
-        ips114_show_int(   0 , 140,   encoder[3],         4);
-            
+		
+		//            ips114_full(RGB565_GRAY);
+//		ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+		Read_Encoder();
+		test();
+//		// Speed_Control(1000,1000,0);//测试编码器
+//		ips114_show_int(    0 , 20,   encoder[0],         4);//展示编码器数值，调试用
+//		ips114_show_int(    0 , 60,   encoder[1],         4);
+//		ips114_show_int(    0 , 100,   encoder[2],         4);
+//		ips114_show_int(   0 , 140,   encoder[3],         4);
+
         // 此处编写需要循环执行的代码
     }
 }

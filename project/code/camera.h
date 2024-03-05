@@ -8,7 +8,7 @@
 #define IMAGE_WIDTH 188 
 #define IMAGE_HEIGHT 120
 
-uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
+
 
 uint8 Camera_Init(void);
 uint8 Camera_GetOSTU(uint8 *tmImage);
