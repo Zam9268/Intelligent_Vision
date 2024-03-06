@@ -400,6 +400,11 @@
               <FileType>1</FileType>
               <FilePath>..\user\src\imu660ra.c</FilePath>
             </File>
+            <File>
+              <FileName>take.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\user\src\take.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -419,6 +424,11 @@
               <FileName>imu660ra.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\user\inc\imu660ra.h</FilePath>
+            </File>
+            <File>
+              <FileName>take.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\user\inc\take.h</FilePath>
             </File>
           </Files>
         </Group>

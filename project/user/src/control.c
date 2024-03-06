@@ -7,7 +7,7 @@ float Vx, Vy, Vz;//VxÎªÕû³µxÖá·½ÏòËÙ¶È£¬VyÎªÕû³µyÖá·½ÏòËÙ¶È£¬VzÊÇÕû³µÈÄ³µÖĞĞÄĞı×
 float target_motor[4];//ËÄ¸öÂÖ×ÓµÄÄ¿±êpwmÖµ
 float Car_H = 0.8;//³µÉí³¤¶È
 float Car_W = 0.6;//³µÉí¿í¶È£¬µ¥Î»¾ùÎªm,¿ÉËæÒâµ÷Õû
-float Velocity_KP = 0.1; //ËÙ¶ÈPID
+float Velocity_KP = 0; //ËÙ¶ÈPID
 float Velocity_KI = 0.1; //ËÙ¶ÈPID£»ÕâÀï»¹Ã»ÓĞÈ·¶¨×îÖÕ·½°¸£¬ÏÈÓÃ×î¼òµ¥µÄÀ´Ğ´
 float turn_angle;//¹ıÍä×ªÏò½Ç¶È
 int spin;//¹ıÍäÊ±µÄÆ½¾ùÖĞÏß
@@ -122,13 +122,25 @@ void PidInit(pid_info * pid)
 float increment_pid(float error,pid_info *pid)
 {
 	pid->error = error;
-	pid->dError = pid->error - pid->lastError;//±¾´ÎÎó²îÓëÉÏ´ÎÎó²îµÄÆ«²îÖµ
-	pid->output =(pid->kp*pid->dError)+(pid->ki*pid->error); //ËÙ¶Èpi¿ØÖÆ±Õ»·
-  pid->lastError = pid->error;//¼ÇÂ¼ÏÂ±¾´ÎÎó²î£¬ÒÔ±¸ÏÂ´ÎÊ¹ÓÃ
+	pid->dError = error - pid->lastError;//±¾´ÎÎó²îÓëÉÏ´ÎÎó²îµÄÆ«²îÖµ
+  pid->lastError = error;//¼ÇÂ¼ÏÂ±¾´ÎÎó²î£¬ÒÔ±¸ÏÂ´ÎÊ¹ÓÃ
+	pid->output +=(pid->kp*pid->dError)+(pid->ki*pid->error); //ËÙ¶Èpi¿ØÖÆ±Õ»·
 	pid->output_last = pid->output;//¼ÇÂ¼ÏÂ±¾´ÎµÄpidÊä³ö
 	return pid->output;//·µ»ØÔöÁ¿Ê½µÄ¼ÆËãÖµ
 }
-
+//ÔöÁ¿Ê½PID
+float PidIncCtrl(float error, pid_info *pid)
+{
+  
+  pid->out_p = pid->kp * (error - pid->last_error);
+  pid->out_i = pid->ki * error;
+  
+  pid->last_error = error;
+  
+  pid->out += pid->out_p + pid->out_i;
+  
+  return pid->out;
+}
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      PID¸³Öµ
 //  @param      void
@@ -161,10 +173,10 @@ void PID_cale()
   PID_err[2] = target_motor[2] - encoder[2]; //µ±Ç°Æ«²îÖµ
   PID_err[3] = target_motor[3] - encoder[3]; //µ±Ç°Æ«²îÖµ
 
-	PID_motor[0] += increment_pid(PID_err[0], &LF_motor_pid);
-  PID_motor[1] += increment_pid(PID_err[1], &LB_motor_pid);
-  PID_motor[2] += increment_pid(PID_err[2], &RF_motor_pid);
-  PID_motor[3] += increment_pid(PID_err[3], &RB_motor_pid);//¼ÆËãËÄ¸öÂÖ×ÓËÙ¶È±Õ»·ºóÊä³öµÄpwm
+	PID_motor[0] = increment_pid(PID_err[0], &LF_motor_pid);
+  PID_motor[1] = increment_pid(PID_err[1], &LB_motor_pid);
+  PID_motor[2] = increment_pid(PID_err[2], &RF_motor_pid);
+  PID_motor[3] = increment_pid(PID_err[3], &RB_motor_pid);//¼ÆËãËÄ¸öÂÖ×ÓËÙ¶È±Õ»·ºóÊä³öµÄpwm
 }
 
 
@@ -317,22 +329,6 @@ void move(int8 mode,float value,int16 stra_speed,int16 turn_speed)
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//-------------------------------------------------------------------------------------------------------------------
-//  @brief      ±àÂëÆ÷ËÙ¶È     (ËÙ¶È = ( (×ÜÂö³åÊı / ±àÂëÆ÷ÏßÊı)  * ±àÂëÆ÷³İÊı / ³µÄ£³İÊı ) * ÂÖÖÜ³¤ / Âö³å¶ÁÈ¡Ê±¼ä)
-//  @param      encoder  ±àÂëÆ÷µÄÖµ
-//  @return     V_enco   ¸Ã±àÂëÆ÷µÄËÙ¶È£¨mm/s£©
-//  @since      v1.0
-//  Sample usage: ENCO_speed(master_encoder_left)
-//-------------------------------------------------------------------------------------------------------------------
-//17½ìÂóÂÖ±àÂëÆ÷ËÙ¶ÈÇóÎ»ÒÆ
-//AT_ITCM_SECTION_INIT(float ENCO_speed(int16 encoder))
-//float ENCO_speed(int16 encoder)
-//{
-//		V_enco=(encoder*50*PI*11000/104/1024)*0.9f;//0.932f//*0.9f;//*0.9153f;//*0.9153f;  //  µ¥Î»£¨mm/s£©(11000=55/0.005) (encoder=61.634->³µËÙ1m/s)
-//	V_enco=encoder*16.224796f;
-//	return V_enco;
-//}
 
 ///**************************************************************************
 // º¯Êı¹¦ÄÜ£º18½ìÊÓ¾õ¶ÁÈ¡±àÂëÆ÷ÊıÖµ²¢¼ÆËã³µÂÖËÙ¶È²¢Çó³öÎ»ÒÆ£¬µ¥Î»m/s
