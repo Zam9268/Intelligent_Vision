@@ -32,6 +32,11 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1,   // 图像最远端60 ——69 行权重
 };
 
+/**
+ * @brief 数组转化函数，方便显示
+ * @param H（赛道长度）
+ * @return 无
+ */
 void Image_Change(void)
 {
     for (int i = 0; i < IMAGE_HEIGHT; i++)
@@ -155,6 +160,7 @@ void Outer_Analyse(void)
 
 }
 
+
 /**
  * @brief 误差处理函数
  * @param height:截止行数
@@ -196,6 +202,18 @@ float Err_Handle(uint8 height)
 void test(void)
 {
     Image_Change();
-	ips114_show_char(188,120,'Q');
+	uint8 *output_address;//输入地址指针
+    
+    output_address=Scharr_Edge(*mt9v03x_image);
+    memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
+	uint8 threshold=Camera_GetOSTU((uint8 *)Image_Use);
+    ips114_show_uint(188,120,threshold,3);
+    Simple_Binaryzation(*Image_Use,threshold);
+//	Center_line_deal(10,178);
+//    for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
+//    {
+//        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_BLUE);
+//        
+//    }
 	ips114_displayimage03x(*Image_Use,188,120);
 }
