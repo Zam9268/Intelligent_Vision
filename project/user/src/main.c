@@ -34,7 +34,10 @@
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
-#include "control.h"
+#include "image.h"
+#include "camera.h"
+
+extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
@@ -45,49 +48,48 @@
 #define PIT_PRIORITY (PIT_IRQn) // 对应周期中断的中断编号
 float x, y, z;//
 
+uint8 returnn;
 int main(void)
 {
 	  
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
     system_delay_ms(300);           //等待主板其他外设上电完成
-
+	ips114_init();//屏幕显示初始化
+	ips114_set_dir(IPS114_PORTAIT);
+    ips114_set_font(IPS114_6X8_FONT);
+    ips114_set_color(RGB565_RED, RGB565_BLACK);
     Motor_Init();                  // 电机初始化
 	  Encoder_Init();                // 编码器初始化
 //    pit_ms_init(PIT_CH_Enco, 10);             // 控制pit中断，时间间隔为10ms
 
 	  ips114_set_dir(IPS114_CROSSWISE_180);
 	Encoder_Init();                // 编码器初始化
-    pit_init_ms(PIT_CH0, 1000);    // 定时器初始化
-	ips114_set_dir(IPS114_CROSSWISE_180);
-    ips114_set_font(IPS114_8X16_FONT);
-    ips114_set_color(RGB565_RED, RGB565_BLACK);
-    ips114_init();//屏幕显示初始化
-    ips114_clear();//清屏 
-    interrupt_global_enable(0);
-    ips114_clear();//清屏 
-    ips114_full(RGB565_GRAY);
+    Camera_Init();
+    pit_init(PIT_CH0, 1000);    // 定时器初始化
+	
+	
     
-    // interrupt_set_priority(PIT_PRIORITY, 2); // 定时器中断优先级 
-    // interrupt_global_enable(0);//开中断
-
-
-
+    ips114_clear();//清屏 
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-    //     // 此处编写需要循环执行的代码			
-      ips114_show_string( 0 , 0,   "SUCCESS");                           
- 	 		Speed_Control( 1000, 0, 0);                                            //麦轮测试闭环
-		  Read_Encoder();//读取编码器
-	    ips114_show_int(    0 , 30,   encoder[0],         4);
-      ips114_show_int(    0 , 60,   encoder[1],         4);
-      ips114_show_int(    0 , 90,   encoder[2],         4);
-      ips114_show_int(    0 , 120,   encoder[3],         4);
-	 system_delay_ms(100);
+        // 此处编写需要循环执行的代码
             
+		
+		//            ips114_full(RGB565_GRAY);
+//		ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+		// Read_Encoder();
+		test();
+//		// Speed_Control(1000,1000,0);//测试编码器
+//		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
+//		ips114_show_char(0,0,'Q');
+//		ips114_show_int(    0 , 60,   encoder[1],         4);
+//		ips114_show_int(    0 , 100,   encoder[2],         4);
+//		ips114_show_int(   0 , 140,   encoder[3],         4);
+
         // 此处编写需要循环执行的代码
     }
 }

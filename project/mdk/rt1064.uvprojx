@@ -354,7 +354,7 @@
               <MiscControls>-masm=auto</MiscControls>
               <Define>DEBUG, __STARTUP_INITIALIZE_NONCACHEDATA</Define>
               <Undefine></Undefine>
-              <IncludePath>..\code</IncludePath>
+              <IncludePath>..\code;..\code</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -444,6 +444,11 @@
               <FileName>mymath.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\mymath.c</FilePath>
+            </File>
+            <File>
+              <FileName>image.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\image.c</FilePath>
             </File>
           </Files>
         </Group>

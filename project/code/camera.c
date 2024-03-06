@@ -39,7 +39,7 @@ uint8 *Simple_Binaryzation(uint8 *image0,uint8 threshold)
  * @time_consuming：1100us
  * @param image1
  * @return uint8*
- */
+ 
 uint8 *Mean_Binaryzation(uint8 *image1)
 {
     
@@ -73,6 +73,7 @@ uint8 *Mean_Binaryzation(uint8 *image1)
     }
     return (uint8 *)Image_Use;
 }
+*/
 
 /**
  * @brief 高斯模糊
