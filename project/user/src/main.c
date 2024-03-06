@@ -57,6 +57,9 @@ int main(void)
 //    pit_ms_init(PIT_CH_Enco, 10);             // 控制pit中断，时间间隔为10ms
 
 	  ips114_set_dir(IPS114_CROSSWISE_180);
+	Encoder_Init();                // 编码器初始化
+    pit_init_ms(PIT_CH0, 1000);    // 定时器初始化
+	ips114_set_dir(IPS114_CROSSWISE_180);
     ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕显示初始化
