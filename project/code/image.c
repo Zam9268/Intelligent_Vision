@@ -206,14 +206,15 @@ void test(void)
     
     output_address=Scharr_Edge(*mt9v03x_image);
     memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-	uint8 threshold=Camera_GetOSTU((uint8 *)Image_Use);
-    ips114_show_uint(188,120,threshold,3);
+	uint8 threshold=Camera_GetOSTU((uint8 *)mt9v03x_image);
+    
     Simple_Binaryzation(*Image_Use,threshold);
-//	Center_line_deal(10,178);
+//`	
 //    for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
 //    {
 //        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_BLUE);
 //        
 //    }
+    // ips114_show_uint(188,120,Longest_White_Column_Left[1],3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 }
