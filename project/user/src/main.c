@@ -36,6 +36,7 @@
 #include "zf_common_headfile.h"
 #include "image.h"
 #include "camera.h"
+#include "take.h"
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
@@ -46,7 +47,6 @@ extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 // 本例程是开源库移植用空工程
 #define PIT_CH_Enco (PIT_CH1)    // 编码器里程计中断
 #define PIT_PRIORITY (PIT_IRQn) // 对应周期中断的中断编号
-float x, y, z;//
 
 uint8 returnn;
 int main(void)
@@ -55,34 +55,30 @@ int main(void)
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     debug_init();                  // 调试端口初始化
     system_delay_ms(300);           //等待主板其他外设上电完成
-	ips114_init();//屏幕显示初始化
-	ips114_set_dir(IPS114_PORTAIT);
-    ips114_set_font(IPS114_6X8_FONT);
+	
+	  ips114_set_dir(IPS114_CROSSWISE_180);
+    ips114_set_font(IPS114_8X16_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
+    ips114_init();//屏幕初始化
+    interrupt_global_enable(0);
+	  ips114_full(RGB565_GRAY);
+	
     Motor_Init();                  // 电机初始化
 	  Encoder_Init();                // 编码器初始化
 //    pit_ms_init(PIT_CH_Enco, 10);             // 控制pit中断，时间间隔为10ms
-
-	  ips114_set_dir(IPS114_CROSSWISE_180);
-	Encoder_Init();                // 编码器初始化
-    Camera_Init();
-    pit_init(PIT_CH0, 1000);    // 定时器初始化
+//    Camera_Init();
+//    pit_init(PIT_CH0, 1000);    // 定时器初始化
 	
-	
-    
-    ips114_clear();//清屏 
+	  ips114_clear();//清屏  
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-        // 此处编写需要循环执行的代码
-            
-		
-		//            ips114_full(RGB565_GRAY);
-//		ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+        // 此处编写需要循环执行的代码            	
+		ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
+    text_arm();
 		// Read_Encoder();
-		test();
 //		// Speed_Control(1000,1000,0);//测试编码器
 //		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
 //		ips114_show_char(0,0,'Q');

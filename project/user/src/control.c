@@ -128,19 +128,19 @@ float increment_pid(float error,pid_info *pid)
 	pid->output_last = pid->output;//记录下本次的pid输出
 	return pid->output;//返回增量式的计算值
 }
-//增量式PID
-float PidIncCtrl(float error, pid_info *pid)
-{
-  
-  pid->out_p = pid->kp * (error - pid->last_error);
-  pid->out_i = pid->ki * error;
-  
-  pid->last_error = error;
-  
-  pid->out += pid->out_p + pid->out_i;
-  
-  return pid->out;
-}
+////增量式PID
+//float PidIncCtrl(float error, pid_info *pid)
+//{
+//  
+//  pid->out_p = pid->kp * (error - pid->last_error);
+//  pid->out_i = pid->ki * error;
+//  
+//  pid->last_error = error;
+//  
+//  pid->out += pid->out_p + pid->out_i;
+//  
+//  return pid->out;
+//}
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      PID赋值
 //  @param      void

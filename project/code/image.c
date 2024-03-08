@@ -193,9 +193,9 @@ float Err_Handle(uint8 height)
  * @param 无
  * @return 无
  */
-void test(void)
-{
-    Image_Change();
-	ips114_show_char(188,120,'Q');
-	ips114_displayimage03x(*Image_Use,188,120);
-}
+//void test(void)
+//{
+//   Image_Change();
+//	ips114_show_char(188,120,'Q');
+//	ips114_displayimage03x(*Image_Use,188,120);
+//}

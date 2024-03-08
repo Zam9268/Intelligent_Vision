@@ -1,9 +1,14 @@
 #include "take.h"
+#include "math.h" 
+#include "zf_common_headfile.h"
 
 uint16 servo1_duty = 50;
-uint16 servo2_duty = 50;//舵机初始值
+uint16 servo2_duty = 50;//舵机初始角度
 
-uint8 arm_pick_flag = ARM_PICK_DONE; //一开始从原点出发，默认是拾取完可以去下一个点的
+uint32 servo1_pwm = 0;
+uint32 servo2_pwm = 0;//舵机占空比
+
+uint8 arm_pick_flag = ARM_PICK_DONE; //
 uint8 arm_state_flag = ARM_STATE_OFF;
 
 uint8 one_pick = 0;
@@ -26,7 +31,7 @@ void my_pwm_gpio(void)
   gpio_init(C14, GPI, 1, GPI_PULL_UP); //按键
   gpio_init(C15, GPI, 1, GPI_PULL_UP); //按键
 
-  gpio_init(C26, GPI, 1, GPI_PULL_UP); //拨
+  gpio_init(C26, GPI, 1, GPI_PULL_UP); //拨码开关
   gpio_init(C27, GPI, 1, GPI_PULL_UP); //拨码开关
 }
 
@@ -39,27 +44,31 @@ void my_pwm_gpio(void)
 **************************************************************************/
 void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_count)
 {
-  float servo1_start = (float)servo1_duty, servo2_start = (float)servo2_duty;
+  float servo1_start = (float)servo1_duty, servo2_start = (float)servo2_duty;//?bug出现的地方？
   float servo1_step = (float)(_servo1_angle - servo1_duty) / _step_count, servo2_step = (float)(_servo2_angle - servo2_duty) / _step_count;//每一步需要执行的角度
   while (1)
   {
-    system_delay_ms(5);//fabsf函数是用来计算单精度浮点数的绝对值的，计算双精度浮点数的绝对值，然后将结果转换成单精度浮点数返回
+    system_delay_ms(5);
+		//fabsf函数是用来计算单精度浮点数的绝对值的，计算双精度浮点数的绝对值，然后将结果转换成单精度浮点数返回
     if (fabsf(servo1_start - (float)_servo1_angle) >= servo1_step)//所求绝对值大于单步调整的舵机角度时，初始角度加单步的舵机角度
       servo1_start += servo1_step;
     else//所求绝对值小于单步调整的舵机角度
       servo1_start = _servo1_angle;//初始角度直接更新为_servo1_angle
+		
+    servo1_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo1_start);//查看占空比
     pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo1_start));//SERVO_MOTOR_DUTY将转动角度转化成舵机占空比(舵机脉宽)
 
     if (fabsf(servo2_start - (float)_servo2_angle) >= servo2_step)
       servo2_start += servo2_step;
     else
       servo2_start = _servo2_angle;
+    servo2_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start);
     pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start));
 
-    if (fabsf(servo1_start - (float)_servo1_angle) < 1 && fabsf(servo2_start - (float)_servo2_angle) < 1)//1为误差范围，输入进来的角度与初始角度误差很小时
+    if (fabsf(servo1_start - (float)_servo1_angle) <= 1 && fabsf(servo2_start - (float)_servo2_angle) <= 1)//1为误差范围，存在浮点数误差，输入进来的角度与初始角度误差很小时
     {
       servo1_duty = (uint16)_servo1_angle;
-      servo2_duty = (uint16)_servo2_angle;//更新舵机角度
+      servo2_duty = (uint16)_servo2_angle;//
       return;
     }
   }
@@ -74,12 +83,15 @@ void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_cou
 **************************************************************************/
 void arm_control(uint8 mode)
 {
+//  ips114_show_string( 0 , 40,   "SUCCESS");                          // 显示字符串
   switch (mode)
   {
 
   case 1:                  //模式1：拾取模式
     gpio_set_level(C9, 1); //电磁铁给高电平带电
+//	  ips114_show_string( 0 , 40,   "SUCCESS");                          //电磁铁上电成功
     servo_slow_ctrl(148, 141, 5);
+	  ips114_show_string( 0 , 40,   "SUCCESS");                          //测试舵机，显示成功，但是舵机不会动
     break;
 
   case 2: //模式2：收纳模式
@@ -100,29 +112,29 @@ void arm_control(uint8 mode)
     break;
 
   case 5: //模式5：调试模式
-          //往下拨D27，按下C4,对应的C30舵机角度增加
-    if (!gpio_get_level(C4) && gpio_get_level(D27))
+          //往下拨C27，按下C14,对应的C30舵机角度增加
+    if (!gpio_get_level(C14) && gpio_get_level(C27))
     {
       servo1_duty += 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo1_duty));
     }
-    //往下拨D27，按下C26对应的C30舵机角度减小
-    if (!gpio_get_level(C26) && gpio_get_level(D27))
+    //往下拨C27，按下C26对应的C30舵机角度减小
+    if (!gpio_get_level(C26) && gpio_get_level(C27))
     {
       servo1_duty -= 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo1_duty));
     }
-    //往上拨D27，按下C4对应的C31舵机角度增加
-    if (!gpio_get_level(C4) && !gpio_get_level(D27))
+    //往上拨C27，按下C14对应的C31舵机角度增加
+    if (!gpio_get_level(C14) && !gpio_get_level(C27))
     {
       servo2_duty += 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));
     }
-    //往上拨D27，按下C26对应的C31舵机角度减小
-    if (!gpio_get_level(C26) && !gpio_get_level(D27))
+    //往上拨C27，按下C26对应的C31舵机角度减小
+    if (!gpio_get_level(C26) && !gpio_get_level(C27))
     {
       servo2_duty -= 10;
       system_delay_ms(300);
@@ -137,4 +149,11 @@ void arm_control(uint8 mode)
   default:
     break; //外对应C30（servo1），内对应C31（servo2）
   }
+}
+//*******************************测试机械臂******************************//
+void text_arm(void)
+{
+	my_pwm_gpio();//初始化各个引脚
+	arm_control(1);//进入函数后没有反应，但是电磁铁上电成功
+//	ips114_show_string( 0 , 40,   "SUCCESS");                          // 显示字符串
 }
