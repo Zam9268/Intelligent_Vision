@@ -66,9 +66,13 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     /*寻找最长白列（待优化） */
     for(uint8 j=start_column;j<end_column;j++)
     {
-        for(uint8 i=0;i<IMAGE_HEIGHT;i++)
+        for(uint8 i=IMAGE_HEIGHT-1;i>0;i--)
         {
-            if(Image_Use[i][j]==0)
+            if(Image_Use[i][j]==BLACK_POINT)
+            {
+                break;
+            }
+            else
             {
                 White_Column[j]++;
             }
@@ -97,10 +101,10 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     /*终止行赋值*/
     Search_Stop_Line=Longest_White_Column_Left[0];//搜索截止行的赋值
     int right_border,left_border;//定义边界中间变量
-    for(int i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
+    for(int i=IMAGE_HEIGHT-1;i>=0;i--)
     {
         /*先寻右边界*/
-        for(int j=Longest_White_Column_Left[1];j<=Longest_White_Column_Right[1];j++)
+        for(int j=Longest_White_Column_Left[1];j<=IMAGE_WIDTH-3;j++)
         {
             if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT)
             {
@@ -135,6 +139,79 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     }
 }
 
+/**
+ * @brief 中线处理（边缘检测的最长白列巡线，自己写的，可能有bug），要去除一些噪点
+ * @param H（赛道长度）
+ * @return 无
+ */
+void Center_line_deal_plus(uint8 start_column,uint8 end_column)
+{
+    /*边界数组清零*/
+    for(uint8 i=0;i<IMAGE_HEIGHT;i++)
+    {
+        left_line[i]=0;
+        right_line[i]=0;
+    }
+    /*最长白列计数*/
+    for(uint8 j=start_column;j<end_column;j++)
+    {
+        for(uint8 i=IMAGE_HEIGHT-1;i>0;i--)
+        {
+            if(Image_Use[i][j]==BLACK_POINT)
+            {
+                White_Column[j]++;
+            }//当遇到白色边缘的时候就退出检测
+            else    break;
+        }
+    }
+    /*从左到右寻找最长白列*/
+    Longest_White_Column_Left[0]=0;//白列长度清零
+    for(uint8 i=start_column;i<end_column;i++)
+    {
+        if(White_Column[i]>Longest_White_Column_Left[0])//最大值更替
+        {
+            Longest_White_Column_Left[0]=White_Column[i];//对应的白列点的数量
+            Longest_White_Column_Left[1]=i;//对应最长白列的坐标
+        }
+    }
+    /*边线数组赋值*/
+    int right_border,left_border;//定义边界列坐标值中间变量
+    for(int i=IMAGE_HEIGHT-1;i>=0;i--)
+    {
+        for(int j=Longest_White_Column_Left[1];j>=2;j--)//从左到右开始扫描
+        {
+            if(Image_Use[i][j]==BLACK_POINT&&Image_Use[i][j-1]==WHITE_POINT&&Image_Use[i][j-2]==WHITE_POINT)
+            {
+                left_border=j;//记录当前边界值
+                Left_Lost_Flag[i]=0;//没有丢线，就置0
+                break;
+            }
+            else if(j<=2)//如果在最左点的时候没有遇到白色的跳变点，就会默认找不到边界
+            {
+                left_border=j;//记录当前边界的坐标
+                Left_Lost_Flag[i]=1;//丢线了，就会直接置0
+                break;
+            }
+        }
+        for(int j=Longest_White_Column_Left[1];j<=IMAGE_WIDTH-3;j++)
+        {
+            if(Image_Use[i][j]==BLACK_POINT&&Image_Use[i][j+1]==WHITE_POINT&&Image_Use[i][j+2]==WHITE_POINT)
+            {
+                right_border=j;//记录当前边界值
+                Right_Lost_Flag[i]=0;//没有丢线，就置0
+                break;
+            }
+            else if(j>=IMAGE_HEIGHT-1-2)//如果在最右点的时候没有遇到白色的跳变点，就会默认找不到边界
+            {
+                right_border=j;//记录当前边界的坐标
+                Right_Lost_Flag[i]=1;//丢线了，就会直接置0
+                break;
+            }
+        }
+        left_line[i]=left_border;//赋值给左边界数组
+        right_line[i]=right_border;//赋值给右边界数组
+    }
+}
 /**
  * @brief 边线数组分析（后期会加上逆透视，目前只是提取原始的边线数组）
  * @param 无
