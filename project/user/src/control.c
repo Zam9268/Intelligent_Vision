@@ -30,10 +30,10 @@ void Motor_Init(void)
   gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); //右前
   gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //右后
 
-  pwm_init(motor_LF, 15000, 0); //左前pwm
-  pwm_init(motor_LB, 15000, 0); //左后pwm
-  pwm_init(motor_RF, 15000, 0); //右前pwm
-  pwm_init(motor_RB, 15000, 0); //右后pwm
+  pwm_init(motor_LF, 15000, 1000); //左前pwm
+  pwm_init(motor_LB, 15000, 1000); //左后pwm
+  pwm_init(motor_RF, 15000, 1200); //右前pwm
+  pwm_init(motor_RB, 15000, 1200); //右后pwm
 }
 
 
@@ -305,11 +305,10 @@ void motor_control(void)
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
 {
 // 	  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
-//     Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//通过测试
+    Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//通过测试
 //     motor_control();
- Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
- PID_cale();//PID闭环后赋值给电机
-motor_close_control();//闭环电机测试
+    Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
+    // motor_close_control();//闭环电机测试
 }
 //-------------------------------------------------------------------------------------------------------------------
 //  @brief      获取过弯转向的转向速度及角度

@@ -49,14 +49,16 @@ void CSI_IRQHandler(void)
 
 void PIT_IRQHandler(void)
 {
-    if(pit_flag_get(PIT_CH0))//用于获取转动角度Angle_Z
+    if(pit_flag_get(PIT_CH0))//
     {
+
         pit_flag_clear(PIT_CH0);
     }
     
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//周期读取编码器数值
+    //    Read_Encoder();//周期读取编码器数值
+       PID_cale();//PID计算
        pit_flag_clear(PIT_CH1);
     }
     

@@ -1,132 +1,203 @@
-#include "vofa.h"
-#include "usart.h"
-#include "OLED.h"
-
-
-//RawDataÊı¾İĞ­Òé ²âÊÔ
-void RawData_Test(void)		//  Ö±½Óµ±´®¿ÚÖúÊÖÊ¹ÓÃ ²âÊÔÊÇ·ñ¿ÉĞĞ
-{
-    u1_SendByte(0x40);
-    u1_SendByte(0x41);
-    u1_SendByte(0x42);
-    u1_SendByte(0x43);
-    u1_SendByte(0x0d);
-    u1_SendByte(0x0a);
-}
-
-//FireWaterÊı¾İĞ­Òé ²âÊÔ
-float a=5,b=10,c=20;
-void FireWater_Test(void)
-{
-    a+=100;
-    b+=50;
-    c+=10;
-    u1_printf("%.2f,%.2f,%.2f\n",a,b,c);
-}
-
-
-//Ê¹ÓÃjustfloat Êı¾İĞ­Òé ËùĞè
-
 /*
-ÒªµãÌáÊ¾:
-1. floatºÍunsigned long¾ßÓĞÏàÍ¬µÄÊı¾İ½á¹¹³¤¶È
-2. union¾İÀàĞÍÀïµÄÊı¾İ´æ·ÅÔÚÏàÍ¬µÄÎïÀí¿Õ¼ä
-*/
-typedef union
-{
-    float fdata;
-    unsigned long ldata;
-} FloatLongType;
+ * @file Vofa.c
+ * @author github@jelin-sh
+ * @brief
+ * @version 0.1
+ * @date 2024-02-29
+ *
+ * @copyright Copyright (c) 2024
+ *
+ */
+#include "Vofa.h"
+#include <stdarg.h>
+#include <stdio.h>
 
-
+static const uint8_t cmdTail[] = VOFA_CMD_TAIL;
+static const uint8_t justFloatTail[4] = {0x00, 0x00, 0x80, 0x7f}; // justfloatåè®®å°¾éƒ¨
 /*
-½«¸¡µãÊıf×ª»¯Îª4¸ö×Ö½ÚÊı¾İ´æ·ÅÔÚbyte[4]ÖĞ
-*/
-void Float_to_Byte(float f,unsigned char byte[])
+ * @brief åˆå§‹åŒ–Vofa
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param mode Vofaæ¨¡å¼
+ */
+void Vofa_Init(Vofa_HandleTypedef *handle, Vofa_ModeTypeDef mode)
 {
-    FloatLongType fl;
-    fl.fdata=f;
-    byte[0]=(unsigned char)fl.ldata;
-    byte[1]=(unsigned char)(fl.ldata>>8);
-    byte[2]=(unsigned char)(fl.ldata>>16);
-    byte[3]=(unsigned char)(fl.ldata>>24);
+	handle->rxBuffer.rp = handle->rxBuffer.buffer;
+	handle->rxBuffer.wp = handle->rxBuffer.buffer;
+	handle->mode = mode;
 }
-
 /*
-½«4¸ö×Ö½ÚÊı¾İbyte[4]×ª»¯Îª¸¡µãÊı´æ·ÅÔÚ*fÖĞ
-*/
-void Byte_to_Float(float *f,unsigned char byte[])
+ * @brief Vofaå‘é€æ•°æ®
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param data æ•°æ®
+ * @param num æ•°æ®é•¿åº¦
+ */
+void Vofa_SendData(Vofa_HandleTypedef *handle, uint8_t *data, uint16_t num)
 {
-    FloatLongType fl;
-    fl.ldata=0;
-    fl.ldata=byte[3];
-    fl.ldata=(fl.ldata<<8)|byte[2];
-    fl.ldata=(fl.ldata<<8)|byte[1];
-    fl.ldata=(fl.ldata<<8)|byte[0];
-    *f=fl.fdata;
+	Vofa_SendDataCallBack(handle, data, num);
+}
+/*
+ * @brief JustFloatåè®®å‘é€æ•°æ®
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param data æ•°æ®
+ * @param num æ•°æ®é•¿åº¦
+ */
+void Vofa_JustFloat(Vofa_HandleTypedef *handle, float *data, uint16_t num)
+{
+	Vofa_SendDataCallBack(handle, (uint8_t *)data, num * sizeof(float));
+	Vofa_SendDataCallBack(handle, (uint8_t *)justFloatTail, 4);
+}
+/*
+ * @brief Vofaå‘é€å­—ç¬¦ä¸²
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param format å­—ç¬¦ä¸²
+ * @param ... å¯å˜å‚æ•°
+ */
+void Vofa_Printf(Vofa_HandleTypedef *handle, const char *format, ...)
+{
+	uint32_t n;
+	va_list args;
+	va_start(args, format);
+	n = vsnprintf((char *)handle->txBuffer, VOFA_BUFFER_SIZE, format, args);
+	Vofa_SendDataCallBack(handle, handle->txBuffer, n);
+	va_end(args);
+}
+/*
+ * @brief Vofaæ¥æ”¶æ•°æ®
+ *
+ * @param handle Vofaå¥æŸ„
+ */
+void Vofa_ReceiveData(Vofa_HandleTypedef *handle)
+{
+	uint8_t data = Vofa_GetDataCallBack(handle);
+
+	if (handle->rxBuffer.overflow && handle->mode == VOFA_MODE_BLOCK_IF_FIFO_FULL)
+	{
+		return;
+	}
+
+	*handle->rxBuffer.wp = data;
+	handle->rxBuffer.wp++;
+
+	if (handle->rxBuffer.wp == (handle->rxBuffer.buffer + VOFA_BUFFER_SIZE))
+	{
+		handle->rxBuffer.wp = handle->rxBuffer.buffer;
+	}
+	if (handle->rxBuffer.wp == handle->rxBuffer.rp)
+	{
+		handle->rxBuffer.overflow = true;
+	}
+}
+/*
+ * @brief Vofaè·å–ä¸€ä¸ªå­—èŠ‚
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param byte å­—èŠ‚
+ * @return uint8_t æ˜¯å¦è·å–æˆåŠŸ
+ */
+static uint8_t Vofa_GetByte(Vofa_HandleTypedef *handle, uint8_t *byte)
+{
+	if (handle->rxBuffer.rp == handle->rxBuffer.wp && !handle->rxBuffer.overflow)
+	{
+		return false;
+	}
+
+	if (handle->rxBuffer.overflow)
+	{
+		handle->rxBuffer.overflow = false;
+	}
+
+	*byte = *handle->rxBuffer.rp;
+	*handle->rxBuffer.rp = 0;
+	handle->rxBuffer.rp++;
+
+	if (handle->rxBuffer.rp == (handle->rxBuffer.buffer + VOFA_BUFFER_SIZE))
+	{
+		handle->rxBuffer.rp = handle->rxBuffer.buffer;
+	}
+
+	return true;
+}
+/*
+ * @brief è¯»å–å‘½ä»¤
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param buffer ç¼“å­˜
+ * @param bufferLen ç¼“å­˜é•¿åº¦
+ * @return uint16_t è¯»å–é•¿åº¦
+ */
+uint16_t Vofa_ReadCmd(Vofa_HandleTypedef *handle, uint8_t *buffer, uint16_t bufferLen)
+{
+	uint16_t length = 0;
+	uint16_t i = 0;
+	uint16_t tailCount = 0;
+
+	for (i = 0; i < bufferLen && Vofa_GetByte(handle, &buffer[i]) && tailCount < sizeof(cmdTail); i++)
+	{
+		if (buffer[i] == cmdTail[tailCount])
+		{
+			tailCount++;
+		}
+		else
+		{
+			tailCount = 0;
+		}
+
+		length++;
+	}
+	return length;
+}
+/*
+ * @brief Vofaè¯»å–ä¸€è¡Œæ•°æ®
+ *
+ * @param handle Vofaå¥æŸ„
+ * @param buffer ç¼“å­˜
+ * @param bufferLen ç¼“å­˜é•¿åº¦
+ * @return uint16_t è¯»å–é•¿åº¦
+ */
+uint16_t Vofa_ReadLine(Vofa_HandleTypedef *handle, uint8_t *buffer, uint16_t bufferLen)
+{
+	uint16_t length = 0;
+	uint16_t i = 0;
+
+	for (i = 0; i < bufferLen && Vofa_GetByte(handle, &buffer[i]) && (buffer[i] != '\n'); i++)
+	{
+		length++;
+	}
+	return length;
 }
 
-void Test_FloatAndByte(void)	//¸¡µãÊıºÍËÄ×Ö½ÚÊı¾İ×ª»»Ê¾Àı
+uint16_t Vofa_ReadData(Vofa_HandleTypedef *handle, uint8_t *buffer, uint16_t bufferLen)
 {
-	float a=1.0;			//·¢ËÍµÄÊı¾İ Á½¸öÍ¨µÀ
-	
-	u8 byte[4]={0};			//float×ª»¯Îª4¸ö×Ö½ÚÊı¾İ
-	
-	Float_to_Byte(a,byte);
-	//u1_printf("%f\r\n",a);
-	u1_SendArray(byte,4);	//1×ª»¯Îª4×Ö½ÚÊı¾İ ¾ÍÊÇ  0x00 0x00 0x80 0x3F
-	a=2;	//¸Ä±äaÖµ
-	Byte_to_Float(&a,byte);		//½«byteÊı¾İ×ª»»Îª¸¡µãĞÍÊı¾İ
-	u1_SendByte(a);			//a = 1.0
+	uint16_t length = 0;
+	uint16_t i = 0;
+
+	for (i = 0; i < bufferLen && Vofa_GetByte(handle, &buffer[i]); i++)
+	{
+		length++;
+	}
+	return length;
 }
-
-/*  Êı¾İÖ¡¸ñÊ½
-typedef struct
-{	
-	u8 byte[4];		//float×ª»¯Îª4¸ö×Ö½ÚÊı¾İ
-	u8 tail[4];	//Ö¡Î²
-}Frame_TypeDef;
-	byte ¸¡µãÊı×ª»»»º³åÇø	tail Ö¡Î²
-u8 byte[4]={0};		//float×ª»¯Îª4¸ö×Ö½ÚÊı¾İ
-u8 tail[4]={0x00, 0x00, 0x80, 0x7f};	//Ö¡Î²
-*/
-
-
-
-void JustFloat_Test(void)	//justfloat Êı¾İĞ­Òé²âÊÔ
+/*
+ * @brief Vofaå‘é€æ•°æ®å›è°ƒå‡½æ•°
+ *
+ */
+#ifdef __GNUC__
+__attribute__((weak)) void Vofa_SendDataCallBack(Vofa_HandleTypedef *handle, uint8_t *data, uint16_t length)
 {
-    float a=1,b=2;	//·¢ËÍµÄÊı¾İ Á½¸öÍ¨µÀ
-	
-	u8 byte[4]={0};		//float×ª»¯Îª4¸ö×Ö½ÚÊı¾İ
-	u8 tail[4]={0x00, 0x00, 0x80, 0x7f};	//Ö¡Î²
-	
-	//ÏòÉÏÎ»»ú·¢ËÍÁ½¸öÍ¨µÀÊı¾İ
-	Float_to_Byte(a,byte);
-	//u1_printf("%f\r\n",a);
-	u1_SendArray(byte,4);	//1×ª»¯Îª4×Ö½ÚÊı¾İ ¾ÍÊÇ  0x00 0x00 0x80 0x3F
-	
-	Float_to_Byte(b,byte);
-	u1_SendArray(byte,4);	//2×ª»»Îª4×Ö½ÚÊı¾İ ¾ÍÊÇ  0x00 0x00 0x00 0x40 
-	
-	//·¢ËÍÖ¡Î²
-	u1_SendArray(tail,4);	//Ö¡Î²Îª 0x00 0x00 0x80 0x7f
-
+	return;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * @brief Vofaè·å–æ•°æ®å›è°ƒå‡½æ•°
+ *
+ */
+__attribute__((weak))
+uint8_t
+Vofa_GetDataCallBack(Vofa_HandleTypedef *handle)
+{
+	return 0;
+}
+#endif
