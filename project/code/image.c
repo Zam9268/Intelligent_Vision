@@ -22,7 +22,7 @@ RoadType Road_Type;//定义赛道类型
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 
-//加权控制数组，可以利用该数组来调节前??
+//加权控制数组，可以利用该数组来调节前瞻
 const uint8 Weight[IMAGE_HEIGHT]=
 {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, // 图像最远端00 —??09 行权??
@@ -34,6 +34,11 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1,   // 图像最远端60 —??69 行权??
 };
 
+/**
+ * @brief 数组赋值
+ * @param 无
+ * @return 无
+ */
 void Image_Change(void)
 {
     for (int i = 0; i < IMAGE_HEIGHT; i++)

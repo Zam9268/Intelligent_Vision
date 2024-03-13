@@ -57,7 +57,7 @@ void PIT_IRQHandler(void)
     
     if(pit_flag_get(PIT_CH1))
     {
-    //    Read_Encoder();//周期读取编码器数值
+       Read_Encoder();//周期读取编码器数值，解算出当前速度值
        PID_cale();//PID计算
        pit_flag_clear(PIT_CH1);
     }

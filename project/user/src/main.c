@@ -43,6 +43,7 @@
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern float PID_motor[4];//存放pid输出后的数值
+extern pid_info Speed[4];//外部声明
 Vofa_HandleTypedef vofa1;//vofa结构体声明
 
 // 打开新的工程或者工程移动了位置务必执行以下操作
@@ -68,17 +69,18 @@ int main(void)
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     ips114_init();//屏幕初始化
     interrupt_global_enable(0);
-    ips114_full(RGB565_GRAY);
 	ips114_clear();//清屏  
     Motor_Init();                  // 电机初始化
     Encoder_Init();                // 编码器初始化
-    Camera_Init();
+    PidInit();//PID参数结构体的值初始化
+    // Camera_Init();
     
-    pit_ms_init(PIT_CH1,20);    // 定时器初始化
-    target_motor[0]=1000;
-	target_motor[1]=1000;
-	target_motor[2]=1000;
-	target_motor[3]=1000;
+    pit_ms_init(PIT_CH1,10);    // 定时器初始化
+    // pit_ms_init(PIT_CH0,10);    // 定时器初始化
+    // target_motor[0]=1000;
+	// target_motor[1]=1000;
+	// target_motor[2]=1000;
+	// target_motor[3]=1000;
     float other_data[5]={1.0,2.0,3.0,4.0,5.0};
 	  
     // 此处编写用户代码 例如外设初始化代码等
@@ -91,10 +93,12 @@ int main(void)
 		// ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
         // for(uint16 i=0;i<1800;i++)
         // {
-        //     target_motor[0]=8000*sin(2*PI*i/180.0);
-        //     printf("%d,%d\r\n",(int)target_motor[0],(int)PID_motor[0]);
+        //     PID_motor[1]=8000*sin(2*PI*i/180.0);
+        //     PID_motor[3]=8000*sin(2*PI*i/180.0);
+        //     PID_motor[2]=8000*sin(2*PI*i/180.0);
+        //     printf("%d,%d,%d\r\n",(int)PID_motor[1],(int)PID_motor[2],(int)PID_motor[3]);
 		// 	system_delay_ms(100);
-		// 	Speed_Control(1000,1000,0);
+		// 	motor_close_control();
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
@@ -108,10 +112,12 @@ int main(void)
 		// Read_Encoder();
 //		// Speed_Control(1000,1000,0);//测试编码器
 //		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
-//		ips114_show_char(0,0,'Q');
-//		ips114_show_int(    0 , 60,   encoder[1],         4);
-//		ips114_show_int(    0 , 100,   encoder[2],         4);
-//		ips114_show_int(   0 , 140,   encoder[3],         4);
+        // printf("%d,%d,%d\r\n",(int)encoder[1],-(int)encoder[2],(int)encoder[0]);
+        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+		// ips114_show_int(0,0,encoder[0],4);
+		// ips114_show_int(    0 , 20,   encoder[1],         4);
+		// ips114_show_int(    0 , 40,   encoder[2],         4);
+		// ips114_show_int(   0 , 60,   encoder[3],         4);
         
         // 此处编写需要循环执行的代码
     }
