@@ -64,39 +64,47 @@ int main(void)
     system_delay_ms(300);           //等待主板其他外设上电完成
 	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    ips114_set_dir(IPS114_CROSSWISE_180);
-    ips114_set_font(IPS114_8X16_FONT);
-    ips114_set_color(RGB565_RED, RGB565_BLACK);
-    ips114_init();//屏幕初始化
-    interrupt_global_enable(0);
-	ips114_clear();//清屏  
+//    ips114_set_dir(IPS114_CROSSWISE_180);
+//    ips114_set_font(IPS114_8X16_FONT);
+//    ips114_set_color(RGB565_RED, RGB565_BLACK);
+//    ips114_init();//屏幕初始化
+//    interrupt_global_enable(0);
+//	ips114_clear();//清屏  
     Motor_Init();                  // 电机初始化
     Encoder_Init();                // 编码器初始化
     PidInit();//PID参数结构体的值初始化
     // Camera_Init();
     
     pit_ms_init(PIT_CH1,10);    // 定时器初始化
-    // pit_ms_init(PIT_CH0,10);    // 定时器初始化
+    pit_ms_init(PIT_CH0,15);    // 定时器初始化
     // target_motor[0]=1000;
 	// target_motor[1]=1000;
-	// target_motor[2]=1000;
+	
 	// target_motor[3]=1000;
+    
     float other_data[5]={1.0,2.0,3.0,4.0,5.0};
+//	Speed[0].target_speed=1.0;
 	  
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
+        target_motor[0]=1000;
+        motor_close_control();
+        // for(uint8 i=0;i<4;i++)
+        // {
+        //     target_motor[i]=1000;
+        // }
 //		motor_control();
         // 此处编写需要循环执行的代码            	
 		// ips114_show_string( 0 , 10,   "SUCCESS");                          // 显示字符串
         // for(uint16 i=0;i<1800;i++)
         // {
-        //     PID_motor[1]=8000*sin(2*PI*i/180.0);
-        //     PID_motor[3]=8000*sin(2*PI*i/180.0);
-        //     PID_motor[2]=8000*sin(2*PI*i/180.0);
-        //     printf("%d,%d,%d\r\n",(int)PID_motor[1],(int)PID_motor[2],(int)PID_motor[3]);
+        //     Speed[2].target_speed=3.00*sin(2*PI*i/180.0);
+        //     // Speed[2].target_speed=3.00*sin(2*PI*i/180.0);
+        //     // // Speed[3].target_speed=3.00*sin(2*PI*i/180.0);
+        //     // printf("%d,%d,%d\r\n",(int)PID_motor[1],(int)PID_motor[2],(int)PID_motor[3]);
 		// 	system_delay_ms(100);
 		// 	motor_close_control();
         // }
@@ -113,9 +121,10 @@ int main(void)
 //		// Speed_Control(1000,1000,0);//测试编码器
 //		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
         // printf("%d,%d,%d\r\n",(int)encoder[1],-(int)encoder[2],(int)encoder[0]);
-        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
+        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[2],encoder[1],encoder[3]);
 		// ips114_show_int(0,0,encoder[0],4);
-		// ips114_show_int(    0 , 20,   encoder[1],         4);
+		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);
 		// ips114_show_int(   0 , 60,   encoder[3],         4);
         
