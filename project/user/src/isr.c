@@ -38,7 +38,7 @@
 #include "isr.h"
 #include "control.h"
 
-
+extern pid_info Speed[4];//外部声明
 
 
 void CSI_IRQHandler(void)
@@ -51,7 +51,10 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        PID_cale();//PID计算
+        for(uint8 i=0;i<4;i++)
+        {
+            increment_pid(&Speed[i]);//调用pid函数
+        }
         pit_flag_clear(PIT_CH0);
     }
     
