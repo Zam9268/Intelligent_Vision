@@ -1,6 +1,9 @@
 #include "take.h"
-#include "math.h" 
+#include "math.h"
+#include "isc.h"  
 #include "zf_common_headfile.h"
+
+#define PIT_CH_TIME (PIT_CH2)
 
 uint16 servo1_duty = 50;
 uint16 servo2_duty = 50;//舵机初始角度
@@ -8,11 +11,19 @@ uint16 servo2_duty = 50;//舵机初始角度
 uint32 servo1_pwm = 0;
 uint32 servo2_pwm = 0;//舵机占空比
 
+uint8 step = 1;
 uint8 arm_pick_flag = ARM_PICK_DONE; //
 uint8 arm_state_flag = ARM_STATE_OFF;
 
 uint8 one_pick = 0;
 uint8 arm_put_down = 0;//机械臂放下物品的标志位
+
+
+void PIT_CH2_Int_Init(uint32 ldval)
+{
+    pit_ms_init(PIT_CH_TIME, ldval);//初始化CH2通道，中断周期为 ldval ms
+    interrupt_global_enable(0);
+}
 
 void my_pwm_gpio(void)
 {
@@ -96,11 +107,33 @@ void arm_control(uint8 mode)
 
   case 2: //模式2：收纳模式
     gpio_set_level(C9, 1);
-    servo_slow_ctrl(148, 110, 10);
+    switch (step)
+  {
+    case 1:
+        servo_slow_ctrl(148, 110, 10);
+        PIT_CH2_Int_Init(10);
+    if(arm_flag==1)//定时器计数完成标志
+    {
+       mode = 2;
+       step = 2;
+    }
+    case 2:
     servo_slow_ctrl(22, 110, 50); // 58 110   58  34//这个速度不要乱改,先转前臂，再转后臂
+    PIT_CH2_Int_Init(10);
+    if(arm_flag==1)//定时器计数完成标志
+    {
+       mode = 2;
+       step = 3;
+    }
+    case 3:
     servo_slow_ctrl(22, 38, 100); //三套参数的确定时间：2023年4月24日18:02:30
+    PIT_CH2_Int_Init(10);
+      if(arm_flag==1)//定时器计数完成标志
+    {
+       mode = 3;//不再进入回到模式2，进入默认模式3断电
+    }
     break;
-
+  }
   case 3: //模式3：归中模式
     gpio_set_level(C9, 0);
     servo_slow_ctrl(50, 50, 100);//默认模式

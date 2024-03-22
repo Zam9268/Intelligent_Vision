@@ -21,6 +21,7 @@ extern uint16 servo2_duty;
 extern uint32 servo1_pwm;
 extern uint32 servo2_pwm;//¶æ»úÕ¼¿Õ±È
 //extern uint16 servo3_duty;
+extern uint8 step;
 extern uint8 arm_pick_flag;
 extern uint8 arm_state_flag;
 extern uint8 one_pick;

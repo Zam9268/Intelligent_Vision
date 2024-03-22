@@ -38,7 +38,7 @@
 #include "isr.h"
 #include "control.h"
 
-
+extern uint8 step;
 
 
 void CSI_IRQHandler(void)
@@ -49,8 +49,11 @@ void CSI_IRQHandler(void)
 
 void PIT_IRQHandler(void)
 {
-    if(pit_flag_get(PIT_CH0))//用于获取转动角度Angle_Z
+    int count = 0;
+    if(pit_flag_get(PIT_CH0))
     {
+        void Read_imu (void);
+        Read_imu;
         pit_flag_clear(PIT_CH0);
     }
     
@@ -62,6 +65,13 @@ void PIT_IRQHandler(void)
     
     if(pit_flag_get(PIT_CH2))
     {
+        extern uint8 arm_flag;
+        count++;
+        if(count>100)
+        {
+            arm_flag = 1;
+            pit_disable(PIT_CH2);//中断禁止，停止计时
+        }
         pit_flag_clear(PIT_CH2);
     }
     
