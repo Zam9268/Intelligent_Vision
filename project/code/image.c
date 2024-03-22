@@ -241,7 +241,7 @@ void Outer_Analyse(void)
 
 /**
  * @brief 连续性检测
- * @param height:截止行数
+ * @param line:边线数组
  * @return 返回最大的连续性列数差值
  */
 uint8 Continuity_detect(uint8 *line)
@@ -257,6 +257,12 @@ uint8 Continuity_detect(uint8 *line)
     return max_uncontinuity;//返回最大的连续性列数差值
 }
 
+/**
+ * @brief 边线变化率处理
+ * @param 无（同时对左边线和右边线进行导数处理）
+ * @return 无
+ * @attention 这个函数可以优化，比如选择处理对应的导数行数
+ */
 void Derivative_Change(void)
 {
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
@@ -266,6 +272,12 @@ void Derivative_Change(void)
     }
 }
 
+/**
+ * @brief 求出边线最大变化率的值（大小比较）
+ * @param uint8 *line 边线数组
+ * @return 无
+ * @attention 无
+ */
 float Derivative_detect_max(uint8 *line)
 {
     float max_derivative=0.00;
@@ -279,6 +291,12 @@ float Derivative_detect_max(uint8 *line)
     return max_derivative;
 }
 
+/**
+ * @brief 求出边线最小变化率的值（大小比较）
+ * @param uint8 *line 边线数组
+ * @return 无
+ * @attention 无
+ */
 float Derivative_detect_min(uint8 *line)
 {
     float min_derivative=0.00;
@@ -291,6 +309,7 @@ float Derivative_detect_min(uint8 *line)
     }
     return min_derivative;
 }
+
 /**
  * @brief 误差处理函数
  * @param height:截止行数
@@ -314,7 +333,7 @@ float Err_Handle(uint8 height)
     */
     
     float err=0.00;
-    int weight_count=0;//权重总??
+    int weight_count=0;//权重总值
     for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)
     {
         err+=(IMAGE_WIDTH/2-((left_line[i]+right_line[i])>>1))*Weight[i];
@@ -324,6 +343,27 @@ float Err_Handle(uint8 height)
     return err;
 }
 
+void Left_Add_Line(int x1, int y1, inx x2,int y2)
+{
+    int i,max,a1,a2,hx;
+    //对输入的值进行限幅处理
+    if(x1>=IMAGE_WIDTH) x1=IMAGE_WIDTH-1;//限幅处理
+    else if(x1<=0)  x1=0;
+    if(x2>=IMAGE_WIDTH) x2=IMAGE_WIDTH-1;//限幅处理
+    else if(x2<=0)  x2=0;
+    if(y1>=IMAGE_HEIGHT) y1=IMAGE_HEIGHT-1;//限幅处理
+    else if(y1<=0)  y1=0;
+    if(y2>=IMAGE_HEIGHT) y2=IMAGE_HEIGHT-1;//限幅处理
+    else if(y2<=0)  y2=0;
+    a1=y1;
+    a2=y2;//记录中间的值
+    if(a1>a2)//一般原则上a1要小于a2
+    {
+        max=a1;
+        a1=a2;
+        a2=max;
+    }
+}
 /**
  * @brief 测试函数（把测试的丢在这里）
  * @param ??

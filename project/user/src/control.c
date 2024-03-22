@@ -122,6 +122,7 @@ void PidInit(void)
   for(uint8 i=0;i<4;i++)
   {
     Speed[i].target_speed = 0.00;
+    Speed[i].target_pwm = 0;
     Speed[i].kd= 0.00;
     Speed[i].ki        = 0.00;
     Speed[i].kd        = 0.00;
@@ -132,9 +133,10 @@ void PidInit(void)
     Speed[i].output_last   = 0.00;
     Speed[i].xuhao=i; //序号赋值
   }
+
   // 设置PI参数
-  Speed[0].kp = 10;
-  Speed[0].ki = 1;
+  Speed[0].kp = 0.8;
+  Speed[0].ki = 0.2;
   // 设置PI参数
   Speed[1].kp = 0;
   Speed[1].ki = 0;

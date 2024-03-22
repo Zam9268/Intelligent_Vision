@@ -64,6 +64,7 @@ int main(void)
     system_delay_ms(300);           //等待主板其他外设上电完成
 	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    PidInit();//PID参数结构体的值初始化
 //    ips114_set_dir(IPS114_CROSSWISE_180);
 //    ips114_set_font(IPS114_8X16_FONT);
 //    ips114_set_color(RGB565_RED, RGB565_BLACK);
@@ -72,7 +73,6 @@ int main(void)
 //	ips114_clear();//清屏  
     Motor_Init();                  // 电机初始化
     Encoder_Init();                // 编码器初始化
-    PidInit();//PID参数结构体的值初始化
     // Camera_Init();
     
     pit_ms_init(PIT_CH1,10);    // 定时器初始化
@@ -84,13 +84,12 @@ int main(void)
     
     float other_data[5]={1.0,2.0,3.0,4.0,5.0};
 //	Speed[0].target_speed=1.0;
-	  
+	Speed[1].target_pwm=1000;
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-        target_motor[0]=1000;
         motor_close_control();
         // for(uint8 i=0;i<4;i++)
         // {
