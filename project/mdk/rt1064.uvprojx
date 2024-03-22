@@ -355,7 +355,7 @@
             <useXO>0</useXO>
             <ClangAsOpt>2</ClangAsOpt>
             <VariousControls>
-              <MiscControls>-masm=auto</MiscControls>
+              <MiscControls></MiscControls>
               <Define>DEBUG, __STARTUP_INITIALIZE_NONCACHEDATA</Define>
               <Undefine></Undefine>
               <IncludePath>..\code;..\code</IncludePath>
