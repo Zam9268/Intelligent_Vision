@@ -18,18 +18,25 @@
 
 extern uint16 servo1_duty;
 extern uint16 servo2_duty;
+extern uint16 servo3_duty;
+
 extern uint32 servo1_pwm;
-extern uint32 servo2_pwm;//舵机占空比
+extern uint32 servo2_pwm;
+extern uint32 servo3_pwm;//舵机占空比
 //extern uint16 servo3_duty;
 extern uint8 step;
+extern uint8 side_step; 
+extern uint8 arm_flag;
 extern uint8 arm_pick_flag;
 extern uint8 arm_state_flag;
 extern uint8 one_pick;
 extern uint8 arm_put_down;
 //extern uint8 key_speed;
 
+void PIT_CH2_Int_Init(uint32 ldval);
 void my_pwm_gpio(void);
 void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_count);
+void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count);
 void arm_control(uint8 mode);
 void text_arm(void);
 //void classify_pick(uint8 type, uint8 on_off);
