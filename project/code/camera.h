@@ -20,6 +20,6 @@ uint8 *Scharr_Edge(uint8 *image5);
 uint8 *Sobel_Edge(uint8 *image4);
 uint8 *Gaussian_Blur(uint8 *image2);
 uint8 *Mean_Binaryzation(uint8 *image1);
-uint8 *Simple_Binaryzation(uint8 *image0,uint8 threshold);
+void Simple_Binaryzation(uint8 *image0,uint8 threshold);
 
 #endif

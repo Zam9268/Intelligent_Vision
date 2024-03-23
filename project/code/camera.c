@@ -14,24 +14,24 @@ uint8 Camera_Init(void)
 }
 
 /**
- * @brief 简单二值化（手动设置阈值）
+ * @brief 简单二值化（手动设置阈值），做了修改
  * @time_consuming 720us
  * @return uint8*，返回对应的地址
  */
-uint8 *Simple_Binaryzation(uint8 *image0,uint8 threshold)
+void Simple_Binaryzation(uint8 *image0,uint8 threshold)
 {
     uint16 temp=0;//中间变量
-    static uint8 simple_bina[IMAGE_HEIGHT][IMAGE_WIDTH];
+    // static uint8 simple_bina[IMAGE_HEIGHT][IMAGE_WIDTH];
     for(int i=0;i<IMAGE_HEIGHT;i++)
     {
         for(int j=0;j<IMAGE_WIDTH;j++)
         {
            temp=*(image0+i*IMAGE_WIDTH+j);//求出对应坐标值的灰度值
-           if(temp<threshold)   simple_bina[i][j]=0;
-           else                 simple_bina[i][j]=255;
+           if(temp<threshold)   image0[i*IMAGE_WIDTH+j]=0;
+           else                 image0[i*IMAGE_WIDTH+j]=255;
         }
     }
-	return *simple_bina;
+	// return *simple_bina;
 }
 
 /**
@@ -130,7 +130,7 @@ uint8 *Gaussian_Blur(uint8 *image2)
  * @brief Sobel算子边缘检测
  * @time_consuming：4350us(InvSqrt,很稳定)/4200us(sqrt,波动大，最高4380，最低3890)
  * @param image4
- * @return uint8*
+ * @return uint8*，注意返回的图像仍然为灰度图像，要和Canny算法相结合（也可以和大津法相结合，和大津法相结合效果还挺好？）
  */
 
 uint8 *Sobel_Edge(uint8 *image4)

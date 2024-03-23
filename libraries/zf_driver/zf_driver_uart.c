@@ -39,7 +39,7 @@
 #include "zf_common_interrupt.h"
 #include "zf_driver_gpio.h"
 #include "board.h"
-
+#include "vofa.h"//vofa发送数据
 #include "zf_driver_uart.h"
 
 static  LPUART_Type *uart_index[]            = LPUART_BASE_PTRS;
@@ -256,4 +256,16 @@ void uart_init(uart_index_enum uart_n, uint32 baud, uart_tx_pin_enum tx_pin, uar
     LPUART_Init(uart_index[uart_n], &lpuartConfig, uartClkSrcFreq);             // 第一次初始化便于打开时钟
     LPUART_Deinit(uart_index[uart_n]);                                          // 复位外设
     LPUART_Init(uart_index[uart_n], &lpuartConfig, uartClkSrcFreq);             // 重新初始化设置正确的参数
+}
+
+/*
+ * @brief Vofa数据发送回调函数
+ *
+ * @param handle Vofa句柄
+ * @param data 数据指针
+ * @param length 数据长度
+ */
+void Vofa_SendDataCallBack(Vofa_HandleTypedef *handle,uint8_t *data,uint16_t length)
+{
+    uart_write_buffer(UART_1,data,length);
 }
