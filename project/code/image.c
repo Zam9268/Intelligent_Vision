@@ -1,7 +1,7 @@
 #include "image.h"
+#include "stdbool.h"
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
-
 
 /*边线数组变量定义*/
 uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//左右边线数组
@@ -19,6 +19,10 @@ uint8 Search_Stop_Line;//搜索终止??
 uint8 Boundry_Start_Left,Boundry_Start_Right;//左右边界起始??
 uint8 Road_Wide[IMAGE_HEIGHT];//定义赛道宽度数组
 RoadType Road_Type;//定义赛道类型
+uint8 Right_Down_Find=0;
+uint8 Left_Down_Find=0;//左右找点标志位清零
+uint8 Left_Up_Find=0;//左上找点标志位清零
+uint8 Right_Up_Find=0;//右上找点标志位清零
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 
@@ -94,14 +98,14 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     Longest_White_Column_Right[0]=0;//白列长度清零
     for(uint8 i=end_column;i>start_column;i--)
     {
-        if(White_Column[i]>Longest_White_Column_Right[0])//最大值更??
+        if(White_Column[i]>Longest_White_Column_Right[0])//最大值更更新
         {
             Longest_White_Column_Right[0]=White_Column[i];
-            Longest_White_Column_Right[1]=i;//最长列的长度和所在列数更??
+            Longest_White_Column_Right[1]=i;//最长列的长度和所在列数更新
         }
     }
     /*终止行赋??*/
-    Search_Stop_Line=Longest_White_Column_Left[0];//搜索截止行的赋??
+    Search_Stop_Line=Longest_White_Column_Left[0];//搜索截止行的赋?值
     int right_border,left_border;//定义边界中间变量
     for(int i=IMAGE_HEIGHT-1;i>=0;i--)
     {
@@ -240,6 +244,63 @@ void Outer_Analyse(void)
 }
 
 /**
+ * @brief 左赛道连续性检测
+ * @param start:起始行数 end:终止行数
+ * @return 返回最大的连续性列数差值
+ */
+int Continuity_Change_Left(int start, int end)
+{
+    int i,t,continuity_change_flag=0;
+    if(Left_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//大部分丢线，没必要判断
+    if(Search_Stop_Line <=5) return 1; //搜索截止行很短，没必要判断
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//数组越界保护
+    if(end<=5)  end=5;//数组越界保护
+    if(start<end)//原则上start要大于end（从下往上扫）
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    for(i=start;i>=end;i--)
+    {
+        if(left_line[i]-left_line[i-1]>=5)//这里5是连续性判断的阈值，可以更改
+        {
+            continuity_change_flag=i;
+            break;//返回第一个检测到的坐标点
+        }
+    }
+    return continuity_change_flag;//如果为0，说明连续性较好
+}
+
+/**
+ * @brief 右赛道连续性检测
+ * @param start:起始行数 end:终止行数
+ * @return 返回最大的连续性列数差值
+ */
+int Continuity_Change_Right(int start, int end)
+{
+    int i,t,continuity_change_flag=0;
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//大部分丢线，没必要判断
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//数组越界保护
+    if(end <=5) end=5;//数组越界保护
+    if(start<end)
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    for(i=start;i>=end;i--)
+    {
+        if(abs(right_line[i]-right_line[i-1])>=5)//这里5是连续性判断的阈值，可以更改
+        {
+            continuity_change_flag=i;
+            break;//返回第一个检测到的坐标点
+        }
+    }
+    return continuity_change_flag;//如果为0，说明连续性较好，返回超过阈值检测的第一个行坐标（从下往上扫的）
+}
+
+/**
  * @brief 连续性检测
  * @param line:边线数组
  * @return 返回最大的连续性列数差值
@@ -311,6 +372,63 @@ float Derivative_detect_min(uint8 *line)
 }
 
 /**
+ * @brief 求出左边线不满足单调性的第一个行数
+ * @param int start,int end 起始行，终止行
+ * @return 无
+ * @attention 无
+ */
+int Monotonicity_Change_Left(int start, int end)
+{
+    int i,monotonicity_change_line=0;
+    if(Left_Lost_Time>=0.9*IMAGE_HEIGHT)   return 0;//大部分丢线，没必要判断
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//数组越界保护
+    if(end<=5) end=5;//数组越界保护
+    if(start<=end)  return 0; //如果入口算反了的话，会直接返回0
+    for(i=start;i>=end;i--)
+    {
+        /*从某一个点向上和向下分别取5个点，如果这个点的横坐标是最大的，那就默认该点不符合单调性*/
+        if(Left_Line[i] >= Left_Line[i + 5] && Left_Line[i] >= Left_Line[i - 5] &&
+                 Left_Line[i] >= Left_Line[i + 4] && Left_Line[i] >= Left_Line[i - 4] &&
+                 Left_Line[i] >= Left_Line[i + 3] && Left_Line[i] >= Left_Line[i - 3] &&
+                 Left_Line[i] >= Left_Line[i + 2] && Left_Line[i] >= Left_Line[i - 2] &&
+                 Left_Line[i] >= Left_Line[i + 1] && Left_Line[i] >= Left_Line[i - 1])
+        {
+            monotonicity_change_line=i;
+            break;
+        }
+    }
+    return monotonicity_change_line;
+}
+
+/**
+ * @brief 求出右边线不满足单调性的第一个行数
+ * @param int start,int end 起始行，终止行
+ * @return 无
+ * @attention 无
+ */
+int Monotonicity_Change_Right(int start,int end)
+{
+    int i,monotonicity_change_line=0;
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//大部分丢线，没必要判断
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//数组越界保护
+    if(end <=5) end=5;//数组越界保护
+    if(start<=end)  return monotonicity_change_line;//如果输入错误直接返回
+    for(i=start;i>=end;i--)//从下往上扫
+    {
+        /*对于左边线，如果该点坐标是在上下5个点中最靠左的话就认为符合单调性*/
+        if(Right_Line[i] <= Right_Line[i + 5] && Right_Line[i] <= Right_Line[i - 5] &&
+            Right_Line[i] <= Right_Line[i + 4] && Right_Line[i] <= Right_Line[i - 4] &&
+            Right_Line[i] <= Right_Line[i + 3] && Right_Line[i] <= Right_Line[i - 3] &&
+            Right_Line[i] <= Right_Line[i + 2] && Right_Line[i] <= Right_Line[i - 2] &&
+            Right_Line[i] <= Right_Line[i + 1] && Right_Line[i] <= Right_Line[i - 1])
+        {
+            monotonicity_change_line=i;
+            break;
+        }
+    }
+    return monotonicity_change_line;//如果为0，说明单调性比较良好
+}
+/**
  * @brief 误差处理函数
  * @param height:截止行数
  * @return 误差
@@ -343,6 +461,11 @@ float Err_Handle(uint8 height)
     return err;
 }
 
+/**
+ * @brief 左补线函数
+ * @param int x1, int y1, int x2,int y2 补线的起始点和终点的坐标
+ * @return 无（直接修改左边线数组的值）
+ */
 void Left_Add_Line(int x1, int y1, int x2,int y2)
 {
     int i,max,a1,a2,hx;
@@ -363,18 +486,305 @@ void Left_Add_Line(int x1, int y1, int x2,int y2)
         a1=a2;
         a2=max;
     }
+    for(i=a1;i<=a2;i++)//在图像上从上到下进行补线
+    {
+        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//求出原本的行对应的列坐标
+        if(hx >= IMAGE_WIDTH) hx = IMAGE_WIDTH-1;//限幅处理
+        else if(hx <= 0) hx = 0;
+        left_line[i]=hx;//赋值给左边线数组（这里千万不要只是改变原来图像的百白点，因为这样的话还要再扫一次得到边线数组，这样的话扫描效率就会很低）
+    }
 }
+
+/**
+ * @brief 右补线函数
+ * @param int x1, int y1, int x2,int y2 补线的起始点和终点的坐标
+ * @return 无（直接修改右边线数组的值）
+ */
+void Right_Add_Line(int x1, int y1, int x2, int y2)
+{
+    int i,max,a1,a2,hx;
+    if(x1>=IMAGE_WIDTH) x1=IMAGE_WIDTH-1;//限幅处理
+    else if(x1<=0)  x1=0;
+    if(x2>=IMAGE_WIDTH) x2=IMAGE_WIDTH-1;//限幅处理
+    else if(x2<=0)  x2=0;
+    if(y1>=IMAGE_HEIGHT) y1=IMAGE_HEIGHT-1;//限幅处理
+    else if(y1<=0)  y1=0;
+    if(y2>=IMAGE_HEIGHT) y2=IMAGE_HEIGHT-1;//限幅处理
+    else if(y2<=0)  y2=0;
+    a1=y1;
+    a2=y2;//记录中间的值
+    if(a1>a2)//一般原则上a1要小于a2
+    {
+        max=a1;
+        a1=a2;
+        a2=max;
+    }
+    for(i=a1;i<=a2;i++)//在图像上从上到下进行补线
+    {
+        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//求出原本的行对应的列坐标
+        if(hx >= IMAGE_WIDTH) hx = IMAGE_WIDTH-1;//限幅处理
+        else if(hx <= 0) hx = 0;
+        right_line[i]=hx;//赋值给右边线数组（这里千万不要只是改变原来图像的百白点，因为这样的话还要再扫一次得到边线数组，这样的话扫描效率就会很低）
+    }
+}
+
+/**
+ * @brief 十字元素处理（供十字使用）
+ * @param int start, int end ：搜索的范围起点和终点
+ * @return 修改两个全局变量 Right_Down_Find=0;Left_Down_Find=0;
+ */
+void Find_Down_Point(int start, int end)
+{
+    int i,t;
+    Right_Down_Find=0;
+    Left_Down_Find=0;//左右找点标志位清零
+    if(start<end)//原则上start要大于end
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//下面5行的数据不稳定，不能作为边界点来判断
+    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//搜索终止行
+    if(end<=5)  end=5;
+    /*角点判断方法：与近处点连续，与远处点不连续（或者判断变化率）*/
+    for(i=start;i>=end;i--)
+    {
+        if(Left_Down_Find == 0 && abs(left_line[i]-left_line[i+1])<=5 && abs(left_line[i+1]-left_line[i+2])<=5 &&
+        abs(left_line[i+2]-left_line[i+3])<=5 && abs(left_line[i]-left_line[i-2])>=8 && abs(left_line[i]-left_line[i-2])>=15
+        abs(left_line[i]-left_line[i-4])>=15)//左边线找点
+        {
+            Left_Down_Find=i;//获取对应的行数
+        }
+        if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
+        abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15)
+        {
+            Right_Down_Find=i;//获取对应的行数
+        }
+        if(Left_Down_Find!=0 && Right_Down_Find!=0)    break;//找到左右点就退出
+    }
+}
+
+/**
+ * @brief 找到上面的两个拐点，供十字使用
+ * @param start:搜索范围的起点；end:搜索范围的终点
+ * @return 无（返回的是两个全局变量Left_Up_Find和Right_Up_Find）
+ */
+void Find_Up_Point(int start, int end)
+{
+    int i,t;//中间变量
+    Left_Up_Find=0;//左上找点标志位清零
+    Right_Up_Find=0;//右上找点标志位清零
+    if(start<end)//原则上start要大于end
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//搜索终止行
+    if(end<=5)  end=5;
+    if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//下面5行的数据不稳定，不能作为边界点来判断
+    /*从该点往上扫的点为连续点，从该点往下扫的点为非连续点*/
+    for(i=start;i>=end;i--)//从行数的底下往上扫
+    {
+        if(Left_Up_Find == 0 && 
+        abs(left_line[i]-left_line[i-1])<=5 &&
+        abs(left_line[i-1] -  left_line[i-2])<=5 &&
+        abs(left_line[i-2] -  left_line[i-3])<=5 &&
+        abs(left_line[i] - left_line[i+2])>=8 &&
+        abs(left_line[i] - left_line[i+3])>=15 &&
+        abs(left_line[i] - left_line[i+4])>=15)//左边线找点
+        {
+            Left_Up_Find=i;//获取对应的行数
+        }
+        if(Right_Up_Find == 0 &&
+        abs(right_line[i]-right_line[i-1]) <=5 &&
+        abs(right_line[i-1]-right_line[i-2]) <=5 &&
+        abs(right_line[i-2]-right_line[i-3]) <=5 &&
+        abs(right_line[i]-right_line[i+2]) >=8 &&
+        abs(right_line[i]-right_line[i+3]) >=15 &&
+        abs(right_line[i]-right_line[i+4]) >=15)//右边线找点
+        {
+            Right_Up_Find=i;//获取对应的行数
+        }
+        if(Left_Up_Find!=0 && Right_Up_Find!=0)    break;//找到左右点就退出
+    }
+    if(abs(Right_Up_Find-Left_Up_Find)>=30)//如果拐点的纵向撕裂过大，就视为误判
+    {
+        Right_Up_Find=0;
+        Left_Up_Find=0;
+    }
+}
+
+/**
+ * @brief 左边界延长
+ * @param 延长起始行数，延长到某行
+ * @return null
+ */
+void Lengthen_Left_Boundry(int start, int end)
+{
+    int i,t;
+    float k=0.0;
+    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; //起始点位置矫正
+    else if(start <=0)  start=0;//限幅
+    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1;//限幅
+    else if(end<=0)  end=0;//限幅
+    if(end < start) //原则上end要大于start
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    if(start <=5)   Left_Add_Line(left_Line[start],start,left_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
+    else
+    {
+        k=(float)(left_line[start]-left_line[start-4])/5.0; //这里的k是1/斜率
+        for(i=start;i<=end;i++)
+        {
+            left_line[i]=(int)(i-start)*k+left_line[start];//延长左边界
+            if(left_line[i]>=IMAGE_WIDTH-1) left_line[i]=IMAGE_WIDTH-1;//限幅处理
+            else if(left_line[i]<=0) left_line[i]=0;//限幅处理
+        }
+    }
+}
+
+/**
+ * @brief 边右界延长
+ * @param 延长起始行数，延长到某行
+ * @return null
+ */
+void Lengthen_Right_Boundry(int start, int end)
+{
+    int i,t;
+    float k=0.0;
+    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; //起始点位置矫正
+    else if(start <=0)  start=0;//限幅
+    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1;//限幅
+    else if(end<=0)  end=0;//限幅
+    if(end < start) //原则上end要大于start
+    {
+        t=start;
+        start=end;
+        end=t;
+    }
+    if(start <=5)   Right_Add_Line(right_Line[start],start,right_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
+    else
+    {
+        k=(float)(right_line[start]-right_line[start-4])/5.0; //这里的k是1/斜率
+        for(i=start;i<=end;i++)
+        {
+            right_line[i]=(int)(i-start)*k+right_line[start];//延长右边界
+            if(right_line[i]>=IMAGE_WIDTH-1) right_line[i]=IMAGE_WIDTH-1;//限幅处理
+            else if(right_line[i]<=0) right_line[i]=0;//限幅处理
+        }
+    }
+}
+
+/**
+ * @brief 十字检测
+ * @param null
+ * @return null
+ */
+void Cross_Detect(void)
+{
+    int down_search_start = 0;//定义下面开始搜索的行
+    if(Road_Type == CROSSING)//如果检测到十字路口
+    {
+        Left_Up_Find=0;
+        Right_Up_Find=0;
+        if(Both_Lost_Time >=15)//出现双边丢线开始找点
+        {
+            Find_Up_Point(IMAGE_HEIGHT-1,30);//找上面的两个拐点
+            if(Left_Up_Find ==0 && Right_Up_Find ==0) return ;//找不到就直接返回
+        }
+        if(Left_Up_Find !=0 &&Right_Up_Find !=0)
+        {
+            down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//取最大值，方便下拐点寻找
+            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+2);//找下面的两个拐点
+            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//如果下拐点在上拐点的上面，就视为误判
+            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//如果下拐点在上拐点的上面，就视为误判
+            if(Left_Down_Find!=0 && Right_Down_Find!=0)//四个点都在就直接连线
+            {
+                Left_Add_Line([Left_Up_Find],Left_Up_Find,Left_Line[Left_Down_Find],Left_Down_Find);//左边补线
+                Right_Add_Line([Right_Up_Find],Right_Up_Find,Right_Line[Right_Down_Find],Right_Down_Find);//右边补线
+            }
+            else if(Left_Down_Find == 0 && Right_Down_Find !=0)//斜入十字
+            {
+                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//左边界延长
+                Right_Add_Line(Right_Up_Find,Right_Up_Find,Right_Line[Right_Down_Find],Right_Down_Find);//右边界补线
+            }
+            else if (Left_Down_Find !=0 && Right_Down_Find ==0)//斜入十字
+            {
+                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//右边界延长
+                Left_Add_Line(Left_Up_Find,Left_Up_Find,Left_Line[Left_Down_Find],Left_Down_Find);//左边界补线
+            }
+            else if(Left_Down_Find == 0 && Right_Down_Find == 0)//直入十字
+            {
+                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//左边界延长
+                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//右边界延长
+            }
+        }
+    }
+}
+
+/**
+ * @brief 检测黑白跳变点（一般用于斑马线检测）
+ * @param uint8 row 检测的行数 uint8 start_column 起始列数 uint8 end_column 终止列数
+ * @return 返回黑白跳变点的个数（一般大于5个）
+ */
+uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
+{
+    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//限幅处理
+    else if(row<=0) row=0;//限幅处理
+    if(row<=5)  return 0;//如果行数过小，就不检测
+    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//限幅处理
+    else if(start_column<=0) start_column=0;//限幅处理
+    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//限幅处理
+    else if(end_column<=0) end_column=0;//限幅处理
+    uint8 count=0;
+    for(uint8 i=start_column;i<=end_column;i++)
+    {
+        if(Image_Use[row][i]==WHITE_POINT&&Image_Use[row][i+1]==BLACK_POINT)
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * @brief 斑马线检测
+ * @param 无
+ * @return 无
+ */
+void Zebra_Stripes_Detect(void)
+{
+    int continuity_change_right_flag =0;//连续是0
+    int continuity_change_left_flag =0;//连续是0
+    int monotonicity_change_right_flag =0;//单调性是0
+    int monotonicity_change_left_flag =0;//单调性是0
+
+    continuity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5);//左边线连续性检测
+    continuity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5);//右边线连续性检测
+    monotonicity_change_left_flag = Monotonicity_Change_Left(IMAGE_HEIGHT-1,5);//左边线单调性检测
+    monotonicity_change_right_flag = Monotonicity_Change_Right(IMAGE_HEIGHT-1,5);//右边线单调性检测
+
+    int i=0,j=0,change_count=0,start_line=0,endl_line=0,narrow_road_count=0;
+    if(Search_Stop_Line >=60 && 30<=Longest_White_Column_Left[1] && Longest_White_Column_Left[1]<=IMAGE_WIDTH-30  &&
+    Longest_White_Column_Right[1] >=30  &&Longest_White_Column_Right[1]<=IMAGE_WIDTH-30 &&continuity_change_left_flag!=0 &&continuity_change_right_flag!=0)
+    {
+        if(Black_White_Dump(continuity_change_left_flag-3,left_line[continuity_change_left_flag-3],right_line[continuity_change_left_flag-3])>=5)
+        {
+            if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//元素类型切换
+        }
+    }
+}
+
 /**
  * @brief 测试函数（把测试的丢在这里）
  * @param ??
  * @return ??
  */
-//void test(void)
-//{
-//   Image_Change();
-//	ips114_show_char(188,120,'Q');
-//	ips114_displayimage03x(*Image_Use,188,120);
-//}
 void test(void)
 {
     Image_Change();
