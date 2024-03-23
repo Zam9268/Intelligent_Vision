@@ -107,9 +107,9 @@ void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float tar
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 {
   Speed[0].target_speed = target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // 左前电机目标速度
-  target_motor[1] = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // 左后电机目标速度
-  target_motor[2] = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右前电机目标速度
-  target_motor[3] = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右后电机目标速度
+  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // 左后电机目标速度
+  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右前电机目标速度
+  Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右后电机目标速度
 }
          
 /**
@@ -164,8 +164,6 @@ void increment_pid(pid_info *pid)
   pid->output = PIDInfo_Limit(pid->output, AMPLITUDE_MOTOR); //限幅
 	
 }
-
-
 
 /**
  * @brief 目标电机速度计算函数

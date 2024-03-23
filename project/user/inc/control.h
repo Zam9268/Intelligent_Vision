@@ -35,31 +35,33 @@
 
 //??pid??
 typedef struct{
-	float now_speed;	  //????
-	float target_speed;	//????
-	int target_pwm;		//??Pwm
-	uint8 xuhao;		//?????
-	float kp ;		        //????
-	float ki ;		        //????
-	float kd ;	          //????
-	float error;          //??
-	float lastError;	    //????
-	float lastlastError;  //?????
-	float dError;         //????
-	float output;         //??
-	float output_last;    //????
+	float now_speed;	  //当前速度
+	float target_speed;	//目标速度
+	int target_pwm;		//目标Pwm
+	uint8 xuhao;		//编码器序号
+	float kp ;		        
+	float ki ;		        
+	float kd ;	          
+	float error;          //当前误差
+	float lastError;	    //上次误差
+	float lastlastError;  //上上次误差
+	float dError;         //本次误差与上次误差的差值
+	float output;         //输出值
+	float output_last;    //上次输出值
 }pid_info;
 
 
-extern float Velocity_KP;//?????Kp
-extern float Velocity_KI;//?????Ki
-extern int encoder[4];//???????????
-extern float target_motor[4];//?????????????????????
-extern int pid_motor[4];//????????pid??????????
-extern float turn_angle;//?????????
-extern int spin;//??????????????
+extern float Velocity_KP;//增量式kp
+extern float Velocity_KI;//增量式Ki
+extern float Car_H;//车长
+extern float Car_W;//车宽
+extern int encoder[4];//编码器数据
+extern float target_motor[4];//目标电机pwm
+extern int pid_motor[4];//pid处理后的速度
+extern float turn_angle;//转向角
+extern int spin;//旋转方向
 extern int translation;
-extern pid_info LF_motor_pid;//???pid
+extern pid_info LF_motor_pid;//四个轮子pid结构体
 extern pid_info RF_motor_pid;
 extern pid_info LB_motor_pid;
 extern pid_info RB_motor_pid;
