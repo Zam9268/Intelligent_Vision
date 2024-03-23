@@ -1,4 +1,6 @@
 #include"math.h"
+#include"imu660ra.h"
+#include "zf_common_headfile.h"
 
 #define dt 0.005;		  //滤波周期，每5ms进行一次滤波
 #define LED1                        (B9 )  
@@ -7,16 +9,16 @@
 float Angle_z,Angle_Z=90;//目标角度
 float acc_y , acc_x;//y轴，x轴加速度，用于解算姿态角
 float Gyro_z=0;
-float fil_Acc_x,fil_Acc_y,fil_Gyro_z;
+float fil_Gyro_z;//陀螺仪角速度
 float Angle_z=0;
-float Angle_z,Angle_Z=90;
+float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
 int moto_flag=0;
 int gyro_i=0;
 int start_flag;
 
-void my_imu660ra_init()
+void my_imu660ra_init()//放在主函数
 {
     gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL);                             // 初始化 LED1 输出 默认高电平 推挽输出模式 
     while(1)
@@ -35,6 +37,7 @@ void my_imu660ra_init()
     interrupt_global_enable(0);
 }
 
+/*******************平均递推滤波，用来获取角度****************/
 void IMU660ra_newValues()
 {
 	 float sum=0;
@@ -103,8 +106,8 @@ float Kalman_Filter_x(float Accel,float Gyro)
 	static float angle_dot;
 	static float angle;
 	float Q_angle=0.001; // 过程噪声的协方差
-	float Q_gyro=0.003;	//0.003 过程噪声的协方差 过程噪声的协方差为一个一行两列矩阵
-	float R_angle=0.5;		// 测量噪声的协方差 既测量偏差
+	float Q_gyro=0.003;	//0.003 过程噪声的协方差 过程噪声的协方差为一个一行两列矩阵，参数要调整
+	float R_angle=0.5;		// 测量噪声的协方差 既测量偏差，参数要调整
 	char  C_0 = 1;
 	static float Q_bias, Angle_err;
 	static float PCt_0, PCt_1, E;

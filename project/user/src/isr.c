@@ -52,8 +52,7 @@ void PIT_IRQHandler(void)
     int count = 0;
     if(pit_flag_get(PIT_CH0))
     {
-        void Read_imu (void);
-        Read_imu;
+      
         pit_flag_clear(PIT_CH0);
     }
     
