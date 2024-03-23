@@ -40,12 +40,14 @@
 #include "take.h"
 #include "Vofa.h"
 #include "math.h"
+#include "communication.h"
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern float PID_motor[4];//存放pid输出后的数值
 extern pid_info Speed[4];//外部声明
 Vofa_HandleTypedef vofa1;//vofa结构体声明
 extern int test_count;
+extern uint8 right_data[64];
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
 // 第二步 project->clean  等待下方进度条走完
@@ -57,14 +59,13 @@ extern int test_count;
 uint8 returnn;
 int main(void)
 {
-	  
     clock_init(SYSTEM_CLOCK_600M); // 不可删除
     CLOCK_EnableClock(kCLOCK_Pit);//开启使能PIT时钟
     debug_init();                  // 调试端口初始化
     system_delay_ms(300);           //等待主板其他外设上电完成
-	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//PID参数结构体的值初始化
+    My_Communication_Init();//串口通讯的初始化
 //    ips114_set_dir(IPS114_CROSSWISE_180);
 //    ips114_set_font(IPS114_8X16_FONT);
 //    ips114_set_color(RGB565_RED, RGB565_BLACK);
@@ -94,6 +95,8 @@ int main(void)
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
+          printf("%d,%d,%d\r\n",right_data[0],right_data[1],right_data[2]);
+        
         
         // for(uint8 i=0;i<4;i++)
         // {
@@ -135,5 +138,14 @@ int main(void)
     }
 }
 
-
+/**
+ * @brief 串口1接收中断
+ * @param 无
+ * @return 无
+ */
+void UART1_handler(void)
+{
+    uart1_rx_interrupt_handler();//串口中断接收
+    get_uartdata();//获取串口数据
+}
 

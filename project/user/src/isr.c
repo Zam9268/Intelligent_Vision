@@ -94,70 +94,71 @@ void LPUART1_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART1))
     {
-        // ?????§Ø?
-    #if DEBUG_UART_USE_INTERRUPT                        // ??????? debug ?????§Ø?
-        debug_interrupr_handler();                      // ???? debug ?????????????? ????? debug ???¦Ë????????
-    #endif                                              // ???????? DEBUG_UART_INDEX ????¦Ä??????????????????§Ø??
+        //????
+    // #if DEBUG_UART_USE_INTERRUPT                        // ???? debug ????
+    //     debug_interrupr_handler();                      // ?? debug ???????? ???? debug ???????
+    // #endif                                              // ????? DEBUG_UART_INDEX ?????????????????
+    extern void UART1_handler(void);//?????????
     }
         
-    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????
 }
 
 void LPUART2_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // ?????§Ø?
+        // ????
         
     }
         
-    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag);    // ?????
 }
 
 void LPUART3_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART3))
     {
-        // ?????§Ø?
+        // ????
         
     }
         
-    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag);    // ?????
 }
 
 void LPUART4_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
-        // ?????§Ø? 
+        // ????
         flexio_camera_uart_handler();
         
         gps_uart_callback();
     }
         
-    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????
 }
 
 void LPUART5_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
-        // ?????§Ø?
+        // ????
         camera_uart_handler();
     }
         
-    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ?????
 }
 
 void LPUART6_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART6))
     {
-        // ?????§Ø?
+        // ????
         
     }
         
-    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag);    //?????
 }
 
 
@@ -165,12 +166,12 @@ void LPUART8_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART8))
     {
-        // ?????§Ø?
+        //????
         wireless_module_uart_handler();
         
     }
         
-    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag);    // ?????????
+    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag);    //?????
 }
 
 
@@ -178,7 +179,7 @@ void GPIO1_Combined_0_15_IRQHandler(void)
 {
     if(exti_flag_get(B0))
     {
-        exti_flag_clear(B0);// ????§Ø???¦Ë
+        exti_flag_clear(B0);//?????
     }
     
 }
@@ -189,7 +190,7 @@ void GPIO1_Combined_16_31_IRQHandler(void)
     wireless_module_spi_handler();
     if(exti_flag_get(B16))
     {
-        exti_flag_clear(B16); // ????§Ø???¦Ë
+        exti_flag_clear(B16); //?????
     }
 
     
@@ -201,7 +202,7 @@ void GPIO2_Combined_0_15_IRQHandler(void)
     
     if(exti_flag_get(C0))
     {
-        exti_flag_clear(C0);// ????§Ø???¦Ë
+        exti_flag_clear(C0);//?????
     }
 
 }

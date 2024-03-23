@@ -387,11 +387,11 @@ int Monotonicity_Change_Left(int start, int end)
     for(i=start;i>=end;i--)
     {
         /*从某一个点向上和向下分别取5个点，如果这个点的横坐标是最大的，那就默认该点不符合单调性*/
-        if(Left_Line[i] >= Left_Line[i + 5] && Left_Line[i] >= Left_Line[i - 5] &&
-                 Left_Line[i] >= Left_Line[i + 4] && Left_Line[i] >= Left_Line[i - 4] &&
-                 Left_Line[i] >= Left_Line[i + 3] && Left_Line[i] >= Left_Line[i - 3] &&
-                 Left_Line[i] >= Left_Line[i + 2] && Left_Line[i] >= Left_Line[i - 2] &&
-                 Left_Line[i] >= Left_Line[i + 1] && Left_Line[i] >= Left_Line[i - 1])
+        if(left_line[i] >= left_line[i + 5] && left_line[i] >= left_line[i - 5] &&
+                 left_line[i] >= left_line[i + 4] && left_line[i] >= left_line[i - 4] &&
+                 left_line[i] >= left_line[i + 3] && left_line[i] >= left_line[i - 3] &&
+                 left_line[i] >= left_line[i + 2] && left_line[i] >= left_line[i - 2] &&
+                 left_line[i] >= left_line[i + 1] && left_line[i] >= left_line[i - 1])
         {
             monotonicity_change_line=i;
             break;
@@ -416,11 +416,11 @@ int Monotonicity_Change_Right(int start,int end)
     for(i=start;i>=end;i--)//从下往上扫
     {
         /*对于左边线，如果该点坐标是在上下5个点中最靠左的话就认为符合单调性*/
-        if(Right_Line[i] <= Right_Line[i + 5] && Right_Line[i] <= Right_Line[i - 5] &&
-            Right_Line[i] <= Right_Line[i + 4] && Right_Line[i] <= Right_Line[i - 4] &&
-            Right_Line[i] <= Right_Line[i + 3] && Right_Line[i] <= Right_Line[i - 3] &&
-            Right_Line[i] <= Right_Line[i + 2] && Right_Line[i] <= Right_Line[i - 2] &&
-            Right_Line[i] <= Right_Line[i + 1] && Right_Line[i] <= Right_Line[i - 1])
+        if(right_line[i] <= right_line[i + 5] && right_line[i] <= right_line[i - 5] &&
+            right_line[i] <= right_line[i + 4] && right_line[i] <= right_line[i - 4] &&
+            right_line[i] <= right_line[i + 3] && right_line[i] <= right_line[i - 3] &&
+            right_line[i] <= right_line[i + 2] && right_line[i] <= right_line[i - 2] &&
+            right_line[i] <= right_line[i + 1] && right_line[i] <= right_line[i - 1])
         {
             monotonicity_change_line=i;
             break;
@@ -551,7 +551,7 @@ void Find_Down_Point(int start, int end)
     for(i=start;i>=end;i--)
     {
         if(Left_Down_Find == 0 && abs(left_line[i]-left_line[i+1])<=5 && abs(left_line[i+1]-left_line[i+2])<=5 &&
-        abs(left_line[i+2]-left_line[i+3])<=5 && abs(left_line[i]-left_line[i-2])>=8 && abs(left_line[i]-left_line[i-2])>=15
+        abs(left_line[i+2]-left_line[i+3])<=5 && abs(left_line[i]-left_line[i-2])>=8 && abs(left_line[i]-left_line[i-2])>=15 &&
         abs(left_line[i]-left_line[i-4])>=15)//左边线找点
         {
             Left_Down_Find=i;//获取对应的行数
@@ -635,7 +635,7 @@ void Lengthen_Left_Boundry(int start, int end)
         start=end;
         end=t;
     }
-    if(start <=5)   Left_Add_Line(left_Line[start],start,left_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
+    if(start <=5)   Left_Add_Line(left_line[start],start,left_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
     else
     {
         k=(float)(left_line[start]-left_line[start-4])/5.0; //这里的k是1/斜率
@@ -667,7 +667,7 @@ void Lengthen_Right_Boundry(int start, int end)
         start=end;
         end=t;
     }
-    if(start <=5)   Right_Add_Line(right_Line[start],start,right_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
+    if(start <=5)   Right_Add_Line(right_line[start],start,right_line[end],end);//如果起始点过于靠上，就不能延长（误差太大了）
     else
     {
         k=(float)(right_line[start]-right_line[start-4])/5.0; //这里的k是1/斜率
@@ -705,18 +705,18 @@ void Cross_Detect(void)
             if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//如果下拐点在上拐点的上面，就视为误判
             if(Left_Down_Find!=0 && Right_Down_Find!=0)//四个点都在就直接连线
             {
-                Left_Add_Line([Left_Up_Find],Left_Up_Find,Left_Line[Left_Down_Find],Left_Down_Find);//左边补线
-                Right_Add_Line([Right_Up_Find],Right_Up_Find,Right_Line[Right_Down_Find],Right_Down_Find);//右边补线
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//左边补线
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//右边补线
             }
             else if(Left_Down_Find == 0 && Right_Down_Find !=0)//斜入十字
             {
                 Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//左边界延长
-                Right_Add_Line(Right_Up_Find,Right_Up_Find,Right_Line[Right_Down_Find],Right_Down_Find);//右边界补线
+                Right_Add_Line(Right_Up_Find,Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//右边界补线
             }
             else if (Left_Down_Find !=0 && Right_Down_Find ==0)//斜入十字
             {
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//右边界延长
-                Left_Add_Line(Left_Up_Find,Left_Up_Find,Left_Line[Left_Down_Find],Left_Down_Find);//左边界补线
+                Left_Add_Line(Left_Up_Find,Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//左边界补线
             }
             else if(Left_Down_Find == 0 && Right_Down_Find == 0)//直入十字
             {
@@ -752,6 +752,22 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
     return count;
 }
 
+/**
+ * @brief 环岛检测
+ * @param 无
+ * @return 无
+ */
+uint8 Island_State=0;
+void Island_Detect(void)
+{
+    static int state1_down_guai[2]={0};//状态1下拐点
+    static int state1_up_guai[2]={0};//状态1上拐点
+    int monotonicity_change_left_flag=0;
+    int monotonicity_change_right_flag=0;//单调点坐标
+    int continuity_change_left_flag=0;//连续性点的坐标
+    int continuity_change_right_flag=0;//连续性点的坐标
+
+}
 /**
  * @brief 斑马线检测
  * @param 无
