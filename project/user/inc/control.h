@@ -75,7 +75,7 @@ void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float tar
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void Incremental_PI(void);
 void PidInit(void);
-void increment_pid(pid_info *pid);
+void increment_pid(void);
 void PID_cale();
 void motor_close_control(void);
 void motor_control(void);

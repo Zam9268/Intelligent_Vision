@@ -45,7 +45,7 @@ extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern float PID_motor[4];//存放pid输出后的数值
 extern pid_info Speed[4];//外部声明
 Vofa_HandleTypedef vofa1;//vofa结构体声明
-
+extern int test_count;
 // 打开新的工程或者工程移动了位置务必执行以下操作
 // 第一步 关闭上面所有打开的文件
 // 第二步 project->clean  等待下方进度条走完
@@ -77,20 +77,24 @@ int main(void)
     
     pit_ms_init(PIT_CH1,10);    // 定时器初始化
     pit_ms_init(PIT_CH0,15);    // 定时器初始化
+    pit_ms_init(PIT_CH2,15);    // 定时器初始化
     // target_motor[0]=1000;
 	// target_motor[1]=1000;
 	
 	// target_motor[3]=1000;
     
     float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-//	Speed[0].target_speed=1.0;
-	Speed[1].target_pwm=1000;
+	Speed[3].target_speed=125.0;
+    Speed[2].target_speed=125.0;
+    Speed[1].target_speed=125.0;
+    Speed[0].target_speed=125.0;
+	// Speed[1].target_pwm=1500;
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-        motor_close_control();
+        
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -121,7 +125,7 @@ int main(void)
 //		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
         // printf("%d,%d,%d\r\n",(int)encoder[1],-(int)encoder[2],(int)encoder[0]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
-        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[2],encoder[1],encoder[3]);
+        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);

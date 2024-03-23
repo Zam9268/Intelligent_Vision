@@ -343,7 +343,7 @@ float Err_Handle(uint8 height)
     return err;
 }
 
-void Left_Add_Line(int x1, int y1, inx x2,int y2)
+void Left_Add_Line(int x1, int y1, int x2,int y2)
 {
     int i,max,a1,a2,hx;
     //对输入的值进行限幅处理

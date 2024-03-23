@@ -18,6 +18,7 @@ int pid_motor[4]; // PID控制后的电机输出
 int midline[Row]; // 中线位置数组
 float PID_Bias[4]={0.0}, PID_Last_bias[4]={0.0};
 float Keep_Bias; // 保持偏差
+int test_count=0;
 pid_info LF_motor_pid; // 左前电机PID
 pid_info RF_motor_pid; // 右前电机PID
 pid_info LB_motor_pid; // 左后电机PID
@@ -41,6 +42,8 @@ void Motor_Init(void)
   pwm_init(motor_LB, 15000, 0); // 初始化左后电机的PWM
   pwm_init(motor_RF, 15000, 0); // 初始化右前电机的PWM
   pwm_init(motor_RB, 15000, 0); // 初始化右后电机的PWM
+
+  
 }
 
 
@@ -55,6 +58,11 @@ void Encoder_Init(void)
   encoder_dir_init(ENCODER_LB, ENCODER_LB_LSB, ENCODER_LB_DIR); // 初始化编码器模块与引脚 方向编码器模式
   encoder_dir_init(ENCODER_RF, ENCODER_RF_LSB, ENCODER_RF_DIR); // 初始化编码器模块与引脚 方向编码器模式
   encoder_dir_init(ENCODER_RB, ENCODER_RB_LSB, ENCODER_RB_DIR); // 初始化编码器模块与引脚 方向编码器模式
+
+  for(uint8 i=0;i<4;i++)
+  {
+    encoder[i]=0;//编码器的示数清零
+  }
 }
 
 /**
@@ -135,17 +143,17 @@ void PidInit(void)
   }
 
   // 设置PI参数
-  Speed[0].kp = 0.8;
-  Speed[0].ki = 0.2;
+  Speed[0].kp = -22.5;
+  Speed[0].ki = -1.50;
   // 设置PI参数
-  Speed[1].kp = 0;
-  Speed[1].ki = 0;
+  Speed[1].kp = -30;
+  Speed[1].ki = -0.5;
   // 设置PI参数
-  Speed[2].kp = 0;
-  Speed[2].ki = 0;
+  Speed[2].kp = -25;
+  Speed[2].ki = -0.5;
   // 设置PI参数
-  Speed[3].kp = 0;
-  Speed[3].ki = 0; // 设置pi参数
+  Speed[3].kp = -25;
+  Speed[3].ki = -0.8; // 设置pi参数
 
 }
 
@@ -154,15 +162,17 @@ void PidInit(void)
  * @param pid_info *pid 控制器参数结构体
  * @return 控制器输出值
  */
-void increment_pid(pid_info *pid)
+void increment_pid(void)
 {
-  //更新误差
-  pid->lastlastError = pid->lastError;  //误差更新为上上次的误差
-  pid->lastError = pid->error;          //误差更新为上次的误差
-  pid->error = pid->target_pwm - encoder[pid->xuhao]; //计算当前pwm和编码器值的误差
-  pid->output += pid->kp*(pid->error-pid->lastError)+pid->ki*pid->error; //增量式PI控制器
-  pid->output = PIDInfo_Limit(pid->output, AMPLITUDE_MOTOR); //限幅
-	
+  for(uint8 i=0;i<4;i++)
+  {
+      //更新误差
+      Speed[i].lastlastError = Speed[i].lastError;  //误差更新为上上次的误差
+      Speed[i].lastError = Speed[i].error;          //误差更新为上次的误差
+      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //计算当前pwm和编码器值的误差
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式PI控制器
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+  }
 }
 
 /**
@@ -177,6 +187,8 @@ void motor_close_control(void)
   int j;
   for (j = 0; j < 4; j++) //???
   {
+    pid_motor[j]=Speed[j].output;//pid输出赋值，其实这里就没必要限幅了
+    // Speed[j].output=0;
     if (pid_motor[j] > AMPLITUDE_MOTOR)
       pid_motor[j] = AMPLITUDE_MOTOR;
     if (pid_motor[j] < -AMPLITUDE_MOTOR)
