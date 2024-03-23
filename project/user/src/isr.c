@@ -40,7 +40,7 @@
 
 extern pid_info Speed[4];//外部声明
 extern uint8 step;
-
+int count = 0;
 
 void CSI_IRQHandler(void)
 {
@@ -52,18 +52,16 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        for(uint8 i=0;i<4;i++)
-        {
-            increment_pid(&Speed[i]);//调用pid函数
-        }
-    int count = 0;
-    if(pit_flag_get(PIT_CH0))
-    {
-        void Read_imu (void);
-        Read_imu;
+        increment_pid();
+        motor_close_control();
         pit_flag_clear(PIT_CH0);
+    // if(pit_flag_get(PIT_CH0))
+    // {
+    //     void Read_imu (void);
+    //     Read_imu;
+    //     pit_flag_clear(PIT_CH0);
+    // }
     }
-    
     if(pit_flag_get(PIT_CH1))
     {
        Read_Encoder();//周期读取编码器数值，解算出当前速度值
@@ -89,7 +87,7 @@ void PIT_IRQHandler(void)
     }
 
     __DSB();
-    }
+    
 }
 
 void LPUART1_IRQHandler(void)

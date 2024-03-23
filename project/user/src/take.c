@@ -229,7 +229,7 @@ void arm_control(uint8 mode)
        arm_flag = 0;//清空计时标志位
     }
     case 2:
-    servo_slow_ctrl(141, 50); //放门
+//    servo_slow_ctrl(141, 50); //放门
     PIT_CH2_Int_Init(10);
     if(arm_flag==1)//定时器计数完成标志
     {
@@ -238,7 +238,7 @@ void arm_control(uint8 mode)
        arm_flag = 0;
     }
     case 3:
-    servo_slow_ctrl(22, 100); //合门
+//    servo_slow_ctrl(22, 100); //合门
     PIT_CH2_Int_Init(10);
       if(arm_flag==1)//定时器计数完成标志
     {
@@ -248,7 +248,7 @@ void arm_control(uint8 mode)
     }
     case 4:
     gpio_set_level(C9, 0);//进入默认断电
-    servo_slow_ctrl(50, 100); //恢复初始状态
+//    servo_slow_ctrl(50, 100); //恢复初始状态
     PIT_CH2_Int_Init(10);
     if(arm_flag==1)//定时器计数完成标志
     {

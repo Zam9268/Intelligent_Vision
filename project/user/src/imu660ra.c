@@ -1,5 +1,5 @@
-#include"math.h"
-
+#include "math.h"
+#include "zf_common_headfile.h"
 #define dt 0.005;		  //滤波周期，每5ms进行一次滤波
 #define LED1                        (B9 )  
 #define PIT_CH                         (PIT_CH0 )                                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用
@@ -9,7 +9,6 @@ float acc_y , acc_x;//y轴，x轴加速度，用于解算姿态角
 float Gyro_z=0;
 float fil_Acc_x,fil_Acc_y,fil_Gyro_z;
 float Angle_z=0;
-float Angle_z,Angle_Z=90;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
 int moto_flag=0;
@@ -18,12 +17,13 @@ int start_flag;
 
 void my_imu660ra_init()
 {
+	
     gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL);                             // 初始化 LED1 输出 默认高电平 推挽输出模式 
     while(1)
     {
         if(imu660ra_init())
         {
-            printf("\r\nIMU660RA init error.");                                 // IMU660RA 初始化失败
+            printf("IMU660RA init error.\r\n");                                 // IMU660RA 初始化失败
         }
         else
         {
