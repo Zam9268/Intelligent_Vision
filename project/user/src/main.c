@@ -65,16 +65,17 @@ int main(void)
     system_delay_ms(300);           //等待主板其他外设上电完成
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//PID参数结构体的值初始化
-    My_Communication_Init();//串口通讯的初始化
-//    ips114_set_dir(IPS114_CROSSWISE_180);
-//    ips114_set_font(IPS114_8X16_FONT);
-//    ips114_set_color(RGB565_RED, RGB565_BLACK);
-//    ips114_init();//屏幕初始化
-//    interrupt_global_enable(0);
-//	ips114_clear();//清屏  
+//    My_Communication_Init();//串口通讯的初始化
+    ips114_init();//屏幕初始化
+   ips114_set_dir(IPS114_PORTAIT);
+    ips114_set_font(IPS114_6X8_FONT);
+    ips114_set_color(RGB565_RED, RGB565_BLACK);
+   
+   interrupt_global_enable(0);
+	ips114_clear();//清屏  
     Motor_Init();                  // 电机初始化
     Encoder_Init();                // 编码器初始化
-    // Camera_Init();
+    Camera_Init();
     
     pit_ms_init(PIT_CH1,10);    // 定时器初始化
     pit_ms_init(PIT_CH0,15);    // 定时器初始化
@@ -83,8 +84,6 @@ int main(void)
 	// target_motor[1]=1000;
 	
 	// target_motor[3]=1000;
-    
-    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
 	Speed[3].target_speed=125.0;
     Speed[2].target_speed=125.0;
     Speed[1].target_speed=125.0;
@@ -95,8 +94,8 @@ int main(void)
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-          printf("%d,%d,%d\r\n",right_data[0],right_data[1],right_data[2]);
-        
+        //   printf("%d,%d,%d\r\n",right_data[0],right_data[1],right_data[2]);
+        test();
         
         // for(uint8 i=0;i<4;i++)
         // {
@@ -125,10 +124,14 @@ int main(void)
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
 //		// Speed_Control(1000,1000,0);//测试编码器
-//		ips114_show_int(    0 , 0,   returnn,         4);//展示编码器数值，调试用
-        // printf("%d,%d,%d\r\n",(int)encoder[1],-(int)encoder[2],(int)encoder[0]);
+//		ips114_show_int(    0 , 0,   encoder[0],         4);//展示编码器数值，调试用
+//        ips114_show_int(    0 , 20,   encoder[1],         4);//展示编码器数值，调试用
+//        ips114_show_int(    0 , 40,   encoder[2],         4);//展示编码器数值，调试用
+//        ips114_show_int(    0 , 60,   encoder[3],         4);//展示编码器数值，调试用
+//        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
-        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
+//        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);
@@ -143,9 +146,9 @@ int main(void)
  * @param 无
  * @return 无
  */
-void UART1_handler(void)
-{
-    uart1_rx_interrupt_handler();//串口中断接收
-    get_uartdata();//获取串口数据
-}
+//void UART1_handler(void)
+//{
+//    uart1_rx_interrupt_handler();//串口中断接收
+//    get_uartdata();//获取串口数据
+//}
 

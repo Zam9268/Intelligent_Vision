@@ -1,5 +1,5 @@
-//#ifndef __CONTROL_H
-//#define __CONTROL_H
+#ifndef __CONTROL_H
+#define __CONTROL_H
 
 #include "stdio.h"
 #include "stdint.h"
@@ -81,3 +81,5 @@ void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
 float PIDInfo_Limit(float Value, float MaxValue);
+
+#endif
