@@ -1,5 +1,5 @@
-#ifndef CONTROL_H
-#define CONTROL_H
+#ifndef __CONTROL_H
+#define __CONTROL_H
 
 #include "stdio.h"
 #include "stdint.h"
