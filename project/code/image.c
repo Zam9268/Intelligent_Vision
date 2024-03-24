@@ -507,7 +507,7 @@ int Monotonicity_Change_Right(int start,int end)
  * @param height:截止行数
  * @return 误差
  */
-float Err_Handle(uint8 height)
+float Err_Handle(void)
 {
     /*这种写法会使得前瞻不够远，故舍弃
     float err=0.00;//值为负，往左偏；值为正，往右偏
@@ -887,7 +887,7 @@ void test(void)
 	
 
     Simple_Binaryzation(*Image_Use,threshold);
-    Center_line_deal(0,188);//白列寻边线
+    Center_line_deal(5,183);//白列寻边线
 //`	
 //   for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
 //   {
@@ -897,7 +897,8 @@ void test(void)
     ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
-    
+    float my_err=Err_Handle();
+    ips114_show_float(188,20,my_err,2,2);
     // ips114_show_uint(188,20,White_Column[85],3);
     // ips114_show_uint(188,40,White_Column[105],3);
     // ips114_show_uint(188,60,White_Column[110],3);
