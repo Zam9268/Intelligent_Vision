@@ -84,10 +84,10 @@ int main(void)
 	// target_motor[1]=1000;
 	
 	// target_motor[3]=1000;
-	Speed[3].target_speed=125.0;
-    Speed[2].target_speed=125.0;
-    Speed[1].target_speed=125.0;
-    Speed[0].target_speed=125.0;
+	Speed[3].target_speed=50.0;
+    Speed[2].target_speed=50.0;
+    Speed[1].target_speed=50.0;
+    Speed[0].target_speed=50.0;
 	// Speed[1].target_pwm=1500;
     // 此处编写用户代码 例如外设初始化代码等
     
@@ -131,7 +131,7 @@ int main(void)
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-//        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+       printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);

@@ -79,7 +79,7 @@ void Read_Encoder(void)
 {
   // 读取编码器计数值
   encoder[0] = -encoder_get_count(ENCODER_LF); // 左前编码器计数值
-  encoder[1] = -encoder_get_count(ENCODER_LB); // 左后编码器计数值
+  encoder[1] = encoder_get_count(ENCODER_LB); // 左后编码器计数值
   encoder[2] = encoder_get_count(ENCODER_RF); // 右前编码器计数值
   encoder[3] = -encoder_get_count(ENCODER_RB); // 右后编码器计数值
 

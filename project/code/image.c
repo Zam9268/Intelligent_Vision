@@ -38,6 +38,73 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1,   // 图像最远端60 —??69 行权??
 };
 
+uint8 OSTU_GetThreshold(uint8 *image, uint16 Width, uint16 Height)
+{
+    uint8 HistGram[257] = {0}; // 将数组大小改为 257
+    uint16 x, y;
+    int16 Y;
+    uint32 Amount = 0;
+    uint32 PixelBack = 0;
+    uint32 PixelIntegralBack = 0;
+    uint32 PixelIntegral = 0;
+    int32 PixelIntegralFore = 0;
+    int32 PixelFore = 0;
+    double OmegaBack, OmegaFore, MicroBack, MicroFore, SigmaB, Sigma;
+    int16 MinValue, MaxValue;
+    uint8 Threshold = 0;
+    uint8 *data = image;
+    for (y = 0; y < Height; y++)
+    {
+        for (x = 0; x < Width; x++)
+        {
+            HistGram[data[y * Width + x]]++;
+        }
+    }
+    HistGram[255] = 0; // 将像素值为 255 的像素单独处理
+
+    for (MinValue = 0; MinValue < 256 && HistGram[MinValue] == 0; MinValue++)
+        ;
+    for (MaxValue = 255; MaxValue > MinValue && HistGram[MaxValue] == 0; MaxValue--)
+        ;
+
+    if (MaxValue == MinValue)
+    {
+        return MaxValue;
+    }
+    if (MinValue + 1 == MaxValue)
+    {
+        return MinValue;
+    }
+    for (Y = MinValue; Y <= MaxValue; Y++)
+    {
+        Amount += HistGram[Y];
+    }
+
+    PixelIntegral = 0;
+    for (Y = MinValue; Y <= MaxValue; Y++)
+    {
+        PixelIntegral += HistGram[Y] * Y;
+    }
+    SigmaB = -1;
+    for (Y = MinValue; Y < MaxValue; Y++)
+    {
+        PixelBack = PixelBack + HistGram[Y];
+        PixelFore = Amount - PixelBack;
+        OmegaBack = (double)PixelBack / Amount;
+        OmegaFore = (double)PixelFore / Amount;
+        PixelIntegralBack += HistGram[Y] * Y;
+        PixelIntegralFore = PixelIntegral - PixelIntegralBack;
+        MicroBack = (double)PixelIntegralBack / PixelBack;
+        MicroFore = (double)PixelIntegralFore / PixelFore;
+        Sigma = OmegaBack * OmegaFore * (MicroBack - MicroFore) * (MicroBack - MicroFore);
+        if (Sigma > SigmaB)
+        {
+            SigmaB = Sigma;
+            Threshold = Y;
+        }
+    }
+    return Threshold;
+}
 /**
  * @brief 数组赋值
  * @param 无
@@ -64,15 +131,21 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
 	{
 		left_line[i]=0;
-		right_line[i]=0;
+		right_line[i]=IMAGE_WIDTH-1;
+        Right_Lost_Flag[i]=0;
+        Left_Lost_Flag[i]=0;
 	}
+    for(uint8 i=0;i<IMAGE_WIDTH-1;i++)
+    {
+        White_Column[i]=0;
+    }
     int x=0,y=0;//设x为行,y为列
     uint8 middle=the_maxlen_position;//定义赛道最长位??
     uint8 x_num;
     /*寻找最长白列（待优化） */
-    for(uint8 j=start_column;j<end_column;j++)
+    for(uint8 j=start_column;j<=end_column;j++)
     {
-        for(uint8 i=IMAGE_HEIGHT-1;i>0;i--)
+        for(uint8 i=IMAGE_HEIGHT-1;i>=0;i--)
         {
             if(Image_Use[i][j]==BLACK_POINT)
             {
@@ -81,12 +154,13 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
             else
             {
                 White_Column[j]++;
+                if(White_Column[j]==120)    break;
             }
         }
     }
     /*从左到右寻找最长白??*/
     Longest_White_Column_Left[0]=0;//白列长度清零
-    for(uint8 i=start_column;i<end_column;i++)
+    for(uint8 i=start_column;i<=end_column;i++)
     {
         if(White_Column[i]>Longest_White_Column_Left[0])//最大值更??
         {
@@ -107,10 +181,10 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
     /*终止行赋??*/
     Search_Stop_Line=Longest_White_Column_Left[0];//搜索截止行的赋?值
     int right_border,left_border;//定义边界中间变量
-    for(int i=IMAGE_HEIGHT-1;i>=0;i--)
+    for(int i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
     {
         /*先寻右边??*/
-        for(int j=Longest_White_Column_Left[1];j<=Longest_White_Column_Right[1];j++)
+        for(int j=Longest_White_Column_Left[1];j<=IMAGE_WIDTH-1;j++)
         {
             if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT)
             {
@@ -118,7 +192,7 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
                 Right_Lost_Flag[i]=0;//没有丢线，就??0
                 break;
             }
-            else if(j>=IMAGE_HEIGHT-1-2)//没有找到右边界时，就把最右边界赋值给右边，然后丢线标志位??1
+            else if(j>=IMAGE_WIDTH-1-2)//没有找到右边界时，就把最右边界赋值给右边，然后丢线标志位??1
             {
                 right_border=j;
                 Right_Lost_Flag[i]=1;
@@ -803,21 +877,28 @@ void Zebra_Stripes_Detect(void)
  */
 void test(void)
 {
-    Image_Change();
+  Image_Change();
 	uint8 *output_address;//输入地址指针
     
-    output_address=Scharr_Edge(*mt9v03x_image);
-    memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-	uint8 threshold=Camera_GetOSTU((uint8 *)mt9v03x_image);
+    // output_address=Scharr_Edge(*mt9v03x_image);
+//    output_address=Camera_GetOSTU(*mt9v03x_image);//获取OSTU二值化后的图像
+    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+    // memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
+	
 
     Simple_Binaryzation(*Image_Use,threshold);
-    Center_line_deal(10,178);//白列寻边线
+    Center_line_deal(0,188);//白列寻边线
 //`	
-//    for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
-//    {
-//        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_BLUE);
-//        
-//    }
-    // ips114_show_uint(188,120,Longest_White_Column_Left[1],3);      
+//   for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
+//   {
+//       ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+//       
+//   }
+    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
+	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
+    
+    // ips114_show_uint(188,20,White_Column[85],3);
+    // ips114_show_uint(188,40,White_Column[105],3);
+    // ips114_show_uint(188,60,White_Column[110],3);
 }
