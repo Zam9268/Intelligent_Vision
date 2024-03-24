@@ -7,10 +7,11 @@
 
 
 #define CENTER_LINE_START   0
-#define LONG_WHITE_COLUMN  100//é•¿ç™½åˆ—é•¿åº¦é˜ˆå€¼
+#define LONG_WHITE_COLUMN  100//é•¿ç™½åˆ—é•¿åº¦é˜ˆå€?
 #define WHITE_POINT 255
 #define BLACK_POINT 0
 
+extern int center[IMAGE_HEIGHT];//ÖÐÏßÊý×é
 typedef enum{
     STRAIGHT_ROAD,
     LEFT_TURN,
