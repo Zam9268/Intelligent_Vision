@@ -1,6 +1,9 @@
+
+#include "zf_common_headfile.h"
 #include "control.h"
 #include "imu660ra.h"
-#include "zf_common_headfile.h"
+#include "camera.h"
+#include "image.h"
 #include "math.h"
 #define Row   180 //148
 #define Col   180
@@ -23,6 +26,8 @@ pid_info LF_motor_pid; // 左前电机PID
 pid_info RF_motor_pid; // 右前电机PID
 pid_info LB_motor_pid; // 左后电机PID
 pid_info RB_motor_pid; // 右后电机PID
+
+pid_info Pos_turn_pid[4];//位置式处理用的pid
 
 pid_info Speed[4]; // 速度信息数组，0表示左前电机，1表示左后电机，2表示右前电机，3表示右后电机
 
@@ -121,11 +126,43 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 }
          
 /**
- * @brief Pid初始化（不用放在中断，只需要初始化一次即可）
+ * @brief 位置式Pid初始化（不用放在中断，只需要初始化一次即可）
  * @param 无
  * @return 无
  */
 void PidInit(void)
+{
+  for(uint8 i=0;i<4;i++)
+  {
+    Pos_turn_pid[i].target_speed = 0.00;
+    Pos_turn_pid[i].target_pwm = 0;
+    Pos_turn_pid[i].kd= 0.00;
+    Pos_turn_pid[i].ki        = 0.00;
+    Pos_turn_pid[i].kd        = 0.00;
+    Pos_turn_pid[i].error     = 0.00;
+    Pos_turn_pid[i].lastError = 0.00;
+    Pos_turn_pid[i].dError    = 0.00;
+    Pos_turn_pid[i].output    = 0.00;
+    Pos_turn_pid[i].output_last   = 0.00;
+    Pos_turn_pid[i].xuhao=i; //序号赋值
+  }
+
+  // 设置PI参数(还没调)
+  Pos_turn_pid[0].kp = -22.5;
+  Pos_turn_pid[0].ki = -1.50;
+  // 设置PI参数
+  Pos_turn_pid[1].kp = -30;
+  Pos_turn_pid[1].ki = -0.5;
+  // 设置PI参数
+  Pos_turn_pid[2].kp = -25;
+  Pos_turn_pid[2].ki = -0.5;
+  // 设置PI参数
+  Pos_turn_pid[3].kp = -25;
+  Pos_turn_pid[3].ki = -0.8; // 设置pi参数
+
+}
+
+void Pos_PidInit(void)
 {
   for(uint8 i=0;i<4;i++)
   {
@@ -156,7 +193,6 @@ void PidInit(void)
   Speed[3].ki = -0.8; // 设置pi参数
 
 }
-
 /**
  * @brief 实现PID控制器
  * @param pid_info *pid 控制器参数结构体
@@ -174,7 +210,71 @@ void increment_pid(void)
       Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
   }
 }
+/**********************************************************************************************************
+*	函 数 名：qianzhan_2()
+*	功能说明：获取前瞻
+*   输    入：无
+*   输    出：20行的平均前瞻
+*   备    注：左转弯前瞻为负，右转弯前瞻为正
+**********************************************************************************************************/ 
+int qianzhan_2()
+{
+	uint8_t i;
+	int sum=0;
+	
+	for(i=0;i<20;i++)
+	{
+	sum+=(center[IMAGE_HEIGHT/2+15-i]-IMAGE_WIDTH/2); //获取第55-75行的前瞻
+	}	
+	return (sum/20);//求平均值
+}
+/**********************************************************************************************************
+*	函 数 名：PID_Cal
+*	功能说明：位置式PID控制
+*   输    入：与标准中线的误差值
+*   输    出：PID控制值，直接赋值给执行函数
+**********************************************************************************************************/ 
+float Position_PID(pid_info *pid, int32_t err)
+{
+ 
+    float  iError,     //当前误差
+            Output;    //控制输出	
+ 
+    iError = err;                   //计算当前误差
+	
+    pid->Integral = pid->Integral > pid->IntegralMax?pid->IntegralMax:pid->Integral;  //积分项上限幅
+    pid->Integral = pid->Integral <-pid->IntegralMax?-pid->IntegralMax:pid->Integral; //积分项下限幅
+		
+    Output = pid->P * iError                        //比例P            
+           + pid->D * (iError - pid->Last_Error);   //微分D
+	
+	pid->Last_Error = iError;		  	                     //更新上次误差，用于下次计算 
+	return Output;	//返回控制输出值
+}
 
+/**********************************************************************************************************
+*	函 数 名：
+*	功能说明：差速控制
+*   输    入：位置式输出的pwm
+*   输    出：无
+**********************************************************************************************************/ 
+void turnpos_pid(void)
+{
+  int err = qianzhan_2();
+  for(uint8 i=0;i<4;i++)
+  {
+      //更新误差
+      Speed[i].lastlastError = Speed[i].lastError;  //误差更新为上上次的误差
+      Speed[i].lastError = Speed[i].error;          //误差更新为上次的误差
+      if(i<2)
+      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed - Position_PID( Pos_turn_pid[i], err); //计算当前pwm和编码器值的误差
+      else
+      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed + Position_PID( Pos_turn_pid[i], err);//使用串级+差速的组合实现过弯，并输入至速度环闭环
+
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式PI控制器
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+  }
+}
 /**
  * @brief 目标电机速度计算函数
  * @param 无
