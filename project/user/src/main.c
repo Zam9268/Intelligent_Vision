@@ -65,7 +65,7 @@ int main(void)
     system_delay_ms(300);           //等待主板其他外设上电完成
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//PID参数结构体的值初始化
-    My_Communication_Init();//串口通讯的初始化
+//    My_Communication_Init();//串口通讯的初始化
 //    ips114_set_dir(IPS114_CROSSWISE_180);
 //    ips114_set_font(IPS114_8X16_FONT);
 //    ips114_set_color(RGB565_RED, RGB565_BLACK);
@@ -85,17 +85,17 @@ int main(void)
 	// target_motor[3]=1000;
     
     float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-	Speed[3].target_speed=125.0;
-    Speed[2].target_speed=125.0;
-    Speed[1].target_speed=125.0;
-    Speed[0].target_speed=125.0;
+	  Speed[3].target_speed=50.0;
+    Speed[2].target_speed=50.0;
+    Speed[1].target_speed=50.0;
+    Speed[0].target_speed=50.0;
 	// Speed[1].target_pwm=1500;
     // 此处编写用户代码 例如外设初始化代码等
     
     // 此处编写用户代码 例如外设初始化代码等
     while(1)
     {
-          printf("%d,%d,%d\r\n",right_data[0],right_data[1],right_data[2]);
+//          printf("%d,%d,%d\r\n",right_data[0],right_data[1],right_data[2]);
         
         
         // for(uint8 i=0;i<4;i++)
@@ -143,9 +143,9 @@ int main(void)
  * @param 无
  * @return 无
  */
-void UART1_handler(void)
-{
-    uart1_rx_interrupt_handler();//串口中断接收
-    get_uartdata();//获取串口数据
-}
+// void UART1_handler(void)
+// {
+//     uart1_rx_interrupt_handler();//串口中断接收
+//     get_uartdata();//获取串口数据
+// }
 

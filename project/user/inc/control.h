@@ -1,5 +1,5 @@
-//#ifndef __CONTROL_H
-//#define __CONTROL_H
+#ifndef CONTROL_H
+#define CONTROL_H
 
 #include "stdio.h"
 #include "stdint.h"
@@ -36,6 +36,8 @@
 //??pid??
 typedef struct{
 	float now_speed;	  //当前速度
+	float last_speed;     //上次速度
+	float delta_speed;    //速度差值
 	float target_speed;	//目标速度
 	int target_pwm;		//目标Pwm
 	uint8 xuhao;		//编码器序号
@@ -65,6 +67,7 @@ extern pid_info LF_motor_pid;//四个轮子pid结构体
 extern pid_info RF_motor_pid;
 extern pid_info LB_motor_pid;
 extern pid_info RB_motor_pid;
+extern pid_info Pos_turn_pid[4];//
 extern float PID_Bias[4], PID_Last_bias[4];
 
 
@@ -75,9 +78,14 @@ void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float tar
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void Incremental_PI(void);
 void PidInit(void);
+void Pos_PidInit(void);
 void increment_pid(void);
+int qianzhan_2();
+float Position_PID(pid_info *pid, float err);
 void PID_cale();
 void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
 float PIDInfo_Limit(float Value, float MaxValue);
+
+#endif

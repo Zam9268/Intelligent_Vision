@@ -22,6 +22,7 @@ int midline[Row]; // 中线位置数组
 float PID_Bias[4]={0.0}, PID_Last_bias[4]={0.0};
 float Keep_Bias; // 保持偏差
 int test_count=0;
+float dt=0.005;
 pid_info LF_motor_pid; // 左前电机PID
 pid_info RF_motor_pid; // 右前电机PID
 pid_info LB_motor_pid; // 左后电机PID
@@ -79,15 +80,17 @@ void Read_Encoder(void)
 {
   // 读取编码器计数值
   encoder[0] = -encoder_get_count(ENCODER_LF); // 左前编码器计数值
-  encoder[1] = -encoder_get_count(ENCODER_LB); // 左后编码器计数值
+  encoder[1] = encoder_get_count(ENCODER_LB); // 左后编码器计数值
   encoder[2] = encoder_get_count(ENCODER_RF); // 右前编码器计数值
-  encoder[3] = encoder_get_count(ENCODER_RB); // 右后编码器计数值
+  encoder[3] = -encoder_get_count(ENCODER_RB); // 右后编码器计数值
 
   // 计算对应轮子的速度
   for(uint8 i=0;i<4;i++)
   {
     Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 0.2637为编码器的转速比例系数，求出来的速度单位是cm/s
-  }
+    Speed[i].delta_speed = Speed[i].now_speed - Speed[i].last_speed;//算出速度差值
+    Speed[i].last_speed = Speed[i].now_speed;
+  } 
   
   // 清空编码器计数
   encoder_clear_count(ENCODER_LF);
@@ -130,7 +133,7 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
  * @param 无
  * @return 无
  */
-void PidInit(void)
+void Pos_PidInit(void)
 {
   for(uint8 i=0;i<4;i++)
   {
@@ -162,7 +165,7 @@ void PidInit(void)
 
 }
 
-void Pos_PidInit(void)
+void PidInit(void)
 {
   for(uint8 i=0;i<4;i++)
   {
@@ -215,7 +218,7 @@ void increment_pid(void)
 *	功能说明：获取前瞻
 *   输    入：无
 *   输    出：20行的平均前瞻
-*   备    注：左转弯前瞻为负，右转弯前瞻为正
+*   备    注：左转弯前瞻为负，右转弯前瞻为正，最好取前一点
 **********************************************************************************************************/ 
 int qianzhan_2()
 {
@@ -229,32 +232,31 @@ int qianzhan_2()
 	return (sum/20);//求平均值
 }
 /**********************************************************************************************************
-*	函 数 名：PID_Cal
+*	函 数 名：Position_PID
 *	功能说明：位置式PID控制
-*   输    入：与标准中线的误差值
+*   输    入：与标准中线的误差值,图像处理后的
 *   输    出：PID控制值，直接赋值给执行函数
 **********************************************************************************************************/ 
-float Position_PID(pid_info *pid, int32_t err)
+float Position_PID(pid_info *pid, float err)
 {
  
     float  iError,     //当前误差
-            Output;    //控制输出	
+           pwm_output;
  
     iError = err;                   //计算当前误差
+			
+    pid->output = pid->kp * iError                        //比例P            
+           + pid->kd * (iError - pid->lastError);   //微分D
 	
-    pid->Integral = pid->Integral > pid->IntegralMax?pid->IntegralMax:pid->Integral;  //积分项上限幅
-    pid->Integral = pid->Integral <-pid->IntegralMax?-pid->IntegralMax:pid->Integral; //积分项下限幅
-		
-    Output = pid->P * iError                        //比例P            
-           + pid->D * (iError - pid->Last_Error);   //微分D
-	
-	pid->Last_Error = iError;		  	                     //更新上次误差，用于下次计算 
-	return Output;	//返回控制输出值
+	pid->lastError = iError;		  	                     //更新上次误差，用于下次计算
+  pwm_output =(pid->output - pid->output_last)/dt;
+  pid->output_last=pid->output;                        //记录本次输出值 
+	return pwm_output;	//返回控制输出值
 }
 
 /**********************************************************************************************************
-*	函 数 名：
-*	功能说明：差速控制
+*	函 数 名：turnpos_pid
+*	功能说明：差速控制(实现寻迹)
 *   输    入：位置式输出的pwm
 *   输    出：无
 **********************************************************************************************************/ 
@@ -266,12 +268,12 @@ void turnpos_pid(void)
       //更新误差
       Speed[i].lastlastError = Speed[i].lastError;  //误差更新为上上次的误差
       Speed[i].lastError = Speed[i].error;          //误差更新为上次的误差
+      //尝试加入编码器处理后得出的速度，改变目标速度来实现闭环，当增量式输出减小时，所读出来的编码器速度增加量会趋向于0
+      Speed[i].error = Speed[i].target_speed + Speed[i].delta_speed - Speed[i].now_speed; 
       if(i<2)
-      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed - Position_PID( Pos_turn_pid[i], err); //计算当前pwm和编码器值的误差
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error - Position_PID( &Pos_turn_pid[i], err); //处理后的pwm直接放入
       else
-      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed + Position_PID( Pos_turn_pid[i], err);//使用串级+差速的组合实现过弯，并输入至速度环闭环
-
-      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式PI控制器
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error + Position_PID( &Pos_turn_pid[i], err); 
       Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
   }
 }
