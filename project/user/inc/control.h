@@ -35,35 +35,35 @@
 
 //??pid??
 typedef struct{
-	float now_speed;	  //µ±Ç°ËÙ¶È
-	float last_speed;     //ÉÏ´ÎËÙ¶È
-	float delta_speed;    //ËÙ¶È²îÖµ
-	float target_speed;	//Ä¿±êËÙ¶È
-	int target_pwm;		//Ä¿±êPwm
-	uint8 xuhao;		//±àÂëÆ÷ĞòºÅ
+	float now_speed;	  //ï¿½ï¿½Ç°ï¿½Ù¶ï¿½
+	float last_speed;     //ï¿½Ï´ï¿½ï¿½Ù¶ï¿½
+	float delta_speed;    //ï¿½Ù¶È²ï¿½Öµ
+	float target_speed;	//Ä¿ï¿½ï¿½ï¿½Ù¶ï¿½
+	int target_pwm;		//Ä¿ï¿½ï¿½Pwm
+	uint8 xuhao;		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	float kp ;		        
 	float ki ;		        
 	float kd ;	          
-	float error;          //µ±Ç°Îó²î
-	float lastError;	    //ÉÏ´ÎÎó²î
-	float lastlastError;  //ÉÏÉÏ´ÎÎó²î
-	float dError;         //±¾´ÎÎó²îÓëÉÏ´ÎÎó²îµÄ²îÖµ
-	float output;         //Êä³öÖµ
-	float output_last;    //ÉÏ´ÎÊä³öÖµ
+	float error;          //ï¿½ï¿½Ç°ï¿½ï¿½ï¿½
+	float lastError;	    //ï¿½Ï´ï¿½ï¿½ï¿½ï¿½
+	float lastlastError;  //ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½
+	float dError;         //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Ä²ï¿½Öµ
+	float output;         //ï¿½ï¿½ï¿½Öµ
+	float output_last;    //ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Öµ
 }pid_info;
 
 
-extern float Velocity_KP;//ÔöÁ¿Ê½kp
-extern float Velocity_KI;//ÔöÁ¿Ê½Ki
-extern float Car_H;//³µ³¤
-extern float Car_W;//³µ¿í
-extern int encoder[4];//±àÂëÆ÷Êı¾İ
-extern float target_motor[4];//Ä¿±êµç»úpwm
-extern int pid_motor[4];//pid´¦ÀíºóµÄËÙ¶È
-extern float turn_angle;//×ªÏò½Ç
-extern int spin;//Ğı×ª·½Ïò
+extern float Velocity_KP;//ï¿½ï¿½ï¿½ï¿½Ê½kp
+extern float Velocity_KI;//ï¿½ï¿½ï¿½ï¿½Ê½Ki
+extern float Car_H;//ï¿½ï¿½ï¿½ï¿½
+extern float Car_W;//ï¿½ï¿½ï¿½ï¿½
+extern int encoder[4];//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+extern float target_motor[4];//Ä¿ï¿½ï¿½ï¿½ï¿½pwm
+extern int pid_motor[4];//pidï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿½
+extern float turn_angle;//×ªï¿½ï¿½ï¿½
+extern int spin;//ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
 extern int translation;
-extern pid_info LF_motor_pid;//ËÄ¸öÂÖ×Ópid½á¹¹Ìå
+extern pid_info LF_motor_pid;//ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½pidï¿½á¹¹ï¿½ï¿½
 extern pid_info RF_motor_pid;
 extern pid_info LB_motor_pid;
 extern pid_info RB_motor_pid;
@@ -87,5 +87,6 @@ void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
 float PIDInfo_Limit(float Value, float MaxValue);
+void turnpos_pid(void);
 
 #endif
