@@ -1,115 +1,121 @@
-//#include "communication.h"
-//#include "zf_driver_uart.h"
-//#include "zf_common_fifo.h"
+#include "communication.h"
+#include "zf_driver_uart.h"
+#include "zf_common_fifo.h"
 
-//uint8 uart_get_data[64];
-//uint8 fifo_get_data[64];//ç”¯Ñ…ç´¦éæ’å°¯é”›å²€æ•¤æµœåº¢æ®éƒè·ºç“¨éŒã„¨ç¹æˆæ’¹ç¹ƒé‰ãƒ§æ®‘ç€›æ¥€æ‹°ç€›æ¥„å¦­
-//uint8 get_data =0;//éºãƒ¦æ•¹é¨å‹«å´Ÿæ¶“î†æ®‘éç‰ˆåµé™æ©€å™º
-//uint32 fifo_data_count =0;//é—æ›Ÿî‚¼éºãƒ¦æ•¹é¨å‹¬æšŸç¼å‹ªé‡œéï¿½
-//fifo_struct uart_data_fifo;//ç€¹æ°«ç®Ÿæ¶“â‚¬æ¶“çŒ£ifoç¼æ’´ç€¯æµ£ï¿½
-//uint8 get_states=0;//éºãƒ¦æ•¹éç‰ˆåµé¨å‹­å§¸é¬ï¿½
-//uint8 right_data[64]={0};//ç€›æ¨ºåéˆâ‚¬ç¼å ¢æ®‘éç‰ˆåµ    
-//uint8 arm_uart_flag =0 ;//é™æˆ¦â‚¬ä½ºç²°éˆçƒ˜î«é‘·å‚œæ®‘é·æƒ§å½‡éå›§ç¹”æµ£ï¿½
-//uint8 arm_uart_flag_on=0;
-//uint8 testuart_flag =0;//å¨´å¬­ç˜¯æ¶“æ’å½›éå›§ç¹”æµ£ï¿½
+uint8 uart_get_data[64];
+uint8 fifo_get_data[64];//Ö¡»º³åÇø£¬ÓÃÓÚÔİÊ±´æ´¢ÔËÊä¹ıÀ´µÄ×ÖºÍ×Ö½Ú
+uint8 get_data =0;//½ÓÊÕµÄµ¥¸öµÄÊı¾İ±äÁ¿
+uint32 fifo_data_count =0;//µ¥´Î½ÓÊÕµÄÊı×é¸öÊı
+fifo_struct uart_data_fifo;//¶¨ÒåÒ»¸öfifo½á¹¹Ìå
+uint8 get_states=0;//½ÓÊÕÊı¾İµÄ×´Ì¬
+uint8 right_data[64]={0};//´æ´¢×îÖÕµÄÊı¾İ    
+uint8 arm_uart_flag =0 ;//·¢ËÍ¸ø»úĞµ±ÛµÄÊ°È¡±êÖ¾Î»
+uint8 arm_uart_flag_on=0;
+uint8 testuart_flag =0;//²âÊÔ´®¿Ú±êÖ¾Î»
 
-///**
-// * @brief æ¶“æ’å½›é™å©‚æ‚‡ç»‰å¶…å§›é‘³ç•Œæ®‘é’æ¿†îé–ï¿½
-// * @param éƒï¿½
-// * @return éƒï¿½
-// */
-//void My_Communication_Init(void)
-//{
-//    fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//é’æ¿†îé–æ…ifoç¼æ’´ç€¯æµ£ï¿½
-//    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//é’æ¿†îé–æ ¦è¦†é™ï¿½1é”›å²€æ•¤æµœåº£îƒ‡æ¶“â‚¬æ¶“çŒ˜rtå¦¯â€³æ½¡
-//    uart_init(UART_2,115200,UART2_TX_B18,UART2_RX_B19);//é’æ¿†îé–æ ¦è¦†é™ï¿½2é”›å²€æ•¤æµœåº£îƒ‡æµœå±¼é‡œartå¦¯â€³æ½¡
-//    uart_rx_interrupt(UART_1,1);//å¯®â‚¬éšîˆ™è¦†é™ï¿½1éºãƒ¦æ•¹æ¶“î…ŸæŸ‡
-//    uart_rx_interrupt(UART_2,1);//å¯®â‚¬éšîˆ™è¦†é™ï¿½2éºãƒ¦æ•¹æ¶“î…ŸæŸ‡
-//    interrupt_set_priority(UART1_IRQn,0);//ç’å‰§ç–†æ¶“æ’å½›1æ¶“î…ŸæŸ‡æµ¼æ¨ºå›ç»¾ï¿½
-//    interrupt_set_priority(UART2_IRQn,1);//ç’å‰§ç–†æ¶“æ’å½›2æ¶“î…ŸæŸ‡æµ¼æ¨ºå›ç»¾ï¿½
-//}
+/**
+ * @brief ´®¿Ú¼°¸÷ÖÖ¹¦ÄÜµÄ³õÊ¼»¯
+ * @param ÎŞ
+ * @return ÎŞ
+ */
+void My_Communication_Init(void)
+{
+    fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//³õÊ¼»¯fifo½á¹¹Ìå
+    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//³õÊ¼»¯´®¿Ú1£¬ÓÃÓÚµÚÒ»¸öartÄ£¿é
+    uart_init(UART_2,115200,UART2_TX_B18,UART2_RX_B19);//³õÊ¼»¯´®¿Ú2£¬ÓÃÓÚµÚ¶ş¸öartÄ£¿é
+    uart_rx_interrupt(UART_1,1);//¿ªÆô´®¿Ú1½ÓÊÕÖĞ¶Ï
+    // uart_rx_interrupt(UART_2,1);//¿ªÆô´®¿Ú2½ÓÊÕÖĞ¶Ï£¬Õâ¸öÓï¾äÎŞ·¨Ö´ĞĞ£¬Ö´ĞĞ³ÌĞò»á¿¨ËÀ£¨Ä¿Ç°ÕÒ²»µ½Ô­Òò£©£¡£¡£¡
+    NVIC_SetPriority(LPUART1_IRQn,0);//ÉèÖÃ´®¿Ú1ÖĞ¶ÏÓÅÏÈ¼¶£¬ÓÉÓÚ¸ß°æ±¾²»Ö§³ÖÒşĞÔº¯ÊıÉùÃ÷£¬¾ÍÌæ»»³ÉÕâ¸öº¯ÊıÁË
+    // NVIC_SetPriority(LPUART2_IRQn,1);//ÉèÖÃ´®¿Ú2ÖĞ¶ÏÓÅÏÈ¼¶
+}
 
-///**
-// * @brief æ¶“æ’å½›éºãƒ¦æ•¹é¥ç‚¶çšŸæ¶“î…ŸæŸ‡é”›å Ÿç…¡ç’‡î­è…‘é‚î…¨ç´š
-// * @param éƒï¿½
-// * @return éƒï¿½
-// * @attention 1. é“ç•ŒåŠ§é¦ã„¥äº•éˆå“„å¸«éå—•è…‘ç€›ï¸¾æ®‘éŒãƒ¨î‡—æ¶“î…ŸæŸ‡éœå²ƒç¹–æ¶“î…ç…¡ç’‡î­è…‘é‚î… â€˜ç€¹ç‚´æ§¸æ¶“â‚¬éé£æ®‘é”›å±¾ç…¡ç’‡î­è…‘é‚î…ç´°å¨´î‡å‚éƒå •æ£¿
-// *            æµ£å—˜æ§¸é¢å˜ç°¬æ©æ¬é‡œéŒãƒ¨î‡—é€æƒ§æ¹ªæµœå—•è…‘é‚î…æ´–ç’‹å†¿ç´é¥çŠ³î„æ¶“å¶„ç´°ç€›æ¨ºæ¹ªå¨´î‡å‚éƒå •æ£¿é¨å‹¯æ£¶æ£°æ©ˆç´é¦ã„¥äº•éˆå“„å¸«éå—•è…‘æ¶“â‚¬é‘¸î„„å…˜é„îˆ›å¦¸æ©æ¬é‡œé€æƒ§æ¹ªæ¶“è¯²åš±éé¢è…‘
-// *            2. æ©æ¬é‡œfifoçè¾©è¢«æµ¼é—´ç°¬å¯°î†½æº€é˜ç†ºæ‚Šæ¶“î… æ®‘ç¼‚æ’³å•¿é–çŒ´ç´é¢ã„¤ç°¬ç€›æ¨ºåéºãƒ¦æ•¹é’æ‰®æ®‘éç‰ˆåµé”›å±½æ´œæ¶“è½°å¯Œéˆçƒ˜å¸´é€èˆµæšŸé¹î†¼î›§é‹æ»„ç—…éºãƒ¦æ•¹ç€¹å²‹ç´æµ åº¢æº€é„îˆ™ç¬‰é‘³è—‰å½‚é¨å‹©â‚¬ï¿½
-// */
-//void uart1_rx_interrupt_handler(void)
-//{
-//    uart_query_byte(UART_1,&get_data);//éŒãƒ¨î‡—æ¶“æ’å½›1é¨å‹¬æšŸé¹ï¿½,æ¿¡å‚›ç‰æµ¼æ°³ç¹‘é¥ç‚´æšŸé¹î‡†ç´é’æ¬ç´°çå—˜æšŸé¹î†¼ç“¨éî™­et_dataæ¶“î…¨ç´™å¨‰ã„¦å‰°get_dataé„îˆ™ç«´æ¶“î„å½‰é–²å¿¥ç´š
-//    fifo_write_buffer(&uart_data_fifo,&get_data,1);//çå”ƒet_dataæ¶“î… æ®‘éç‰ˆåµç€›æ¨ºå†fifoç¼æ’´ç€¯æµ£æ“„ç´™éæ¬å†ç¼‚æ’³å•¿é–çŒ´ç´šæ¶“ï¿½
-//}
+/**
+ * @brief ´®¿Ú½ÓÊÕ»Øµ÷ÖĞ¶Ï£¨²éÑ¯ÖĞ¶Ï£©
+ * @param ÎŞ
+ * @return ÎŞ
+ * @attention 1. ËäÈ»ÔÚÎ¢»úÔ­ÀíÖĞÑ§µÄ²éÑ¯ÖĞ¶ÏºÍÕâ¸ö²éÑ¯ÖĞ¶ÏÈ·ÊµÊÇÒ»ÑùµÄ£¬²éÑ¯ÖĞ¶Ï»áÀË·ÑÊ±¼ä
+ *            µ«ÊÇÓÉÓÚÕâ¸ö²éÑ¯·ÅÔÚÁËÖĞ¶Ï»Øµ÷£¬Òò´Ë²»»á´æÔÚÀË·ÑÊ±¼äµÄÎÊÌâ£¬ÔÚÎ¢»úÔ­ÀíÖĞÒ»°ã¶¼ÊÇ°ÑÕâ¸ö·ÅÔÚÖ÷º¯ÊıÖĞ
+ *            2. Õâ¸öfifo¾ÍÀàËÆÓÚÎ¢»úÔ­ÀíÖĞµÄ»º³åÇø£¬ÓÃÓÚ´æ´¢½ÓÊÕµ½µÄÊı¾İ£¬ÒòÎªÖ÷»ú½ÓÊÕÊı¾İÈç¹ûÃ»½ÓÊÕÍê£¬´Ó»úÊÇ²»ÄÜ·¢µÄ¡£
+ */
+void uart1_rx_interrupt_handler(void)
+{
+    uart_query_byte(UART_1,&get_data);//²éÑ¯´®¿Ú1µÄÊı¾İ,Èç¹û»á·µ»ØÊı¾İ£¬Ôò»á½«Êı¾İ´æÈëget_dataÖĞ£¨×¢Òâget_dataÊÇÒ»¸ö±äÁ¿£©
+    fifo_write_buffer(&uart_data_fifo,&get_data,1);//½«get_dataÖĞµÄÊı¾İ´æÈëfifo½á¹¹Ìå£¨Ğ´Èë»º³åÇø£©ÖĞ
+}
 
-///**
-// * @brief æ¶“æ’å½›éºãƒ¦æ•¹é¥ç‚¶çšŸæ¶“î…ŸæŸ‡é”›å Ÿç…¡ç’‡î­è…‘é‚î…¨ç´š
-// * @param éƒï¿½
-// * @return éƒï¿½
-// */
-//void uart4_rx_interrupt_handler(void)
-//{
-//    uart_query_byte(UART_2,&get_data);//éŒãƒ¨î‡—æ¶“æ’å½›2é¨å‹¬æšŸé¹ï¿½,æ¿¡å‚›ç‰æµ¼æ°³ç¹‘é¥ç‚´æšŸé¹î‡†ç´é’æ¬ç´°çå—˜æšŸé¹î†¼ç“¨éî™­et_dataæ¶“î…¨ç´™å¨‰ã„¦å‰°get_dataé„îˆ™ç«´æ¶“î„å½‰é–²å¿¥ç´š
-//    fifo_write_buffer(&uart_data_fifo,&get_data,1);//çå”ƒet_dataæ¶“î… æ®‘éç‰ˆåµç€›æ¨ºå†fifoç¼æ’´ç€¯æµ£æ“„ç´™éæ¬å†ç¼‚æ’³å•¿é–çŒ´ç´šæ¶“ï¿½
-//}
+/**
+ * @brief ´®¿Ú½ÓÊÕ»Øµ÷ÖĞ¶Ï£¨²éÑ¯ÖĞ¶Ï£©
+ * @param ÎŞ
+ * @return ÎŞ
+ */
+void uart4_rx_interrupt_handler(void)
+{
+    uart_query_byte(UART_2,&get_data);//²éÑ¯´®¿Ú2µÄÊı¾İ,Èç¹û»á·µ»ØÊı¾İ£¬Ôò»á½«Êı¾İ´æÈëget_dataÖĞ£¨×¢Òâget_dataÊÇÒ»¸ö±äÁ¿£©
+    fifo_write_buffer(&uart_data_fifo,&get_data,1);//½«get_dataÖĞµÄÊı¾İ´æÈëfifo½á¹¹Ìå£¨Ğ´Èë»º³åÇø£©ÖĞ
+}
 
-//void get_uartdata(void)
-//{
-//    fifo_data_count = fifo_used(&uart_data_fifo); //éŒãƒ§æ¹…ç¼‚æ’³å•¿é–çƒ˜æ§¸éšï¹€ç“¨é¦ã„¦æšŸé¹ï¿½
-//    if(fifo_data_count!=0)
-//    {
-//        if(get_states==0)//ç€µç‘°î‡®æ´æ—‚æ®‘ç”¯Ñƒã”
-//        {
-//            fifo_read_buffer(&uart_data_fifo,fifo_get_data,fifo_data_count,FIFO_READ_AND_CLEAN);
-//            //çå”‚ifoç¼æ’´ç€¯æµ£æ’²è…‘é¨å‹¬æšŸé¹î†¿î‡°é™æ §åŸŒfifo_get_dataæ¶“ï¿½
-//            if(fifo_get_data[0]==0xB7)  get_states=1;//æ¿¡å‚›ç‰éºãƒ¦æ•¹é’é¢ç°¡ç”¯Ñƒã”0xB7é”›å±½å¯çå”ƒet_statesç¼ƒî†»è´Ÿ1é”›å £ç¹˜éãƒ§å§¸é¬ä½½î‡°é™ï¿½1é”›ï¿½
-//            else get_states=0;//éšï¹€å¯ç’‡è¯²å½‡é˜èˆµâ‚¬ä½ºç–†0
-//            fifo_get_data[0]=0;//ç’‡è¯²å½‡ç€¹å±¼ä¿Šé™å³°æ‚—çåçš¢fifo_get_data[0]ç¼ƒï¿½0é”›å²„æ§»å§ãˆ¤å™¸æ¾¶å¶ˆî‡°é™ï¿½
-//        }
-//        else if(get_states==1)//ç’‡è¯²å½‡é˜èˆµâ‚¬ä½·è´Ÿ1é”›å²ƒî‡°é™æ §î‡®æ´æ—‚æ®‘ç”¯Ñ…æ®‘éå‘­î†
-//        {
-//            fifo_read_buffer(&uart_data_fifo,fifo_get_data,fifo_data_count,FIFO_READ_AND_CLEAN);
-//            memcpy(right_data,fifo_get_data,sizeof(right_data));//ç€µç‘°å”´ç€¹ç¡…ç¹˜ç›å±½î˜²é’è·ºæ‹°é·ç–¯ç¤‰
-//            get_states=2;//çå—šî‡°é™æ «å§¸é¬ä½ºç–†æ¶“ï¿½2
-//        }
-//        else if(get_states=2)//ç’‡è¯²å½‡é˜èˆµâ‚¬ä½·è´Ÿ2é”›å²ƒî‡°é™æ §î‡®æ´æ—‚æ®‘é–å‘­ç†¬é¨å‹«å”´ç€¹ï¿½
-//        {
-//            fifo_read_buffer(&uart_data_fifo,fifo_get_data,fifo_data_count,FIFO_READ_AND_CLEAN);//æ·‡æ¿†ç“¨é’æ¿æŠšç¼‚æ’³å•¿é–ï¿½
-//            if(fifo_get_data[0]==0x98)//æ¿¡å‚›ç‰ç’‡è¯²å½‡é’é¢ç°¡ç”¯Ñƒç†¬
-//            {
-//                get_states=0;//çå—šî‡°é™æ «æ®‘é˜èˆµâ‚¬ä½ºç–†0
-//                uart_write_string(UART_1,"get");//é™æˆ¦â‚¬ä½¸æ´–getæ·‡â€³å½¿
-//                fifo_get_data[0]=0;
-//                if(arm_uart_flag_on)    arm_uart_flag = 1;//æ¿¡å‚›ç‰é·æƒ§å½‡éå›§ç¹”æµ£å¶…ç´‘éšîˆ¤ç´é’æ¬çš¢é·æƒ§å½‡éå›§ç¹”æµ£å¶‡ç–†1
-//            }
-//        }
-//        else
-//        {
-//            get_states=0;//ç’‡è¯²å½‡é˜èˆµâ‚¬ä½¹ç«»é—†ï¿½
-//            fifo_get_data[0]=0;
-//        }
-//    }
-//}
-///*
-//ç€µç‘°ç°²é¨å‹«åç»«ç»˜çˆ£è¹‡ï¿½
-//å§ï¹€æ«’é”›ï¿½
-//01 firearmsé”›å Ÿç™é€îˆ¤ç´š
-//02 explosivesé”›å ¢åéå“¥å¢¿é”›ï¿½
-//03 daggeré”›å å¯±æ££æ µç´š
-//04 spontooné”›å £î„Ÿå¦«å¶ç´š
-//05 fire_axe é”›å Ÿç§·é—ƒå‰æ¾é”›ï¿½
-//é—â•„ç¥«é”›ï¿½
-//06 first_aid_kité”›å Ÿâ‚¬ãƒ¦æ™³é–å’ƒç´š
-//07 flashlighté”›å Ÿå¢œé¢ç”µç“›é”›ï¿½
-//08 intercom é”›å î‡®ç’å‰æº€é”›ï¿½
-//09 bulletproofé”›å ¥æ§»å¯®ç¡…å„—è¹‡å†¿ç´š
-//10 telescopeé”›å Ÿæ¹œæ©æ»ˆæš…é”›ï¿½
-//11 helmeté”›å ã”é©æ—“ç´š
-//æµœã‚‰â‚¬æ°¬ä¼éå‡¤ç´°
-//12 fire_engineé”›å Ÿç§·é—ƒèŒ¶æº…é”›ï¿½
-//13 ambulanceé”›å Ÿæ™³é¶ã‚ˆæº…é”›ï¿½
-//14 armoredcaré”›å £î—Šé¢èŒ¶æº…é”›ï¿½
-//15 motorcycleé”›å Ÿæ‡‡éµæ¨¿æº…é”›ï¿½
+/**
+ * @brief È¡³ö»º³åÇøÖĞµÄÊı¾İ
+ * @param ÎŞ
+ * @return ÎŞ
+ * @attention  Í¨¹ı×´Ì¬»úµÄ·½Ê½È¡³ö»º³åÇøÖĞµÄÊı¾İ
+ */
+void get_uartdata(void)
+{
+    fifo_data_count = fifo_used(&uart_data_fifo); //²é¿´»º³åÇøÊÇ·ñ´æÔÚÊı¾İ
+    if(fifo_data_count!=0)
+    {
+        if(get_states==0)//¶Ô¶ÔÓ¦µÄÖ¡Í·
+        {
+            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
+            //½«fifo½á¹¹ÌåÖĞµÄÊı¾İ¶ÁÈ¡µ½fifo_get_dataÖĞ
+            if(fifo_get_data[0]==0xB7)  get_states=1;//Èç¹û½ÓÊÕµ½ÁËÖ¡Í·0xB7£¬Ôò½«get_statesÖÃÎª1£¨½øÈë×´Ì¬¶ÁÈ¡1£©
+            else get_states=0;//·ñÔò¶ÁÈ¡×´Ì¬ÖÃ0
+            fifo_get_data[0]=0;//¶ÁÈ¡ÍêĞÅºÅºó¾Í½«fifo_get_data[0]ÖÃ0£¬·ÀÖ¹ÖØ¸´¶ÁÈ¡
+        }
+        else if(get_states==1)//¶ÁÈ¡×´Ì¬Îª1£¬¶ÁÈ¡¶ÔÓ¦µÄÖ¡µÄÄÚÈİ
+        {
+            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
+            memcpy(right_data,fifo_get_data,sizeof(right_data));//¶ÔÄÚÈİ½øĞĞ¸´ÖÆºÍ¿½±´
+            get_states=2;//½«¶ÁÈ¡×´Ì¬ÖÃÎª2
+        }
+        else if(get_states==2)//¶ÁÈ¡×´Ì¬Îª2£¬¶ÁÈ¡¶ÔÓ¦µÄ°üÎ²µÄÄÚÈİ
+        {
+            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);//±£´æµ½Ö¡»º³åÇø
+            if(fifo_get_data[0]==0x98)//Èç¹û¶ÁÈ¡µ½ÁËÖ¡Î²
+            {
+                get_states=0;//½«¶ÁÈ¡µÄ×´Ì¬ÖÃ0
+                uart_write_string(UART_1,"get");//·¢ËÍ»ØgetĞÅºÅ
+                fifo_get_data[0]=0;
+                if(arm_uart_flag_on)    arm_uart_flag = 1;//Èç¹ûÊ°È¡±êÖ¾Î»¿ªÆô£¬Ôò½«Ê°È¡±êÖ¾Î»ÖÃ1
+            }
+        }
+        else
+        {
+            get_states=0;//¶ÁÈ¡×´Ì¬ÇåÁã
+            fifo_get_data[0]=0;
+        }
+    }
+}
+/*
+¶ÔÓ¦µÄ·ÖÀà±êÖ¾
+ÎäÆ÷£º
+01 firearms£¨Ç¹Ö§£©
+02 explosives£¨±¬Õ¨Îï£©
+03 dagger£¨Ø°Ê×£©
+04 spontoon£¨¾¯¹÷£©
+05 fire_axe £¨Ïû·À¸«£©
+Îï×Ê£º
+06 first_aid_kit£¨¼±¾È°ü£©
+07 flashlight£¨ÊÖµçÍ²£©
+08 intercom £¨¶Ô½²»ú£©
+09 bulletproof£¨·Àµ¯±³ĞÄ£©
+10 telescope£¨ÍûÔ¶¾µ£©
+11 helmet£¨Í·¿ø£©
+½»Í¨¹¤¾ß£º
+12 fire_engine£¨Ïû·À³µ£©
+13 ambulance£¨¾È»¤³µ£©
+14 armoredcar£¨×°¼×³µ£©
+15 motorcycle£¨Ä¦ÍĞ³µ£©
 
-//*/
+*/

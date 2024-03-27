@@ -67,7 +67,7 @@ int main(void)
     system_delay_ms(300);           //?????????????????????
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//PID???????????????
-//    My_Communication_Init();//????????????
+   My_Communication_Init();//????????????
     ips114_init();//��Ļ��ʼ��
    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
@@ -134,7 +134,7 @@ int main(void)
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-       printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+    //    printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);
@@ -145,13 +145,13 @@ int main(void)
 }
 
 /**
- * @brief ????1?????��?
- * @param ??
- * @return ??
+ * @brief 串口1中断函数，用于外部调用
+ * @param 无
+ * @return 无
  */
-// void UART1_handler(void)
-// {
-//     uart1_rx_interrupt_handler();//?????��????
-//     get_uartdata();//???????????
-// }
+void UART1_handler(void)
+{
+    uart1_rx_interrupt_handler();//进入接收中断
+    get_uartdata();//获取信息
+}
 
