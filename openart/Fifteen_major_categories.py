@@ -59,12 +59,12 @@ net_path = "mobilenet_v2-2024-03-03T08-27-26.947Z_in-int8_out-int8_channel_ptq.t
 labels = [line.rstrip() for line in open("/sd/mobilenet_v2_total_labels.txt")]   # 加载标签
 net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路径 load_to_fb：模型会被加载到帧缓冲区
 
-test_data=[0x11,0x22,0x33]
+test_data=[0x10,0x20,0x30]
 
 
 while(1):
     while(1):
-        send_data(0x01)
+        send_data([0x02,0x01])
         print("aaaaa")
     sensor.set_auto_whitebal(False)#关闭白平衡
     img = sensor.snapshot()

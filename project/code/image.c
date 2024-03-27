@@ -29,6 +29,7 @@ float Right_derivative[IMAGE_HEIGHT]={0.0};
 
 /*以下是其他函数中外部声明的变量*/
 extern uint8 right_data[64];//存储最终的数据    
+extern uint32 fifo_data_count;//单次接收的数组个数
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -927,16 +928,17 @@ void test2(void)
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        
     }
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
     ips114_show_float(188,20,my_err,2,2);
-    ips114_show_uint(188,40,Left_Lost_Time,3);
-    ips114_show_uint(188,60,Right_Lost_Time,3);
-    ips114_show_uint(188,80,type,3);
+    ips114_show_uint(188,40,right_data[0],3);
+    ips114_show_uint(188,60,right_data[1],3);
+    ips114_show_uint(188,80,right_data[2],3);
+    ips114_show_uint(188,100,fifo_data_count,2);
+    ips114_show_uint(188,120,sizeof(right_data),3);
 }
 
 /**

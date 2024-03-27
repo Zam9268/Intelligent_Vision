@@ -63,6 +63,7 @@ void uart4_rx_interrupt_handler(void)
 void get_uartdata(void)
 {
     fifo_data_count = fifo_used(&uart_data_fifo); //查看缓冲区是否存在数据
+    static uint8 get_counts=0;//定义发送数据的数量
     if(fifo_data_count!=0)
     {
         if(get_states==0)//对对应的帧头
@@ -76,7 +77,7 @@ void get_uartdata(void)
         else if(get_states==1)//读取状态为1，读取对应的帧的内容
         {
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            memcpy(right_data,fifo_get_data,sizeof(right_data));//对内容进行复制和拷贝
+            memcpy(right_data,fifo_get_data,sizeof(fifo_get_data));//对内容进行复制和拷贝
             get_states=2;//将读取状态置为2
         }
         else if(get_states==2)//读取状态为2，读取对应的包尾的内容
