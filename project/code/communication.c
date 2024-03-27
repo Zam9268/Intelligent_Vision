@@ -74,13 +74,47 @@ void get_uartdata(void)
             else get_states=0;//否则读取状态置0
             fifo_get_data[0]=0;//读取完信号后就将fifo_get_data[0]置0，防止重复读取
         }
-        else if(get_states==1)//读取状态为1，读取对应的帧的内容
+        else if(get_states==1)//帧头读完，开始读取接收数据的个数
         {
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            memcpy(right_data,fifo_get_data,sizeof(fifo_get_data));//对内容进行复制和拷贝
-            get_states=2;//将读取状态置为2
+            if(fifo_get_data[0]>=1&&fifo_get_data[0]<=16)   //读取的数据个数只能介于1和16个之间
+            {
+                get_counts=fifo_get_data[0];//存储发送的数据的个数
+                fifo_get_data[0]=0;//清零
+                get_states=2;//将读取状态置为2
+            }
+            else
+            {
+                get_states=0;//否则读取状态置0
+                fifo_get_data[0]=0;//清零
+            }
         }
-        else if(get_states==2)//读取状态为2，读取对应的包尾的内容
+        else if(get_states==2)//读取状态为2，读取对应的帧的内容
+        {
+            /*
+            下面是原来师兄写的版本，但是我发现只能读取一个字节，当art发送一个列表时，还是只能接收前面一个数据，所以我觉得不是很好
+            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
+            memcpy(right_data,fifo_get_data,sizeof(right_data));//对内容进行复制和拷贝
+            get_states=2;//将读取状态置为2*/
+            int i = 0;//数组下标指针
+            while(1) //这段代码可以优化，等后面再优化
+            {
+                fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
+                if(fifo_get_data[0]==0x98) // 如果读取到了帧尾
+                { 
+                    get_states=2;//将读取状态置为2
+                    break;
+                }
+                right_data[i] = fifo_get_data[0]; // 没读到帧尾就将数据添加到right_data
+                i++;//下标指针增加
+                if(i==get_counts) //判断读取的数据是否等于发送的数据个数
+                {
+                    get_states=3;//将读取状态置3，这句话别放在Break后面，不然无法执行
+                    break;//防止数组溢出）
+                }
+            }
+        }
+        else if(get_states==3)//读取状态为3，读取对应的包尾的内容
         {
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);//保存到帧缓冲区
             if(fifo_get_data[0]==0x98)//如果读取到了帧尾
@@ -89,6 +123,11 @@ void get_uartdata(void)
                 uart_write_string(UART_1,"get");//发送回get信号
                 fifo_get_data[0]=0;
                 if(arm_uart_flag_on)    arm_uart_flag = 1;//如果拾取标志位开启，则将拾取标志位置1
+            }
+            else//这个时候如果读不到帧尾，说明读取出现了错误
+            {
+                get_states=0;//将读取的状态置0
+                memset(right_data,0,sizeof(right_data));//将right_data数组清零（也可以用for循环，for循环可能快一点）
             }
         }
         else
