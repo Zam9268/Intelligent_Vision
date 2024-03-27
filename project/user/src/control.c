@@ -6,92 +6,91 @@
 #include "math.h"
 #define Row   180 //148
 #define Col   180
-float Vx, Vy, Vz;//éº¦è½®é€Ÿåº¦è§£ç®—å¾—å‡ºçš„åæ ‡
-float target_motor[4];//ç›®æ ‡ç”µæœºçš„pwm
-float Car_H = 0.8;//è½¦é•¿
-float Car_W = 0.6; // è½¦å®½ï¼Œå•ä½ï¼šmï¼Œç”¨äºè®¡ç®—è½¬å‘è§’åº¦
-float Velocity_KP = 0; // é€Ÿåº¦PIDçš„æ¯”ä¾‹ç³»æ•°
-float Velocity_KI = 0; // é€Ÿåº¦PIDçš„ç§¯åˆ†ç³»æ•°ï¼Œç”¨äºè°ƒèŠ‚é€Ÿåº¦PIDçš„å“åº”é€Ÿåº¦
-float turn_angle; // è½¬å‘è§’åº¦
-int spin; // æ—‹è½¬æ–¹å‘
-int translation = 0; // å¹³ç§»æ–¹å‘ï¼Œ0è¡¨ç¤ºä¸å¹³ç§»
-int encoder[4]; // ç¼–ç å™¨ç¤ºæ•°
-int pid_motor[4]; // PIDæ§åˆ¶åçš„ç”µæœºè¾“å‡º
-int midline[Row]; // ä¸­çº¿ä½ç½®æ•°ç»„
+#define CONTROL_FREQUENCY  100//±àÂëÆ÷¶ÁÈ¡ÆµÂÊ(¼´ÖÜÆÚÎª0.01s 10ms)
+float Vx, Vy, Vz;//ÈıÖáÄ¿±êËÙ¶È
+float target_motor[4];//Ä¿±êpwm
+float Car_H = 0.8;//³µ³¤
+float Car_W = 0.6; // ³µ¿í
+float turn_angle; // ×ªÏò½Ç¶È
+int spin; // Ğı×ªÁ¿
+int translation = 0; // ºáÒÆÁ¿
+int encoder[4];   // ËÄ¸ö±àÂëÆ÷¶Á³öµÄÖµ
+int encoder_sum[4];//ËÄ¸ö±àÂëÆ÷µÄÀÛ»ıÊıÖµ
+float target_encoder_sum[4];//ËÄ¸ö±àÂëÆ÷µÄÄ¿±êÀÛ¼ÆÊıÖµ
+float loc_target[4];//Î»ÖÃÊ½´¦ÀíºóÊä³öµÄÄ¿±êËÙ¶È
+int Turn_Left_flag,Turn_Right_flag;//×ó×ª±êÖ¾£¬ÓÒ×ª±êÖ¾
+int loc_Finish_flag = 0;//Î»ÖÃÊ½µ÷ÕûÍê³É±êÖ¾
+int pid_motor[4]; // PIDÊä³öµÄpwm
+int midline[Row]; // ÖĞÏßÎ»ÖÃÊı×é
+float err_mid;//ÖĞÏßÆ«ÒÆÎó²î
 float PID_Bias[4]={0.0}, PID_Last_bias[4]={0.0};
-float Keep_Bias; // ä¿æŒåå·®
+float Keep_Bias; //³µÍ·½Ç¶ÈÎó²î
 int test_count=0;
 float dt=0.005;
-pid_info LF_motor_pid; // å·¦å‰ç”µæœºPID
-pid_info RF_motor_pid; // å³å‰ç”µæœºPID
-pid_info LB_motor_pid; // å·¦åç”µæœºPID
-pid_info RB_motor_pid; // å³åç”µæœºPID
 
-pid_info Pos_turn_pid[4];//ä½ç½®å¼å¤„ç†ç”¨çš„pid
+pid_info Pos_turn_pid[4];//Î»ÖÃÊ½´¦ÀíºóµÄpid
 
-pid_info Speed[4]; // é€Ÿåº¦ä¿¡æ¯æ•°ç»„ï¼Œ0è¡¨ç¤ºå·¦å‰ç”µæœºï¼Œ1è¡¨ç¤ºå·¦åç”µæœºï¼Œ2è¡¨ç¤ºå³å‰ç”µæœºï¼Œ3è¡¨ç¤ºå³åç”µæœº
+pid_info Speed[4]; // ËÙ¶È»·pid
 
 /**
- * @brief ç”µæœºåˆå§‹åŒ–å‡½æ•°
- * @param æ— 
- * @return æ— 
+ * @brief µç»ú³õÊ¼»¯
+ * @param ÎŞ
+ * @returnÎŞ
  */
 void Motor_Init(void)
 {
-  gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // åˆå§‹åŒ–å·¦å‰ç”µæœºæ–¹å‘å¼•è„š
-  gpio_init(DIR_LB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // åˆå§‹åŒ–å·¦åç”µæœºæ–¹å‘å¼•è„š
-  gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // åˆå§‹åŒ–å³å‰ç”µæœºæ–¹å‘å¼•è„š
-  gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // åˆå§‹åŒ–å³åç”µæœºæ–¹å‘å¼•è„š
+  gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // gpio¿Ú¸ø¸ßµçÆ½
+  gpio_init(DIR_LB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
+  gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
+  gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
 
-  pwm_init(motor_LF, 15000, 0); // åˆå§‹åŒ–å·¦å‰ç”µæœºçš„PWM
-  pwm_init(motor_LB, 15000, 0); // åˆå§‹åŒ–å·¦åç”µæœºçš„PWM
-  pwm_init(motor_RF, 15000, 0); // åˆå§‹åŒ–å³å‰ç”µæœºçš„PWM
-  pwm_init(motor_RB, 15000, 0); // åˆå§‹åŒ–å³åç”µæœºçš„PWM
+  pwm_init(motor_LF, 15000, 0); // PWMÍ¨µÀ³õÊ¼»¯
+  pwm_init(motor_LB, 15000, 0); //
+  pwm_init(motor_RF, 15000, 0); // 
+  pwm_init(motor_RB, 15000, 0); // 
 
   
 }
 
 
 /**
- * @brief ç¼–ç å™¨åˆå§‹åŒ–å‡½æ•°
- * @param æ— 
- * @return æ— ?
+ * @brief ±àÂëÆ÷³õÊ¼»¯
+ * @param æ—?
+ * @return æ—??
  */
 void Encoder_Init(void)
 {
-  encoder_dir_init(ENCODER_LF, ENCODER_LF_LSB, ENCODER_LF_DIR); // åˆå§‹åŒ–ç¼–ç å™¨æ¨¡å—ä¸å¼•è„š æ–¹å‘ç¼–ç å™¨æ¨¡å¼
-  encoder_dir_init(ENCODER_LB, ENCODER_LB_LSB, ENCODER_LB_DIR); // åˆå§‹åŒ–ç¼–ç å™¨æ¨¡å—ä¸å¼•è„š æ–¹å‘ç¼–ç å™¨æ¨¡å¼
-  encoder_dir_init(ENCODER_RF, ENCODER_RF_LSB, ENCODER_RF_DIR); // åˆå§‹åŒ–ç¼–ç å™¨æ¨¡å—ä¸å¼•è„š æ–¹å‘ç¼–ç å™¨æ¨¡å¼
-  encoder_dir_init(ENCODER_RB, ENCODER_RB_LSB, ENCODER_RB_DIR); // åˆå§‹åŒ–ç¼–ç å™¨æ¨¡å—ä¸å¼•è„š æ–¹å‘ç¼–ç å™¨æ¨¡å¼
+  encoder_dir_init(ENCODER_LF, ENCODER_LF_LSB, ENCODER_LF_DIR); // 
+  encoder_dir_init(ENCODER_LB, ENCODER_LB_LSB, ENCODER_LB_DIR); // 
+  encoder_dir_init(ENCODER_RF, ENCODER_RF_LSB, ENCODER_RF_DIR); // 
+  encoder_dir_init(ENCODER_RB, ENCODER_RB_LSB, ENCODER_RB_DIR); // 
 
   for(uint8 i=0;i<4;i++)
   {
-    encoder[i]=0;//ç¼–ç å™¨çš„ç¤ºæ•°æ¸…é›¶
+    encoder[i]=0;//Çå¿Õ±àÂëÆ÷¼ÆÊı
   }
 }
 
 /**
- * @brief è¯»å–ç¼–ç å™¨ç¤ºæ•°
- * @param æ— 
- * @return æ— 
+ * @brief »ñÈ¡±àÂëÆ÷ÊıÖµ
+ * @param ÎŞ
+ * @return ÎŞ
  */
 void Read_Encoder(void)
 {
-  // è¯»å–ç¼–ç å™¨è®¡æ•°å€¼
-  encoder[0] = -encoder_get_count(ENCODER_LF); // å·¦å‰ç¼–ç å™¨è®¡æ•°å€¼
-  encoder[1] = encoder_get_count(ENCODER_LB); // å·¦åç¼–ç å™¨è®¡æ•°å€¼
-  encoder[2] = encoder_get_count(ENCODER_RF); // å³å‰ç¼–ç å™¨è®¡æ•°å€¼
-  encoder[3] = -encoder_get_count(ENCODER_RB); // å³åç¼–ç å™¨è®¡æ•°å€¼
+  // ¶Á±àÂëÆ÷
+  encoder[0] = -encoder_get_count(ENCODER_LF); // ×óÇ°
+  encoder[1] = encoder_get_count(ENCODER_LB); // ×óºó
+  encoder[2] = encoder_get_count(ENCODER_RF); // ÓÒÇ°
+  encoder[3] = -encoder_get_count(ENCODER_RB); // ÓÒºó
 
-  // è®¡ç®—å¯¹åº”è½®å­çš„é€Ÿåº¦
+  // ¼ÆËã³µÂÖÊµ¼ÊËÙ¶È
   for(uint8 i=0;i<4;i++)
   {
-    Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 0.2637ä¸ºç¼–ç å™¨çš„è½¬é€Ÿæ¯”ä¾‹ç³»æ•°ï¼Œæ±‚å‡ºæ¥çš„é€Ÿåº¦å•ä½æ˜¯cm/s
-    Speed[i].delta_speed = Speed[i].now_speed - Speed[i].last_speed;//ç®—å‡ºé€Ÿåº¦å·®å€¼
-    Speed[i].last_speed = Speed[i].now_speed;
+    Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 0.2637»ñÈ¡³µÂÖËÙ¶È£¬µ¥Î»Îªm/s
   } 
   
-  // æ¸…ç©ºç¼–ç å™¨è®¡æ•°
+  // Çå¿Õ±àÂëÆ÷¼ÆÊı
   encoder_clear_count(ENCODER_LF);
   encoder_clear_count(ENCODER_LB);
   encoder_clear_count(ENCODER_RF);
@@ -99,38 +98,38 @@ void Read_Encoder(void)
 }
 
 /**
- * @brief éº¦è½®è§£ç®—
- * @param æ— 
- * @return æ— 
+ * @brief ÂóÂÖËÙ¶È½âËã1
+ * @param ÎŞ
+ * @return ÎŞ
  */
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz)
 {
-  Speed[0].target_speed = -(+target_Vx + target_Vy + target_Vz); // å·¦å‰ç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[1].target_speed = -(-target_Vx + target_Vy + target_Vz); // å·¦åç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[2].target_speed = -(-target_Vx + target_Vy - target_Vz); // å³å‰ç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[3].target_speed = -(+target_Vx + target_Vy - target_Vz); // å³åç”µæœºç›®æ ‡é€Ÿåº¦
+  Speed[0].target_speed = -(+target_Vx + target_Vy + target_Vz); // ×óÇ°ÂÖ
+  Speed[1].target_speed = -(-target_Vx + target_Vy + target_Vz); // ×óºó
+  Speed[2].target_speed = -(-target_Vx + target_Vy - target_Vz); // ÓÒÇ°
+  Speed[3].target_speed = -(+target_Vx + target_Vy - target_Vz); // ÓÒºó
 }
 
 /**
- * @brief ç§»åŠ¨è½¬æ¢å‡½æ•°ï¼Œå°†ç›®æ ‡é€Ÿåº¦è½¬æ¢ä¸ºç”µæœºé€Ÿåº¦
- * @param target_Vx ç›®æ ‡Xè½´é€Ÿåº¦
- * @param target_Vy ç›®æ ‡Yè½´é€Ÿåº¦
- * @param target_Vz ç›®æ ‡Zè½´é€Ÿåº¦
- * @return æ— 
- * @attention // æ³¨æ„ï¼šxè½´ä¸ºæ­£å‰æ–¹ï¼Œyè½´ä¸ºæ­£å·¦æ–¹ï¼Œzè½´ä¸ºæ­£ä¸Šæ–¹
+ * @brief ÂóÂÖËÙ¶È½âËã2
+ * @param target_Vx xÖáÄ¿±êËÙ¶È
+ * @param target_Vy yÖáÄ¿±êËÙ¶È
+ * @param target_Vz ×ÔĞıËÙ¶È
+ * @return ÎŞ
+ * @attention //
  */
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 {
-  Speed[0].target_speed = target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // å·¦å‰ç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // å·¦åç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // å³å‰ç”µæœºç›®æ ‡é€Ÿåº¦
-  Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // å³åç”µæœºç›®æ ‡é€Ÿåº¦
+  Speed[0].target_speed = target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // ×óÇ°
+  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // ×óºó
+  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // ÓÒÇ°
+  Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // ÓÒºó
 }
          
 /**
- * @brief æµ£å¶‡ç–†å¯®å»idé’æ¿†îé–æ µç´™æ¶“å¶‡æ•¤é€æƒ§æ¹ªæ¶“î…ŸæŸ‡é”›å±½å½§é—‡â‚¬ç‘•ä½¸åµæ¿®å¬ªå¯²æ¶“â‚¬å¨†â€³åµ†é™îˆ¤ç´š
- * @param éƒï¿½
- * @return éƒï¿½
+ * @brief Î»ÖÃÊ½pid³õÊ¼»¯
+ * @param ÎŞ
+ * @return ÎŞ
  */
 void Pos_PidInit(void)
 {
@@ -138,7 +137,7 @@ void Pos_PidInit(void)
   {
     Pos_turn_pid[i].target_speed = 0.00;
     Pos_turn_pid[i].target_pwm = 0;
-    Pos_turn_pid[i].kd= 0.00;
+    Pos_turn_pid[i].kp        = 0.00;
     Pos_turn_pid[i].ki        = 0.00;
     Pos_turn_pid[i].kd        = 0.00;
     Pos_turn_pid[i].error     = 0.00;
@@ -146,21 +145,21 @@ void Pos_PidInit(void)
     Pos_turn_pid[i].dError    = 0.00;
     Pos_turn_pid[i].output    = 0.00;
     Pos_turn_pid[i].output_last   = 0.00;
-    Pos_turn_pid[i].xuhao=i; //æ´å¿“å½¿ç’§å¬ªâ‚¬ï¿½
+    Pos_turn_pid[i].xuhao=i; //±àÂëÆ÷ĞòºÅ
   }
 
-  // ç’å‰§ç–†PIé™å‚›æšŸ(æ©æ¨»ç—…ç’‹ï¿½)
-  Pos_turn_pid[0].kp = -22.5;
-  Pos_turn_pid[0].kd = -1.50;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
-  Pos_turn_pid[1].kp = -30;
-  Pos_turn_pid[1].kd = -0.5;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
-  Pos_turn_pid[2].kp = -25;
-  Pos_turn_pid[2].kd = -0.5;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
-  Pos_turn_pid[3].kp = -25;
-  Pos_turn_pid[3].kd = -0.8; // ç’å‰§ç–†pié™å‚›æšŸ
+  //×óÇ°
+  Pos_turn_pid[0].kp = 0.0;
+  Pos_turn_pid[0].kd = 0.0;
+  //×óºó
+  Pos_turn_pid[1].kp = 0.0;
+  Pos_turn_pid[1].kd = 0.0;
+  //ÓÒÇ°
+  Pos_turn_pid[2].kp = 0.0;
+  Pos_turn_pid[2].kd = 0.0;
+  //ÓÒºó
+  Pos_turn_pid[3].kp = 0.0;
+  Pos_turn_pid[3].kd = 0.0; //¸÷¸öÂÖ×Ó·Ö¿ªµ÷²Î
 
 }
 
@@ -178,124 +177,163 @@ void PidInit(void)
     Speed[i].dError    = 0.00;
     Speed[i].output    = 0.00;
     Speed[i].output_last   = 0.00;
-    Speed[i].xuhao=i; //æ´å¿“å½¿ç’§å¬ªâ‚¬ï¿½
+    Speed[i].xuhao=i; //±àÂëÆ÷ĞòºÅ
   }
 
-  // ç’å‰§ç–†PIé™å‚›æšŸ
+  // ×óÇ°
   Speed[0].kp = -22.5;
   Speed[0].ki = -1.50;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
+  // ×óºó
   Speed[1].kp = -30;
   Speed[1].ki = -0.5;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
+  // ÓÒÇ°
   Speed[2].kp = -25;
   Speed[2].ki = -0.5;
-  // ç’å‰§ç–†PIé™å‚›æšŸ
+  //ÓÒºó
   Speed[3].kp = -25;
-  Speed[3].ki = -0.8; // ç’å‰§ç–†pié™å‚›æšŸ
+  Speed[3].ki = -0.8; ////¸÷¸öÂÖ×Ó·Ö¿ªµ÷²Î 
 
 }
 /**
- * @brief å®ç°PIDæ§åˆ¶å™¨
- * @param pid_info *pid æ§åˆ¶å™¨å‚æ•°ç»“æ„ä½“
- * @return æ§åˆ¶å™¨è¾“å‡ºå€¼
+ * @brief ÔöÁ¿Ê½ËÙ¶È»·(ÄÚ»·)
+ * @param pid_info *pid 
+ * @return ¸÷¸öÂÖ×ÓµÄpwm
  */
 void increment_pid(void)
 {
   for(uint8 i=0;i<4;i++)
   {
-      //æ›´æ–°è¯¯å·®
-      Speed[i].lastlastError = Speed[i].lastError;  //è¯¯å·®æ›´æ–°ä¸ºä¸Šä¸Šæ¬¡çš„è¯¯å·®
-      Speed[i].lastError = Speed[i].error;          //è¯¯å·®æ›´æ–°ä¸ºä¸Šæ¬¡çš„è¯¯å·®
-      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //è®¡ç®—å½“å‰pwmå’Œç¼–ç å™¨å€¼çš„è¯¯å·®
-      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //å¢é‡å¼PIæ§åˆ¶å™¨
-      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //é™å¹…
+      //ËÙ¶È»·
+      Speed[i].lastlastError = Speed[i].lastError;  //¼ÇÂ¼ÉÏÉÏ´ÎÎó²î
+      Speed[i].lastError = Speed[i].error;          //¼ÇÂ¼ÉÏ´ÎÎó²î
+      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //±¾´ÎÎó²î
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //ÔöÁ¿Ê½´¦Àí
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //ÏŞ·ù
   }
 }
-/**********************************************************************************************************
-*	å‡½ æ•° åï¼šqianzhan_2()
-*	åŠŸèƒ½è¯´æ˜ï¼šè·å–å‰ç»
-*   è¾“    å…¥ï¼šæ— 
-*   è¾“    å‡ºï¼š20è¡Œçš„å¹³å‡å‰ç»
-*   å¤‡    æ³¨ï¼šå·¦è½¬å¼¯å‰ç»ä¸ºè´Ÿï¼Œå³è½¬å¼¯å‰ç»ä¸ºæ­£ï¼Œæœ€å¥½å–å‰ä¸€ç‚¹
-**********************************************************************************************************/ 
-int qianzhan_2()
+/**
+ * @brief Î»ÖÃÊ½pid´¦Àí
+ * @param ÊäÈë£ºpid_info *pidËÄ¸öÂÖ×ÓµÄpwmÖµ Target£ºÄ¿±ê¾àÀëµÄ´¦ÀíºóµÄ±àÂëÆ÷×ÜÀÛ¼ÆÖµ encoder£º±àÂëÆ÷ÀÛ¼ÆËù¶ÁµÄÖµ
+ * @return Êä³öµÄÊÇËÙ¶Èpid->output£¬×¼±¸ÊäÈëÖÁËÙ¶È»·±Õ»·
+ */
+int Location_pid(pid_info *pid, float Encoder, float Target)
 {
-	uint8_t i;
-	int sum=0;
-	
-	for(i=0;i<20;i++)
-	{
-	sum+=(center[IMAGE_HEIGHT/2+15-i]-IMAGE_WIDTH/2); //è·å–ç¬¬55-75è¡Œçš„å‰ç»
-	}	
-	return (sum/20);//æ±‚å¹³å‡å€¼
+    static float Bias,Speed;
+
+    Bias= Target - Encoder; //Calculate the deviation //¼ÆËãÆ«²î
+    
+    pid->output = pid->kp*Bias + pid->kd * (Bias-pid->lastError); //Ô­À´ÊÇ+=£¬ÏÖ¸ÄÎª=      2024/3/26
+    
+    pid->lastError=Bias;//±£´æÉÏ´ÎÆ«²î
+    return pid->output;
 }
-/**********************************************************************************************************
-*	å‡½ æ•° åï¼šPosition_PID
-*	åŠŸèƒ½è¯´æ˜ï¼šä½ç½®å¼PIDæ§åˆ¶
-*   è¾“    å…¥ï¼šä¸æ ‡å‡†ä¸­çº¿çš„è¯¯å·®å€¼,å›¾åƒå¤„ç†åçš„
-*   è¾“    å‡ºï¼šPIDæ§åˆ¶å€¼ï¼Œç›´æ¥èµ‹å€¼ç»™æ‰§è¡Œå‡½æ•°
-**********************************************************************************************************/ 
-float Position_PID(pid_info *pid, float err)
+/**
+ * @brief Çå¿Õ±àÂëÆ÷ÀÛ¼ÆÖµ
+ * @param ÎŞ
+ * @return ÎŞ
+ */
+void clear_encoder_sum(void)
 {
- 
-    float  iError,     //å½“å‰è¯¯å·®
-           pwm_output;
- 
-    iError = err;                   //è®¡ç®—å½“å‰è¯¯å·®
-			
-    pid->output = pid->kp * iError                        //æ¯”ä¾‹P            
-           + pid->kd * (iError - pid->lastError);   //å¾®åˆ†D
-	
-	pid->lastError = iError;		  	                     //æ›´æ–°ä¸Šæ¬¡è¯¯å·®ï¼Œç”¨äºä¸‹æ¬¡è®¡ç®—
-  pwm_output =(pid->output - pid->output_last)/dt;
-  pid->output_last=pid->output;                        //è®°å½•æœ¬æ¬¡è¾“å‡ºå€¼ 
-	return pwm_output;	//è¿”å›æ§åˆ¶è¾“å‡ºå€¼
+  encoder_sum[0] = 0;//±àÂëÆ÷ÀÛ¼ÆÖµ
+  encoder_sum[1] = 0;
+  encoder_sum[2] = 0;
+  encoder_sum[3] = 0;
 }
 
-/**********************************************************************************************************
-*	å‡½ æ•° åï¼šturnpos_pid
-*	åŠŸèƒ½è¯´æ˜ï¼šå·®é€Ÿæ§åˆ¶(å®ç°å¯»è¿¹)
-*   è¾“    å…¥ï¼šä½ç½®å¼è¾“å‡ºçš„pwm
-*   è¾“    å‡ºï¼šæ— 
-**********************************************************************************************************/ 
-void turnpos_pid(void)
+void Set_Distence_m(uint16_t distance)
 {
-  float err = Err_Handle();//æ±‚å‡ºå¯¹åº”äºä¸­çº¿çš„è¯¯å·®
+  clear_encoder_sum();    
+
+  target_encoder_sum[0] = (distance/PI) * 100/0.2636719;//ÕâÀï½«Ä¿±ê¾àÀë×ª»»³ÉÂö³åÀÛ¼Æ
+  target_encoder_sum[1] = target_encoder_sum[0];
+  target_encoder_sum[2] = target_encoder_sum[0];
+  target_encoder_sum[3] = target_encoder_sum[0];
+}
+
+/**************************************************************************
+Î»ÖÃ»·Êä³öËÙ¶È
+**************************************************************************/
+void Drive_Motor()
+{
+  float LF_Target,LB_Target,RF_Target,RB_Target;
+  //ÕâÀïÊÇËã³öÀ´µÄÂö³å Òª´«ÈëËÙ¶È»·»¹Ğè½«Î»ÖÃ»·¼ÆËã³öÀ´µÄÂö³å×ª»»ÎªËÙ¶È
+  encoder_sum[0] += encoder[0];//±àÂëÆ÷ÀÛ¼ÆÖµ
+  encoder_sum[1] += encoder[1];
+  encoder_sum[2] += encoder[2];
+  encoder_sum[3] += encoder[3];
+
+    LF_Target = Location_pid(Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
+    LB_Target = Location_pid(Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
+    RF_Target = Location_pid(Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
+    RB_Target = Location_pid(Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);
+            
+    loc_target[0] = LF_Target*CONTROL_FREQUENCY*0.2636719;
+    loc_target[1] = LB_Target*CONTROL_FREQUENCY*0.2636719;
+    loc_target[2] = RF_Target*CONTROL_FREQUENCY*0.2636719;
+    loc_target[3] = RB_Target*CONTROL_FREQUENCY*0.2636719;
+
+  if(Turn_Left_flag==1)//×ó×ª
+  {
+    loc_target[0]=-fabsf(loc_target[0]);
+    loc_target[1]=-fabsf(loc_target[1]);
+    loc_target[2]=fabsf(loc_target[2]);
+    loc_target[3]=fabsf(loc_target[3]);
+  }
+  else if(Turn_Right_flag==1)//ÓÒ×ª
+  {
+    loc_target[0]=fabsf(loc_target[0]);
+    loc_target[1]=fabsf(loc_target[1]);
+    loc_target[2]=-fabsf(loc_target[2]);
+    loc_target[3]=-fabsf(loc_target[3]);
+  }
+}
+void turnloc_pid(void)
+{
+  if(Err_Handle()<2)//Éè¶¨Ò»¸öãĞÖµ·¶Î§£¬Ğ¡ÓÚÕâ¸öãĞÖµÊ±ÊÓÎª²»ÔÙĞèÒª½ÃÕı,Ö»ÓÃËÙ¶È»·×öÄ¿±êËÙ¶È±Õ»·
+  {
+    loc_Finish_flag = 1;//Î»ÖÃµ÷ÕûÍê³É±êÖ¾
+    clear_encoder_sum();//±àÂëÆ÷ÀÛ¼ÓÖµÇå0
+  }
+  if(loc_Finish_flag == 0)//Î»ÖÃµ÷ÕûÎ´Íê³É
+  {
+  Set_Distence_m(Err_Handle());//ÊäÈëËÙ¶È×ª»»³ÉÎó²î,»¹Òªµ÷ÕûÒ»ÏÂ²ÎÊı
+  if(Err_Handle() < 0)
+     Turn_Left_flag = 1;
+  if(Err_Handle() > 0)
+     Turn_Right_flag =1;
+  Drive_Motor();//Î»ÖÃ»·Êä³öËÙ¶È
+
   for(uint8 i=0;i<4;i++)
   {
-      //æ›´æ–°è¯¯å·®
-      Speed[i].lastlastError = Speed[i].lastError;  //è¯¯å·®æ›´æ–°ä¸ºä¸Šä¸Šæ¬¡çš„è¯¯å·®
-      Speed[i].lastError = Speed[i].error;          //è¯¯å·®æ›´æ–°ä¸ºä¸Šæ¬¡çš„è¯¯å·®
-      //å°è¯•åŠ å…¥ç¼–ç å™¨å¤„ç†åå¾—å‡ºçš„é€Ÿåº¦ï¼Œæ”¹å˜ç›®æ ‡é€Ÿåº¦æ¥å®ç°é—­ç¯ï¼Œå½“å¢é‡å¼è¾“å‡ºå‡å°æ—¶ï¼Œæ‰€è¯»å‡ºæ¥çš„ç¼–ç å™¨é€Ÿåº¦å¢åŠ é‡ä¼šè¶‹å‘äº0
-      Speed[i].error = Speed[i].target_speed + Speed[i].delta_speed - Speed[i].now_speed; 
-      if(i<2)
-        Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error - Position_PID( &Pos_turn_pid[i], err); //å¤„ç†åçš„pwmç›´æ¥æ”¾å…¥
-      else
-        Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error + Position_PID( &Pos_turn_pid[i], err); 
-      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //é™å¹…
+      //ÊäÈëËÙ¶È»·´¦Àí
+      Speed[i].lastlastError = Speed[i].lastError;  //¼ÇÂ¼ÉÏÉÏ´ÎÎó²î
+      Speed[i].lastError = Speed[i].error;          //¼ÇÂ¼ÉÏ´ÎÎó²î
+      Speed[i].error = Speed[i].target_speed + loc_target[i] - Speed[i].now_speed; //±¾´ÎÎó²î,¿ÉÄÜ»á²»¼ÓÔ­±¾µÄÄ¿±êËÙ¶È
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //ÔöÁ¿Ê½´¦ÀíÊä³öpwm
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //ÏŞ·ù
+  }
+  Turn_Left_flag = 0;
+  Turn_Right_flag = 0;//±êÖ¾Î»ÇåÁã
   }
 }
-
 /**
- * @brief ç›®æ ‡ç”µæœºé€Ÿåº¦è®¡ç®—å‡½æ•°
- * @param æ— 
- * @return æ— 
- * @attention æ ¹æ®ç›®æ ‡é€Ÿåº¦è®¡ç®—PID_motor[i]ï¼Œå¹¶è¾“å‡ºåˆ°pwmæ§åˆ¶ç”µæœº
- *            å¯¹åº”çš„å¼•è„šè¿›è¡Œä¿®æ”¹ï¼Œæ–¹ä¾¿åç»­å¯¹åº”ï¼š
+ * @brief ËÙ¶È±Õ»·¿ØÖÆ
+ * @param ÎŞ
+ * @return ÎŞ
+ * @attention 
  */
 void motor_close_control(void)
 {
   int j;
   for (j = 0; j < 4; j++) //???
   {
-    pid_motor[j]=Speed[j].output;//pidè¾“å‡ºèµ‹å€¼ï¼Œå…¶å®è¿™é‡Œå°±æ²¡å¿…è¦é™å¹…äº†
+    pid_motor[j]=Speed[j].output;//¸÷ÂÖ×Ópwm¸³Öµ
     // Speed[j].output=0;
   }
-    if (pid_motor[0] > 0) //åä¸‹
+    if (pid_motor[0] > 0) //Õı×ª
     {
-      gpio_set_level(DIR_LF, 0);                 // DIRè®¾ç½®ä¸ºæ­£è½¬
-      pwm_set_duty(motor_LF, (int)pid_motor[0]); // è®¾ç½®PWMå ç©ºæ¯”
+      gpio_set_level(DIR_LF, 0);                 // DIR0
+      pwm_set_duty(motor_LF, (int)pid_motor[0]); // ×óÇ°
     }
     else //åè½¬
     {
@@ -303,93 +341,93 @@ void motor_close_control(void)
       pwm_set_duty(motor_LF, (int)-pid_motor[0]);
     }
 
-    if (pid_motor[1] > 0) //å·¦ä¸‹
+    if (pid_motor[1] > 0) //Õı×ª
     {
       gpio_set_level(DIR_LB, 0);
       pwm_set_duty(motor_LB, (int)pid_motor[1]);
     }
-    else //åè½¬
+    else //·´×ª
     {
       gpio_set_level(DIR_LB, 1);
       pwm_set_duty(motor_LB, (int)-pid_motor[1]);
     }
 
-    if (pid_motor[2] > 0) //å³ä¸Š
+    if (pid_motor[2] > 0) //Õı×ª
     {
       gpio_set_level(DIR_RF, 1);
       pwm_set_duty(motor_RF, (int)pid_motor[2]);
     }
     else //åè½¬
     {
-      gpio_set_level(DIR_RF, 0); //è®¾ç½®ä¸ºåè½¬
+      gpio_set_level(DIR_RF, 0); //·´×ª
       pwm_set_duty(motor_RF, (int)-pid_motor[2]);
     }
 
-    if (pid_motor[3] > 0) //å³ä¸‹
+    if (pid_motor[3] > 0) //Õı×ª
     {
       gpio_set_level(DIR_RB, 1);
       pwm_set_duty(motor_RB, (int)pid_motor[3]);
     }
-    else //åè½¬
+    else //·´×ª
     {
       gpio_set_level(DIR_RB, 0);
       pwm_set_duty(motor_RB, (int)-pid_motor[3]);
     }
   }
 /**
- * @brief ç›®æ ‡ç”µæœºæ§åˆ¶å‡½æ•°
- * @param æ— 
- * @return æ— 
- * @attention æ ¹æ®ç›®æ ‡ç”µæœºé€Ÿåº¦è®¡ç®—PID_motor[i]ï¼Œå¹¶è¾“å‡ºåˆ°pwmæ§åˆ¶ç”µæœº
+ * @brief µç»ú¿ª»·¿ØÖÆ
+ * @param ÎŞ
+ * @return ÎŞ
+ * @attention 
  */
 void motor_control(void)
 {
-  for (int j= 0; j < 4; j++) //å¾ªç¯å››æ¬¡
+  for (int j= 0; j < 4; j++) //µç»úpwm¸³Öµ
   {
     if (pid_motor[j] > AMPLITUDE_MOTOR)
       pid_motor[j] = AMPLITUDE_MOTOR;
     if (pid_motor[j] < -AMPLITUDE_MOTOR)
       pid_motor[j] = -AMPLITUDE_MOTOR;
   }
-  if (pid_motor[0] > 0) //ç”µæœº1   æ­£è½¬
+  if (pid_motor[0] > 0) //×óÇ°
   {
-    gpio_set_level(DIR_LF, 0);                 // DIRè®¾ç½®ä¸ºæ­£è½¬
-    pwm_set_duty(motor_LF, (int)pid_motor[0]); // è®¾ç½®PWMå ç©ºæ¯”
+    gpio_set_level(DIR_LF, 0);                 // DIR0
+    pwm_set_duty(motor_LF, (int)pid_motor[0]); // Õı×ª
   }
-  else //ç”µæœº1   åè½¬
+  else //DIR1   ·´×ª
   {
     gpio_set_level(DIR_LF, 1);
     pwm_set_duty(motor_LF, (int)-pid_motor[0]);
   }
 
-  if (pid_motor[1] > 0) //ç”µæœº2   æ­£è½¬
+  if (pid_motor[1] > 0) //×óºó
   {
-    gpio_set_level(DIR_LB, 0);
-    pwm_set_duty(motor_LB, (int)pid_motor[1]);
+    gpio_set_level(DIR_LB, 0);               // DIR0
+    pwm_set_duty(motor_LB, (int)pid_motor[1]);// Õı×ª
   }
-  else //ç”µæœº2   åè½¬
+  else //DIR1  ·´×ª
   {
     gpio_set_level(DIR_LB, 1);
     pwm_set_duty(motor_LB, (int)-pid_motor[1]);
   }
 
-  if (pid_motor[2] > 0) //ç”µæœº3   æ­£è½¬
+  if (pid_motor[2] > 0) //ÓÒÇ°
   {
     gpio_set_level(DIR_RF, 1);
-    pwm_set_duty(motor_RF, (int)pid_motor[2]);
+    pwm_set_duty(motor_RF, (int)pid_motor[2]);// Õı×ª
   }
-  else //ç”µæœº3   åè½¬
+  else //DIR0 ·´×ª
   {
     gpio_set_level(DIR_RF, 0);
     pwm_set_duty(motor_RF, (int)-pid_motor[2]);
   }
 
-  if (pid_motor[3] > 0) //ç”µæœº4   æ­£è½¬
+  if (pid_motor[3] > 0) //DIR1  
   {
     gpio_set_level(DIR_RB, 1);
-    pwm_set_duty(motor_RB, (int)pid_motor[3]);
+    pwm_set_duty(motor_RB, (int)pid_motor[3]);// Õı×ª
   }
-  else //ç”µæœº4   åè½¬
+  else //DIR0  ·´×ª
   {
     gpio_set_level(DIR_RB, 0);
     pwm_set_duty(motor_RB, (int)-pid_motor[3]);
@@ -397,47 +435,10 @@ void motor_control(void)
 }
 
 /**
- * @brief ç›®æ ‡é€Ÿåº¦æ§åˆ¶å‡½æ•°
- * @param Vx_Speed Xè½´é€Ÿåº¦
- * @param Vy_Speed Yè½´é€Ÿåº¦
- * @param Vz_Speed Zè½´é€Ÿåº¦
- * @return æ— 
- * @attention æ ¹æ®ç›®æ ‡é€Ÿåº¦è®¡ç®—PID_motor[i]ï¼Œå¹¶è¾“å‡ºåˆ°pwmæ§åˆ¶ç”µæœº
- */
-void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed)
-{
-// 	  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
-  Move_Transfrom(Vx_Speed, Vy_Speed, Vz_Speed);//ç§»åŠ¨å˜æ¢
-//     motor_control();
-  Car_Inverse_kinematics_solution(Vx_Speed, Vy_Speed, Vz_Speed);
-  // motor_close_control();//ç”µæœºé—­ç¯æ§åˆ¶
-}
-
-
-/**
- * @brief ç§»åŠ¨å‡½æ•°ï¼Œç”¨äºæ§åˆ¶è½¦è¾†çš„ç§»åŠ¨
- * @param mode 1ä»£è¡¨ç›´è¡Œï¼Œ2ä»£è¡¨è½¬å¼¯
- * @param value ç›®æ ‡é€Ÿåº¦
- * @param stra_speed ç›´è¡Œé€Ÿåº¦
- * @param turn_speed è½¬å¼¯é€Ÿåº¦
- * @return æ— 
- */
-void move(int8 mode, float value, int16 stra_speed, int16 turn_speed)
-{
-  int k = 0;
-  translation = midline[Row - 1] - Col / 2; //è®¡ç®—åç§»é‡
-  for (k = Row; k < 65; k--)
-  {
-    spin = spin + midline[k]; //è®¡ç®—æ—‹è½¬è§’åº¦ä¹‹å’Œ
-    spin = spin / (Row - k) - Col / 2; //è®¡ç®—å¹³å‡æ—‹è½¬è§’åº¦
-  }
-}
-
-/**
- * @brief 18ç”µæœºç¼–ç å™¨é‡Œç¨‹è®¡ç®—å‡½æ•°ï¼Œæ ¹æ®ç¼–ç å™¨è„‰å†²æ•°è®¡ç®—è½¦è¾†è¡Œé©¶è·ç¦»ï¼Œå•ä½ï¼šm
- * @param æ— 
- * @return æ— 
- * @attention è¡Œé©¶è·ç¦»è®¡ç®—å…¬å¼ = (ç¼–ç å™¨è„‰å†²æ•° / ç¼–ç å™¨åˆ†è¾¨ç‡) * (2 * Ï€ * è½®å­åŠå¾„) / è½®å­å‘¨é•¿
+ * @brief 18ç”µæœºç¼–ç å™¨é‡Œç¨‹è?ç®—å‡½æ•°ï¼Œæ ¹æ®ç¼–ç å™¨è„‰å†²æ•°è®¡ç®—è½¦è¾†è¡Œé©¶è·ç?ï¼Œå•ä½ï¼šm
+ * @param æ—?
+ * @return æ—?
+ * @attention è¡Œé©¶è·ç?è®¡ç®—å…?¼ = (ç¼–ç å™¨è„‰å†²æ•° / ç¼–ç å™¨åˆ†è¾¨ç‡) * (2 * Ï€ * è½?­åŠå¾„) / è½?­å‘¨é•¿
  */
 void Encoder_odometer(void)
 {
@@ -447,7 +448,7 @@ void Encoder_odometer(void)
   // Angle_Bias = (90 - Angle_Z) * PI / 180; //è®¡ç®—è§’åº¦åå·®
 
 /****è®¡ç®—è½¦è¾†é€Ÿåº¦******/
-  // V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637ä¸ºç¼–ç å™¨åˆ†è¾¨ç‡
+  // V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637ä¸ºç¼–ç å™¨åˆ†è¾¨ç?
   // V_enco[1] = 0.2636719 * PI * (float)encoder[1];
   // V_enco[2] = 0.2636719 * PI * (float)encoder[2];
   // V_enco[3] = 0.2636719 * PI * (float)encoder[3];
@@ -455,8 +456,8 @@ void Encoder_odometer(void)
   // Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4; //è®¡ç®—Yè½´é€Ÿåº¦
   // Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //è®¡ç®—Xè½´é€Ÿåº¦ï¼ˆä¿®æ­£ï¼‰
   // Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //è®¡ç®—Yè½´é€Ÿåº¦ï¼ˆä¿®æ­£ï¼‰
-  // Car_dis_x += Vx_enco * 0.01; //è®¡ç®—è½¦è¾†Xè½´è¡Œé©¶è·ç¦»
-  // Car_dis_y += Vy_enco * 0.01; //è®¡ç®—è½¦è¾†Yè½´è¡Œé©¶è·ç¦»
+  // Car_dis_x += Vx_enco * 0.01; //è®¡ç®—è½¦è¾†Xè½´è?é©¶è·ç¦?
+  // Car_dis_y += Vy_enco * 0.01; //è®¡ç®—è½¦è¾†Yè½´è?é©¶è·ç¦?
 
 // #if 1
 //  if (Angle_Bias >= 0)
@@ -479,18 +480,18 @@ void Encoder_odometer(void)
 //    Vy_world = -Vx_1 + Vy_1;
 //  }
 // #endif
-//  Car_dis_x += Vx_world * 0.01; //è®¡ç®—è½¦è¾†Xè½´è¡Œé©¶è·ç¦»ï¼ˆä¿®æ­£ï¼‰
-//  Car_dis_y += Vy_world * 0.01; //è®¡ç®—è½¦è¾†Yè½´è¡Œé©¶è·ç¦»ï¼ˆä¿®æ­£ï¼‰
+//  Car_dis_x += Vx_world * 0.01; //è®¡ç®—è½¦è¾†Xè½´è?é©¶è·ç¦»ï¼ˆä¿??ï¼?
+//  Car_dis_y += Vy_world * 0.01; //è®¡ç®—è½¦è¾†Yè½´è?é©¶è·ç¦»ï¼ˆä¿??ï¼?
 
 //  Car_dis_x2 += Vx_world * 0.01;
 //  Car_dis_y2 += Vy_world * 0.01;
 }
 
 /**
- * @brief PIDé™å¹…å‡½æ•°
+ * @brief PIDÏŞ·ù
  *
- * @param Value è¾“å…¥å€¼
- * @param MaxValue æœ€å¤§å€¼
+ * @param Value    pid´¦ÀíºóµÄpwm
+ * @param MaxValue ×î´ópwm
  * @return float
  */
 float PIDInfo_Limit(float Value, float MaxValue)
