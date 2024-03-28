@@ -30,6 +30,8 @@ float Right_derivative[IMAGE_HEIGHT]={0.0};
 /*以下是其他函数中外部声明的变量*/
 extern uint8 right_data[64];//存储最终的数据    
 extern uint32 fifo_data_count;//单次接收的数组个数
+extern uint8 data_length;//数据长度
+extern uint8 i;//下标指针
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -938,7 +940,7 @@ void test2(void)
     ips114_show_uint(188,60,right_data[1],3);
     ips114_show_uint(188,80,right_data[2],3);
     ips114_show_uint(188,100,fifo_data_count,2);
-    ips114_show_uint(188,120,sizeof(right_data),3);
+    
 }
 
 /**

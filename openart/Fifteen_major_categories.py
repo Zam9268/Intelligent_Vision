@@ -61,7 +61,7 @@ net_path = "mobilenet_v2-2024-03-03T08-27-26.947Z_in-int8_out-int8_channel_ptq.t
 labels = [line.rstrip() for line in open("/sd/mobilenet_v2_total_labels.txt")]   # 加载标签
 net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路径 load_to_fb：模型会被加载到帧缓冲区
 
-test_data=[0x10,0x20,0x30]
+test_data=[0x01,0x13,0x17]#可以发送多组数据，但是注意：第一个数据是接收不到的
 
 
 while(1):

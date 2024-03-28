@@ -262,10 +262,10 @@ void Drive_Motor()
   encoder_sum[2] += encoder[2];
   encoder_sum[3] += encoder[3];
 
-    LF_Target = Location_pid(Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
-    LB_Target = Location_pid(Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
-    RF_Target = Location_pid(Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
-    RB_Target = Location_pid(Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);
+//    LF_Target = Location_pid(Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
+//    LB_Target = Location_pid(Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
+//    RF_Target = Location_pid(Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
+//    RB_Target = Location_pid(Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);
             
     loc_target[0] = LF_Target*CONTROL_FREQUENCY*0.2636719;
     loc_target[1] = LB_Target*CONTROL_FREQUENCY*0.2636719;
