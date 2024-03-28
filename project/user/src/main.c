@@ -66,7 +66,8 @@ int main(void)
     debug_init();                  // ??????????
     system_delay_ms(300);           //?????????????????????
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    PidInit();//PID???????????????
+    PidInit();//速度环pid初始化
+    Pos_PidInit();//位置式pid初始化
 //    My_Communication_Init();//????????????
     ips114_init();//锟斤拷幕锟斤拷始锟斤拷
    ips114_set_dir(IPS114_PORTAIT);
@@ -88,8 +89,8 @@ int main(void)
 	
 	// target_motor[3]=1000;
     Last_Longest_White_Column_Left[1]=94;
-	Longest_White_Column_Left[1]=94;
-	Speed[3].target_speed=40.0;
+	  Longest_White_Column_Left[1]=94;
+	  Speed[3].target_speed=40.0;
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;
@@ -127,14 +128,14 @@ int main(void)
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
 //		// Speed_Control(1000,1000,0);//?????????
-//		ips114_show_int(    0 , 0,   encoder[0],         4);//???????????????????
+//		  ips114_show_int(    0 , 0,   encoder[0],         4);//???????????????????
 //        ips114_show_int(    0 , 20,   encoder[1],         4);//???????????????????
 //        ips114_show_int(    0 , 40,   encoder[2],         4);//???????????????????
 //        ips114_show_int(    0 , 60,   encoder[3],         4);//???????????????????
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-       printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+       printf("%.2f,%.2f,%.2f,%.2f\r\n",loc_target[0] ,Speed[0].now_speed, loc_target[2], loc_target[3]);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);

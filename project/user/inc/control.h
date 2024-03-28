@@ -54,13 +54,14 @@ typedef struct{
 extern float Car_H;//ï¿½ï¿½ï¿½ï¿½
 extern float Car_W;//ï¿½ï¿½ï¿½ï¿½
 extern int encoder[4];//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-extern int encoder_sum[4];
+extern float encoder_sum[4];
 extern float target_encoder_sum[4];
 extern float loc_target[4];
 extern int Turn_Left_flag,Turn_Right_flag;
-extern int loc_Finish_flag; 
-extern float target_motor[4];//Ä¿ï¿½ï¿½ï¿½ï¿½pwm
-extern int pid_motor[4];//pidï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶ï¿?
+extern int loc_Finish_flag;
+extern float loc_err;//ÖÐÏßÎó²î
+extern float abs_loc_err;//ÖÐÏßÎó²î¾ø¶ÔÖµ
+extern int pid_motor[4];//pid´¦ÀíºóÊä³öµÄpwmÖµ
 extern float turn_angle;//×ªï¿½ï¿½ï¿?
 extern int spin;//ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½
 extern int translation;
@@ -77,17 +78,17 @@ void Encoder_Init(void);
 void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
-void Incremental_PI(void);
 void PidInit(void);
 void Pos_PidInit(void);
 void increment_pid(void);
-int qianzhan_2();
-float Position_PID(pid_info *pid, float err);
-void PID_cale();
+float Location_pid(pid_info *pid, float Encoder, float Target);
+void clear_encoder_sum(void);
+void Set_Distence_m(float distance);
+void Drive_Motor();
+void turnloc_pid(void);
 void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
 float PIDInfo_Limit(float Value, float MaxValue);
-void turnpos_pid(void);
 
 #endif

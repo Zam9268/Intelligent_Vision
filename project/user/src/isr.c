@@ -52,7 +52,7 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnpos_pid();//位置式pid
+        turnloc_pid();//位置式pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
     // if(pit_flag_get(PIT_CH0))

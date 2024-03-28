@@ -15,11 +15,13 @@ float turn_angle; // 转向角度
 int spin; // 旋转量
 int translation = 0; // 横移量
 int encoder[4];   // 四个编码器读出的值
-int encoder_sum[4];//四个编码器的累积数值
+float encoder_sum[4];//四个编码器的累积数值
 float target_encoder_sum[4];//四个编码器的目标累计数值
 float loc_target[4];//位置式处理后输出的目标速度
 int Turn_Left_flag,Turn_Right_flag;//左转标志，右转标志
 int loc_Finish_flag = 0;//位置式调整完成标志
+float loc_err;//中线误差
+float abs_loc_err;//中线误差绝对值
 int pid_motor[4]; // PID输出的pwm
 int midline[Row]; // 中线位置数组
 float err_mid;//中线偏移误差
@@ -149,7 +151,7 @@ void Pos_PidInit(void)
   }
 
   //左前
-  Pos_turn_pid[0].kp = 0.0;
+  Pos_turn_pid[0].kp = 0.1;
   Pos_turn_pid[0].kd = 0.0;
   //左后
   Pos_turn_pid[1].kp = 0.0;
@@ -216,15 +218,14 @@ void increment_pid(void)
  * @param 输入：pid_info *pid四个轮子的pwm值 Target：目标距离的处理后的编码器总累计值 encoder：编码器累计所读的值
  * @return 输出的是速度pid->output，准备输入至速度环闭环
  */
-int Location_pid(pid_info *pid, float Encoder, float Target)
+float Location_pid(pid_info *pid, float Encoder, float Target)
 {
-    static float Bias,Speed;
-
-    Bias= Target - Encoder; //Calculate the deviation //计算偏差
+    pid->error = Target - Encoder; //Calculate the deviation //计算偏差
     
-    pid->output = pid->kp*Bias + pid->kd * (Bias-pid->lastError); //原来是+=，现改为=      2024/3/26
+    pid->output = pid->kp * pid->error + pid->kd * (pid->error-pid->lastError); //原来是+=，现改为=      2024/3/26
     
-    pid->lastError=Bias;//保存上次偏差
+    pid->lastError=pid->error;//保存上次偏差
+	
     return pid->output;
 }
 /**
@@ -239,12 +240,14 @@ void clear_encoder_sum(void)
   encoder_sum[2] = 0;
   encoder_sum[3] = 0;
 }
-
-void Set_Distence_m(uint16_t distance)
+/**
+ * @brief 目标距离转化成目标编码器累计值
+ * @param 输入：目标距离
+ * @return 无
+ */
+void Set_Distence_m(float distance)
 {
-  clear_encoder_sum();    
-
-  target_encoder_sum[0] = (distance/PI) * 100/0.2636719;//这里将目标距离转换成脉冲累计
+  target_encoder_sum[0] = (distance/PI) *100 /0.2636719;//这里将目标距离转换成脉冲累计
   target_encoder_sum[1] = target_encoder_sum[0];
   target_encoder_sum[2] = target_encoder_sum[0];
   target_encoder_sum[3] = target_encoder_sum[0];
@@ -255,52 +258,69 @@ void Set_Distence_m(uint16_t distance)
 **************************************************************************/
 void Drive_Motor()
 {
-  float LF_Target,LB_Target,RF_Target,RB_Target;
-  //这里是算出来的脉冲 要传入速度环还需将位置环计算出来的脉冲转换为速度
-  encoder_sum[0] += encoder[0];//编码器累计值
-  encoder_sum[1] += encoder[1];
-  encoder_sum[2] += encoder[2];
-  encoder_sum[3] += encoder[3];
+  float LF_Target,LB_Target,RF_Target,RB_Target; //这里是算出来的脉冲 要传入速度环还需将位置环计算出来的脉冲转换为速度
+	loc_err = Err_Handle();
+	abs_loc_err = fabsf(Err_Handle());   //原本是中线误差Err_Handle()
 
-    LF_Target = Location_pid(Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
-    LB_Target = Location_pid(Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
-    RF_Target = Location_pid(Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
-    RB_Target = Location_pid(Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);
-            
-    loc_target[0] = LF_Target*CONTROL_FREQUENCY*0.2636719;
-    loc_target[1] = LB_Target*CONTROL_FREQUENCY*0.2636719;
-    loc_target[2] = RF_Target*CONTROL_FREQUENCY*0.2636719;
-    loc_target[3] = RB_Target*CONTROL_FREQUENCY*0.2636719;
-
-  if(Turn_Left_flag==1)//左转
-  {
-    loc_target[0]=-fabsf(loc_target[0]);
-    loc_target[1]=-fabsf(loc_target[1]);
-    loc_target[2]=fabsf(loc_target[2]);
-    loc_target[3]=fabsf(loc_target[3]);
-  }
-  else if(Turn_Right_flag==1)//右转
-  {
-    loc_target[0]=fabsf(loc_target[0]);
-    loc_target[1]=fabsf(loc_target[1]);
-    loc_target[2]=-fabsf(loc_target[2]);
-    loc_target[3]=-fabsf(loc_target[3]);
-  }
-}
-void turnloc_pid(void)
-{
-  if(Err_Handle()<2)//设定一个阈值范围，小于这个阈值时视为不再需要矫正,只用速度环做目标速度闭环
+   if(abs_loc_err < 1.0)//设定一个阈值范围，小于这个阈值时视为不再需要矫正,只用速度环做目标速度闭环
   {
     loc_Finish_flag = 1;//位置调整完成标志
     clear_encoder_sum();//编码器累加值清0
+    int i = 0;
+    for(i = 0;i < 4; i++) 
+    {
+      loc_target[i] = 0;//位置式调整不再起作用
+    }
   }
+   
+	if(loc_err > 0)
+     Turn_Left_flag = 1;//左转标志位
+  if(loc_err < 0)
+     Turn_Right_flag =1;//右转标志位
+
   if(loc_Finish_flag == 0)//位置调整未完成
   {
-  Set_Distence_m(Err_Handle());//输入速度转换成误差,还要调整一下参数
-  if(Err_Handle() < 0)
-     Turn_Left_flag = 1;
-  if(Err_Handle() > 0)
-     Turn_Right_flag =1;
+    Set_Distence_m(abs_loc_err);//输入速度转换成误差,还要调整一下参数
+	
+    encoder_sum[0] += fabsf(encoder[0]);//编码器累计值
+    encoder_sum[1] += fabsf(encoder[1]);
+    encoder_sum[2] += fabsf(encoder[2]);
+    encoder_sum[3] += fabsf(encoder[3]);
+
+		
+    LF_Target = Location_pid(&Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
+    LB_Target = Location_pid(&Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
+    RF_Target = Location_pid(&Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
+    RB_Target = Location_pid(&Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);//计算出脉冲数
+            
+    loc_target[0] = LF_Target* 0.2636719 *PI /100;//转化成速度
+    loc_target[1] = LB_Target* 0.2636719 *PI /100;
+    loc_target[2] = RF_Target* 0.2636719 *PI /100;
+    loc_target[3] = RB_Target* 0.2636719 *PI /100;//单位为m/s 
+
+  if(Turn_Left_flag==1)//左转
+  {
+    loc_target[0] = -fabsf(loc_target[0]);
+    loc_target[1] = -fabsf(loc_target[1]);
+    loc_target[2] = fabsf(loc_target[2]);
+    loc_target[3] = fabsf(loc_target[3]);
+  }
+  else if(Turn_Right_flag==1)//右转
+  {
+    loc_target[0] = fabsf(loc_target[0]);
+    loc_target[1] = fabsf(loc_target[1]);
+    loc_target[2] = -fabsf(loc_target[2]);
+    loc_target[3] = -fabsf(loc_target[3]);
+  }
+  }
+}
+/**
+ * @brief 串级pid 位置环+速度环
+ * @param 无
+ * @return 无
+ */
+void turnloc_pid(void)
+{
   Drive_Motor();//位置环输出速度
 
   for(uint8 i=0;i<4;i++)
@@ -312,9 +332,11 @@ void turnloc_pid(void)
       Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式处理输出pwm
       Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
   }
+
   Turn_Left_flag = 0;
   Turn_Right_flag = 0;//标志位清零
-  }
+
+  loc_Finish_flag = 0;//重置标志位，根据下次循环判断条件来变更
 }
 /**
  * @brief 速度闭环控制
@@ -505,4 +527,8 @@ float PIDInfo_Limit(float Value, float MaxValue)
 	}
 
 	return Value;
+}
+void test_pos(void)
+{
+    turnloc_pid();
 }
