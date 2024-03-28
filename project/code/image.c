@@ -27,6 +27,9 @@ uint8 Right_Up_Find = 0; // Finding the right top turning point
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 
+/*以下是其他函数中外部声明的变量*/
+extern uint8 right_data[64];//存储最终的数据    
+extern uint32 fifo_data_count;//单次接收的数组个数
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -314,6 +317,27 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
         }
         left_line[i]=left_border;// Store the corresponding boundary information
         right_line[i]=right_border;
+    }
+}
+
+/**
+ * @brief 简单的膨胀操作
+ * @param uint8 start_row：起始行；uint8 end_row：终止行；uint8 start_column：起始列；uint8 end_column 终止列   uint8 threshold：阈值
+ * @return 无
+ * @attention 一般start_row>end_row,start_column<end_column
+ */
+void Easy_Filtering(uint8 start_row,uint8 end_row,uint8 start_column,uint8 end_column,uint8 threshold)
+{
+    for(uint8 i=start_row-1;i>=end_row+1;i--)//从下往上扫，边界条件
+    {
+        for(uint8 j=start_column+1;j<=end_column-1;j++)//从左往右扫
+        {
+            if(Image_Use[i-1][j-1]+Image_Use[i-1][j]+Image_Use[i-1][j+1]+Image_Use[i][j-1]
+                +Image_Use[i][j+1]+Image_Use[i+1][j-1]+Image_Use[i+1][j]+Image_Use[i+1][j+1]>=threshold*WHITE_POINT)//如果周围有5个白点
+                {
+                    Image_Use[i][j]=WHITE_POINT;//则将该点设置为白点
+                }
+        }
     }
 }
 /**
@@ -904,16 +928,17 @@ void test2(void)
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        
     }
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
     ips114_show_float(188,20,my_err,2,2);
-    ips114_show_uint(188,40,Left_Lost_Time,3);
-    ips114_show_uint(188,60,Right_Lost_Time,3);
-    ips114_show_uint(188,80,type,3);
+    ips114_show_uint(188,40,right_data[0],3);
+    ips114_show_uint(188,60,right_data[1],3);
+    ips114_show_uint(188,80,right_data[2],3);
+    ips114_show_uint(188,100,fifo_data_count,2);
+    ips114_show_uint(188,120,sizeof(right_data),3);
 }
 
 /**
@@ -924,7 +949,10 @@ void test2(void)
 void test(void)
 {
     uint8 mode=0;//模式为1表示为大津法，模式为2表示为边缘检测算子
-    
+    if(right_data[0]==0x01) mode=1;
+    else if(right_data[0]==0x02) mode=0;
+    if(mode==1) ips114_draw_line(0,0,188,120,RGB565_GREEN);
+    else if(mode==0)    ips114_draw_line(188,0,0,120,RGB565_BLUE);
     if(mode==1)
     {
         Image_Change();

@@ -16,14 +16,16 @@ from machine import UART
 
 def send_data(data):
    data_packet = []
-   data_packet.append(baotou[0]) #发送包头，这里的append是增长数组的数据
+   data_packet.append(0xB7) #发送包头，这里的append是增长数组的数据
+   #data_packet.append(num)#本次发送数据的数量
    if isinstance(data, list): # 如果data是列表，将其元素添加到data_packet
        data_packet.extend(data)
    else:
        data_packet.append(data) #发送数据
-   data_packet.append(baowei[0]) #发送包尾
+   data_packet.append(0x98) #发送包尾
    uart.write(bytearray(data_packet))#发送数据
-   time.sleep_ms(100)#发送数据后延时100ms,保证发送完成
+   print(data_packet)#打印发送的数据
+   time.sleep_ms(400)#发送数据后延时100ms,保证发送完成
 
 k=0
 map_flag=0
@@ -59,11 +61,13 @@ net_path = "mobilenet_v2-2024-03-03T08-27-26.947Z_in-int8_out-int8_channel_ptq.t
 labels = [line.rstrip() for line in open("/sd/mobilenet_v2_total_labels.txt")]   # 加载标签
 net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路径 load_to_fb：模型会被加载到帧缓冲区
 
+test_data=[0x10,0x20,0x30]
 
 
 while(1):
     while(1):
-        send_data(0x01)
+        send_data(test_data)
+
     sensor.set_auto_whitebal(False)#关闭白平衡
     img = sensor.snapshot()
     #这个是通过色块来找图片
