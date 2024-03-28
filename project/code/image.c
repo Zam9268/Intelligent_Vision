@@ -939,7 +939,7 @@ void test2(void)
     ips114_show_uint(188,40,right_data[0],3);
     ips114_show_uint(188,60,right_data[1],3);
     ips114_show_uint(188,80,right_data[2],3);
-    ips114_show_uint(188,100,fifo_data_count,2);
+    ips114_show_uint(188,100,data_length,2);
     
 }
 

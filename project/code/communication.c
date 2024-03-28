@@ -12,7 +12,8 @@ uint8 right_data[64]={0};//存储最终的数据
 uint8 arm_uart_flag =0 ;//发送给机械臂的拾取标志位
 uint8 arm_uart_flag_on=0;
 uint8 testuart_flag =0;//测试串口标志位
-
+uint8 data_length=0;//定义实际上测试得到的数据长度
+uint8 transform_counts=0;//定义发送数据的数量
 /**
  * @brief 串口及各种功能的初始化
  * @param 无
@@ -63,7 +64,7 @@ void uart4_rx_interrupt_handler(void)
 void get_uartdata(void)
 {
     fifo_data_count = fifo_used(&uart_data_fifo); //查看缓冲区是否存在数据
-    static uint8 get_counts=0;//定义发送数据的数量
+    
     if(fifo_data_count!=0)
     {
         if(get_states==0)//对对应的帧头
@@ -79,7 +80,7 @@ void get_uartdata(void)
         //     fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
         //     if(fifo_get_data[0]>=1&&fifo_get_data[0]<=16)   //读取的数据个数只能介于1和16个之间
         //     {
-        //         get_counts=fifo_get_data[0];//存储发送的数据的个数
+        //         transform_counts=fifo_get_data[0];//存储发送的数据的个数
         //         fifo_get_data[0]=0;//清零
         //         get_states=2;//将读取状态置为2
         //     }
@@ -98,9 +99,17 @@ void get_uartdata(void)
             get_states=2;//将读取状态置为2*/
             static uint8 i = 0;//数组下标指针
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            if(fifo_get_data[0]==0x98) // 如果读取到了帧尾
-            { 
-                get_states=3;//将读取状态置为3
+            if(fifo_get_data[0]==0x98) // 如果读取到了帧尾，且接收到的数据和实际上接收到的数据数量相等
+            {
+                data_length=i;//将数据长度赋值给data_length 
+                i=0;//将下标指针清零
+                get_states=0;//将读取状态置为3
+                for(uint8 j=data_length;j<64;j++)
+                {
+                    right_data[j]=0;//将后面的数据清零
+                }
+                uart_write_string(UART_1,"get");//发送回get信号
+                
             }
             else
             {
@@ -108,27 +117,6 @@ void get_uartdata(void)
                 i++;//下标指针增加
                 fifo_get_data[0]=0;//清零
             }
-        }
-        else if(get_states==3)//读到帧尾之后的处理
-        {
-            get_states=0;//将读取的状态置0
-            uart_write_string(UART_1,"get");//发送回get信号
-            fifo_get_data[0]=0;
-            if(arm_uart_flag_on)    arm_uart_flag = 1;//如果拾取标志位开启，则将拾取标志位置1
-            /*
-            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);//保存到帧缓冲区
-            if(fifo_get_data[0]==0x98)//如果读取到了帧尾
-            {
-                get_states=0;//将读取的状态置0
-                uart_write_string(UART_1,"get");//发送回get信号
-                fifo_get_data[0]=0;
-                if(arm_uart_flag_on)    arm_uart_flag = 1;//如果拾取标志位开启，则将拾取标志位置1
-            }
-            else//这个时候如果读不到帧尾，说明读取出现了错误
-            {
-                get_states=0;//将读取的状态置0
-                memset(right_data,0,sizeof(right_data));//将right_data数组清零（也可以用for循环，for循环可能快一点）
-            }*/
         }
         else
         {
