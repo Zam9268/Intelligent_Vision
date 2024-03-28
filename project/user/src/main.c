@@ -44,7 +44,7 @@
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern float PID_motor[4];//???pid?????????
-extern pid_info Speed[4];//??????
+extern pid_info Speed[4];//速度pid数组
 Vofa_HandleTypedef vofa1;//vofa????????
 extern int test_count;
 extern uint8 right_data[64];
@@ -64,29 +64,33 @@ int main(void)
     clock_init(SYSTEM_CLOCK_600M); // ???????
     CLOCK_EnableClock(kCLOCK_Pit);//???????PIT???
     debug_init();                  // ??????????
-    system_delay_ms(300);           //?????????????????????
-	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    PidInit();//PID???????????????
-   My_Communication_Init();//????????????
-    ips114_init();//锟斤拷幕锟斤拷始锟斤拷
-   ips114_set_dir(IPS114_PORTAIT);
+    system_delay_ms(300);           //等待上电
+
+    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
+	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    PidInit();//速度pid初始化
+    Pos_PidInit();//位置式pid初始化
+
+    // My_Communication_Init();//
+    ips114_init();//屏幕初始化
+    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
-   interrupt_global_enable(0);
-	ips114_clear();//锟斤拷锟斤拷 
-    Motor_Init();                  // ????????
-    Encoder_Init();                // ???????????
-    Camera_Init();
+    interrupt_global_enable(0);    //开中断
+	ips114_clear();                //清屏
+    Motor_Init();                  //电机初始化
+    Encoder_Init();                //编码器初始化
+    Camera_Init();                 //摄像头初始化
     
-    pit_ms_init(PIT_CH1,10);    // ??????????
-    pit_ms_init(PIT_CH0,15);    // ??????????
-    pit_ms_init(PIT_CH2,15);    // ??????????
-    pit_ms_init(PIT_CH3,15);    // ??????????
-    // target_motor[0]=1000;
-	// target_motor[1]=1000;
-	
+    pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
+    pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
+    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
+    pit_ms_init(PIT_CH3,15);    // 通道3初始化, 15ms
+	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
+
+//    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     Last_Longest_White_Column_Left[1]=94;
 	  Longest_White_Column_Left[1]=94;
 	  Speed[3].target_speed=40.0;
@@ -94,9 +98,6 @@ int main(void)
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;
 	// Speed[1].target_pwm=1500;
-    // ?????锟斤拷??????? ?????????????????
-    
-    // ?????锟斤拷??????? ?????????????????
     while(1)
     {   
         
@@ -118,23 +119,19 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		test();
-        // Vofa_JustFloat(&vofa1,other_data,5);
-        // uart_write_buffer(UART_1,other_data,5);
-		// printf("\n");
+		//    test();
+//        Vofa_JustFloat(&vofa1,other_data,5);
+//        uart_write_buffer(UART_1,other_data,5);
+//		printf("\n");
 //        uart_write_buffer(UART_8,other_data,5);
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-//		// Speed_Control(1000,1000,0);//?????????
-//		  ips114_show_int(    0 , 0,   encoder[0],         4);//???????????????????
-//        ips114_show_int(    0 , 20,   encoder[1],         4);//???????????????????
-//        ips114_show_int(    0 , 40,   encoder[2],         4);//???????????????????
-//        ips114_show_int(    0 , 60,   encoder[3],         4);//???????????????????
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
        printf("%.2f,%.2f,%.2f,%.2f\r\n",loc_target[0] ,Speed[0].now_speed, loc_target[2], loc_target[3]);
+       //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);
@@ -145,13 +142,13 @@ int main(void)
 }
 
 /**
- * @brief 涓插彛1涓柇鍑芥暟锛岀敤浜庡閮ㄨ皟鐢?
+ * @brief 涓插彛1涓?鏂?鍑芥暟锛岀敤浜庡?栭儴璋冪??
  * @param 鏃?
  * @return 鏃?
  */
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//杩涘叆鎺ユ敹涓柇
-    get_uartdata();//鑾峰彇淇℃伅
+    uart1_rx_interrupt_handler();//杩涘叆鎺ユ敹涓?鏂?
+    get_uartdata();//获取串口数据
 }
 

@@ -18,8 +18,10 @@ int encoder[4];   // 四个编码器读出的值
 float encoder_sum[4];//四个编码器的累积数值
 float target_encoder_sum[4];//四个编码器的目标累计数值
 float loc_target[4];//位置式处理后输出的目标速度
+float loc_last_target[4];//记录上次的输出量
 int Turn_Left_flag,Turn_Right_flag;//左转标志，右转标志
 int loc_Finish_flag = 0;//位置式调整完成标志
+int Location_pid_flag = 1;//测试使用，可能后续还要使用
 float loc_err;//中线误差
 float abs_loc_err;//中线误差绝对值
 int pid_motor[4]; // PID输出的pwm
@@ -151,17 +153,17 @@ void Pos_PidInit(void)
   }
 
   //左前
-  Pos_turn_pid[0].kp = 0.1;
-  Pos_turn_pid[0].kd = 0.0;
+  Pos_turn_pid[0].kp = 0.5;   //0.5对应目标速度40
+  Pos_turn_pid[0].kd = 0.5;   //0.5对应目标速度40
   //左后
-  Pos_turn_pid[1].kp = 0.0;
-  Pos_turn_pid[1].kd = 0.0;
+  Pos_turn_pid[1].kp = 0.5;
+  Pos_turn_pid[1].kd = 0.5;
   //右前
-  Pos_turn_pid[2].kp = 0.0;
-  Pos_turn_pid[2].kd = 0.0;
+  Pos_turn_pid[2].kp = 0.5;
+  Pos_turn_pid[2].kd = 0.5;
   //右后
-  Pos_turn_pid[3].kp = 0.0;
-  Pos_turn_pid[3].kd = 0.0; //各个轮子分开调参
+  Pos_turn_pid[3].kp = 0.5;
+  Pos_turn_pid[3].kd = 0.5; //各个轮子分开调参
 
 }
 
@@ -273,7 +275,7 @@ void Drive_Motor()
     }
   }
    
-	if(loc_err > 0)
+	if(loc_err > 0)       //不知道为什么右转的时候读出来的误差会小于0,这里到时候还要更改
      Turn_Left_flag = 1;//左转标志位
   if(loc_err < 0)
      Turn_Right_flag =1;//右转标志位
@@ -282,21 +284,29 @@ void Drive_Motor()
   {
     Set_Distence_m(abs_loc_err);//输入速度转换成误差,还要调整一下参数
 	
-    encoder_sum[0] += fabsf(encoder[0]);//编码器累计值
-    encoder_sum[1] += fabsf(encoder[1]);
-    encoder_sum[2] += fabsf(encoder[2]);
-    encoder_sum[3] += fabsf(encoder[3]);
-
+//     int i = 0;
+//     for(i = 0;i < 4; i++)
+//    {
+//        if(encoder_sum[i] < target_encoder_sum[i])
+//      {
+//          encoder_sum[i] += fabsf(encoder[i]);//编码器累计值
+//      }
+//        else
+//      {
+//          Location_pid_flag = 0;//不再进行位置式调整，测试用
+//          loc_target[i] = loc_last_target[i];//最后结果直接为上次处理完的速度，测试用
+//      }
+//    }
 		
-    LF_Target = Location_pid(&Pos_turn_pid[0], -encoder_sum[0], target_encoder_sum[0]);
-    LB_Target = Location_pid(&Pos_turn_pid[1], -encoder_sum[0], target_encoder_sum[1]);
-    RF_Target = Location_pid(&Pos_turn_pid[2], -encoder_sum[0], target_encoder_sum[2]);
-    RB_Target = Location_pid(&Pos_turn_pid[3], -encoder_sum[0], target_encoder_sum[3]);//计算出脉冲数
+    LF_Target = Location_pid(&Pos_turn_pid[0], encoder_sum[0], target_encoder_sum[0]);
+    LB_Target = Location_pid(&Pos_turn_pid[1], encoder_sum[0], target_encoder_sum[1]);
+    RF_Target = Location_pid(&Pos_turn_pid[2], encoder_sum[0], target_encoder_sum[2]);
+    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[0], target_encoder_sum[3]);//计算出脉冲数
             
     loc_target[0] = LF_Target* 0.2636719 *PI /100;//转化成速度
     loc_target[1] = LB_Target* 0.2636719 *PI /100;
     loc_target[2] = RF_Target* 0.2636719 *PI /100;
-    loc_target[3] = RB_Target* 0.2636719 *PI /100;//单位为m/s 
+    loc_target[3] = RB_Target* 0.2636719 *PI /100;//单位为m/s
 
   if(Turn_Left_flag==1)//左转
   {
@@ -312,6 +322,11 @@ void Drive_Motor()
     loc_target[2] = -fabsf(loc_target[2]);
     loc_target[3] = -fabsf(loc_target[3]);
   }
+	
+	  loc_last_target[0] = loc_target[0];//记录本次的输出速度
+    loc_last_target[1] = loc_target[1];
+    loc_last_target[2] = loc_target[2];
+    loc_last_target[3] = loc_target[3];
   }
 }
 /**

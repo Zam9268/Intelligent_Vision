@@ -59,11 +59,13 @@ extern float target_encoder_sum[4];
 extern float loc_target[4];
 extern int Turn_Left_flag,Turn_Right_flag;
 extern int loc_Finish_flag;
+extern int Location_pid_flag;//位置式处理允许标志，测试用
+extern float loc_last_target[4];
 extern float loc_err;//中线误差
 extern float abs_loc_err;//中线误差绝对值
 extern int pid_motor[4];//pid处理后输出的pwm值
-extern float turn_angle;//转锟斤拷锟?
-extern int spin;//锟斤拷转锟斤拷锟斤拷
+extern float turn_angle;//转向角度
+extern int spin;//旋转量
 extern int translation;
 extern pid_info LF_motor_pid;//锟侥革拷锟斤拷锟斤拷pid锟结构锟斤拷
 extern pid_info RF_motor_pid;
