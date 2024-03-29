@@ -71,25 +71,25 @@ void get_uartdata(void)
         {
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
             //将fifo结构体中的数据读取到fifo_get_data中
-            if(fifo_get_data[0]==0xB7)  get_states=2;//如果接收到了帧头0xB7，则将get_states置为1（进入状态读取1）
+            if(fifo_get_data[0]==0xB7)  get_states=1;//如果接收到了帧头0xB7，则将get_states置为1（进入状态读取1）
             else get_states=0;//否则读取状态置0
             fifo_get_data[0]=0;//读取完信号后就将fifo_get_data[0]置0，防止重复读取
         }
-        // else if(get_states==1)//帧头读完，开始读取接收数据的个数
-        // {
-        //     fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-        //     if(fifo_get_data[0]>=1&&fifo_get_data[0]<=16)   //读取的数据个数只能介于1和16个之间
-        //     {
-        //         transform_counts=fifo_get_data[0];//存储发送的数据的个数
-        //         fifo_get_data[0]=0;//清零
-        //         get_states=2;//将读取状态置为2
-        //     }
-        //     else
-        //     {
-        //         get_states=0;//否则读取状态置0
-        //         fifo_get_data[0]=0;//清零
-        //     }
-        // }
+        else if(get_states==1)//帧头读完，开始读取接收数据的个数
+        {
+            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
+            if(fifo_get_data[0]>=1&&fifo_get_data[0]<=16)   //读取的数据个数只能介于1和16个之间
+            {
+                transform_counts=fifo_get_data[0];//存储发送的数据的个数
+                fifo_get_data[0]=0;//清零
+                get_states=2;//将读取状态置为2
+            }
+            else
+            {
+                get_states=0;//否则读取状态置0
+                fifo_get_data[0]=0;//清零
+            }
+        }
         else if(get_states==2)//读取状态为2，读取对应的帧的内容
         {
             /*
@@ -101,15 +101,25 @@ void get_uartdata(void)
             fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
             if(fifo_get_data[0]==0x98) // 如果读取到了帧尾，且接收到的数据和实际上接收到的数据数量相等
             {
-                data_length=i;//将数据长度赋值给data_length 
-                i=0;//将下标指针清零
-                get_states=0;//将读取状态置为3
-                for(uint8 j=data_length;j<64;j++)
+                if(transform_counts==i)
                 {
-                    right_data[j]=0;//将后面的数据清零
+                    data_length=i;//将数据长度赋值给data_length 
+                    i=0;//将下标指针清零
+                    get_states=0;//将读取状态置为3
+                    for(uint8 j=data_length;j<64;j++)
+                    {
+                        right_data[j]=0;//将后面的数据清零
+                    }
+                    uart_write_string(UART_1,"get");//发送回get信号
                 }
-                uart_write_string(UART_1,"get");//发送回get信号
-                
+                else
+                {
+                    for(uint8 j=0;j<i;j++)
+                    {
+                        right_data[j]=0;
+                        get_states=0;
+                    }
+                }
             }
             else
             {

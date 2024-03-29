@@ -14,10 +14,10 @@ import os, tf
 from pyb import LED
 from machine import UART
 
-def send_data(data):
+def send_data(data,num):
    data_packet = []
    data_packet.append(0xB7) #发送包头，这里的append是增长数组的数据
-   #data_packet.append(num)#本次发送数据的数量
+   data_packet.append(num)#本次发送数据的数量
    if isinstance(data, list): # 如果data是列表，将其元素添加到data_packet
        data_packet.extend(data)
    else:
@@ -66,7 +66,7 @@ test_data=[0x97,0x65,0x92,0x11]#可以发送多组数据，但是注意：第一
 
 while(1):
     while(1):
-        send_data(test_data)
+        send_data(test_data,4)
 
     sensor.set_auto_whitebal(False)#关闭白平衡
     img = sensor.snapshot()
