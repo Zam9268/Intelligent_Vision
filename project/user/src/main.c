@@ -115,7 +115,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		//    test();
+		 test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
@@ -138,13 +138,13 @@ int main(void)
 }
 
 /**
- * @brief 串口1????函数，用于???部调???
- * @param ??
- * @return ??
+ * @brief 串口1的信息收发函数，用于art的信息传递
+ * @param 无
+ * @return 无
  */
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//进入接收????
-    get_uartdata();//???????????
+    uart1_rx_interrupt_handler();//进入接收中断处理函数
+    get_uartdata();//取出对应的接收到的信息
 }
 

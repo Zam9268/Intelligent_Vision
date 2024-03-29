@@ -23,9 +23,13 @@ RoadType Road_Type; // Type of road element
 uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0; // Finding the left top turning point
+uint8 Last_Left_Up_Find=0;
+uint8 Last_Right_Up_Find=0;//记录上次的位置
 uint8 Right_Up_Find = 0; // Finding the right top turning point
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
+float err=0.00;
+float last_err=0.00;
 
 /*以下是其他函数中外部声明的变量*/
 extern uint8 right_data[64];//存储最终的数据    
@@ -573,8 +577,9 @@ float Err_Handle(void)
         err+=sum_err[i]/sum_hight;//???????
     }
     */
+   /*误差消除方法：判断白列的位置，判断误差的正负；或者通过取平均来减小误差*/
+    last_err=err;
     
-    float err=0.00;
     int weight_count=0;//??????
     for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)
     {
@@ -582,6 +587,7 @@ float Err_Handle(void)
         weight_count+=Weight[i];//??????????
     }
     err=err/weight_count;//??????
+    if(abs(last_err-err)>=5)    err=last_err;//
     return err;
 }
 
@@ -681,7 +687,8 @@ void Find_Down_Point(int start, int end)
             Left_Down_Find=i;//????????????
         }
         if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
-        abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15)
+        abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15
+        &&abs(left_line[i]-left_line[i-4])>=15)
         {
             Right_Down_Find=i;//????????????
         }
@@ -697,8 +704,11 @@ void Find_Down_Point(int start, int end)
 void Find_Up_Point(int start, int end)
 {
     int i,t;//?м????
+    if(Left_Down_Find!=0)   Last_Left_Up_Find=Left_Down_Find;//记录上一次的左下点
+    if(Right_Down_Find!=0)  Last_Right_Up_Find=Right_Down_Find;//记录上一次的右下点
     Left_Up_Find=0;//?????????λ????
     Right_Up_Find=0;//?????????λ????
+
     if(start<end)//?????start?????end
     {
         t=start;
@@ -709,7 +719,7 @@ void Find_Up_Point(int start, int end)
     if(end<=5)  end=5;
     if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5?е?????????????????????????ж?
     /*????????????????????????????????????????*/
-    for(i=start;i>=end;i--)//????????????????
+    for(i=end;i<=start;i++)//????????????????
     {
         if(Left_Up_Find == 0 && 
         abs(left_line[i]-left_line[i-1])<=5 &&
@@ -733,11 +743,15 @@ void Find_Up_Point(int start, int end)
         }
         if(Left_Up_Find!=0 && Right_Up_Find!=0)    break;//????????????
     }
-    if(abs(Right_Up_Find-Left_Up_Find)>=30)//?????????????????????????
+    if(abs(Right_Up_Find-Left_Up_Find)>=30&&left_line[Left_Up_Find]>=right_line[Right_Up_Find])//?????????????????????????
     {
         Right_Up_Find=0;
         Left_Up_Find=0;
     }
+    // if(right_line[Right_Up_Find]<=left_line[Left_Up_Find])
+    // {
+    //     Right_Up_Find=Last_Right_Up_Find;
+    // }
 }
 
 /**
@@ -818,7 +832,7 @@ void Cross_Detect(void)
         Right_Up_Find=0;
         if(Both_Lost_Time >=15)//???????????????
         {
-            Find_Up_Point(IMAGE_HEIGHT-1,30);//??????????????
+            Find_Up_Point(110,6);//??????????????
             if(Left_Up_Find ==0 && Right_Up_Find ==0) return ;//?????????????
         }
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
@@ -835,12 +849,12 @@ void Cross_Detect(void)
             else if(Left_Down_Find == 0 && Right_Down_Find !=0)//б?????
             {
                 Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Right_Add_Line(Right_Up_Find,Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???粹??
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???粹??
             }
             else if (Left_Down_Find !=0 && Right_Down_Find ==0)//б?????
             {
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Left_Add_Line(Left_Up_Find,Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???粹??
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???粹??
             }
             else if(Left_Down_Find == 0 && Right_Down_Find == 0)//??????
             {
@@ -848,6 +862,7 @@ void Cross_Detect(void)
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
             }
         }
+    // }
     }
 }
 
@@ -927,19 +942,24 @@ void test2(void)
     else if(Road_Type==RIGHT_TURN)  type=2;
     else if(Road_Type==LEFT_TURN)   type=3;
     else if(Road_Type==CROSSING)    type=4;
+    if(Road_Type==CROSSING) Cross_Detect();
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        // ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        // ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
+    // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
+    // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
     ips114_show_float(188,20,my_err,2,2);
-    ips114_show_uint(188,40,right_data[0],3);
-    ips114_show_uint(188,60,right_data[1],3);
-    ips114_show_uint(188,80,right_data[2],3);
-    ips114_show_uint(188,100,data_length,2);
+    ips114_show_uint(188,40,type,3);
+    ips114_show_uint(188,60,left_line[Left_Up_Find],3);
+    ips114_show_uint(188,80,right_line[Right_Up_Find],3);
+    
     
 }
 
@@ -951,10 +971,7 @@ void test2(void)
 void test(void)
 {
     uint8 mode=0;//模式为1表示为大津法，模式为2表示为边缘检测算子
-    if(right_data[0]==0x01) mode=1;
-    else if(right_data[0]==0x02) mode=0;
-    if(mode==1) ips114_draw_line(0,0,188,120,RGB565_GREEN);
-    else if(mode==0)    ips114_draw_line(188,0,0,120,RGB565_BLUE);
+    
     if(mode==1)
     {
         Image_Change();
