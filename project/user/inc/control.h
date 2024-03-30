@@ -5,72 +5,66 @@
 #include "stdint.h"
 #include "zf_common_headfile.h"
 
-#define DIR_LF D14//?gpio
-#define DIR_LB D3//gpio
-#define DIR_RF D12//?gpio
-#define DIR_RB D1//?gpio
+#define DIR_LF D14//ç”µæœºgpio
+#define DIR_LB D3//ç”µæœºgpio
+#define DIR_RF D12//ç”µæœºgpio
+#define DIR_RB D1//ç”µæœºgpio
 
-#define motor_LF PWM1_MODULE1_CHB_D15//????pwm??
-#define motor_LB PWM2_MODULE3_CHA_D2//????pwm??
-#define motor_RF PWM1_MODULE0_CHB_D13//????pwm??
-#define motor_RB PWM1_MODULE3_CHA_D0//????pwm??
+#define motor_LF PWM1_MODULE1_CHB_D15//å·¦å‰pwmé€šé“
+#define motor_LB PWM2_MODULE3_CHA_D2//å·¦åpwmé€šé“
+#define motor_RF PWM1_MODULE0_CHB_D13//å³å‰pwmé€šé“
+#define motor_RB PWM1_MODULE3_CHA_D0//å³å‰pwmé€šé“
 
-#define ENCODER_LF                       (QTIMER1_ENCODER2)//???????
+#define ENCODER_LF                       (QTIMER1_ENCODER2)//å·¦å‰ç¼–ç å™¨é€šé“
 #define ENCODER_LF_LSB                   (QTIMER1_ENCODER2_CH1_C2)
 #define ENCODER_LF_DIR                   (QTIMER1_ENCODER2_CH2_C24)
 
-#define ENCODER_LB                       (QTIMER2_ENCODER1)//???????
+#define ENCODER_LB                       (QTIMER2_ENCODER1)//å·¦åç¼–ç å™¨é€šé“
 #define ENCODER_LB_LSB                   (QTIMER2_ENCODER1_CH1_C3)
 #define ENCODER_LB_DIR                   (QTIMER2_ENCODER1_CH2_C4)
 
-#define ENCODER_RF                       (QTIMER1_ENCODER1)//???????
+#define ENCODER_RF                       (QTIMER1_ENCODER1)//å³å‰ç¼–ç å™¨é€šé“
 #define ENCODER_RF_LSB                   (QTIMER1_ENCODER1_CH1_C0)
 #define ENCODER_RF_DIR                   (QTIMER1_ENCODER1_CH2_C1)
 
-#define ENCODER_RB                       (QTIMER2_ENCODER2)//???????
+#define ENCODER_RB                       (QTIMER2_ENCODER2)//å³åç¼–ç å™¨é€šé“
 #define ENCODER_RB_LSB                   (QTIMER2_ENCODER2_CH1_C5)
 #define ENCODER_RB_DIR                   (QTIMER2_ENCODER2_CH2_C25)
 
-#define AMPLITUDE_MOTOR 3000 //pwm?
+#define AMPLITUDE_MOTOR 3000 //pwm???
 
 //??pid??
 typedef struct{
-	float now_speed;	  //??
-	float target_speed;	//??
-	int target_pwm;		//?Pwm
-	uint8 xuhao;		//?
+	float now_speed;	  //å®é™…é€Ÿåº¦
+	float target_speed;	//ç›®æ ‡é€Ÿåº¦
+	int target_pwm;		//ç›®æ ‡Pwm
+	uint8 xuhao;		//ç¼–ç å™¨åºå·
 	float kp ;		        
 	float ki ;		        
 	float kd ;	          
-	float error;          //??
-	float lastError;	    //??
-	float lastlastError;  //??
-	float dError;         //???
-	float output;         //?
-	float output_last;    //??
+	float error;          //å½“å‰è¯¯å·®
+	float lastError;	    //ä¸Šæ¬¡è¯¯å·®
+	float lastlastError;  //ä¸Šä¸Šæ¬¡è¯¯å·®
+	float dError;         //æœ¬æ¬¡è¯¯å·®ä¸ä¸Šæ¬¡è¯¯å·®çš„åå·®å€¼
+	float output;         //è¾“å‡ºå€¼
+	float output_last;    //ä¸Šæ¬¡è¾“å‡ºå€¼
 }pid_info;
 
 
-extern float Car_H;//
-extern float Car_W;//
-extern int encoder[4];//
+extern float Car_H;//è½¦é•¿
+extern float Car_W;//è½¦å®½
+extern int encoder[4];//å››ä¸ªç¼–ç å™¨è¯»æ•°
 extern float encoder_sum[4];
 extern float target_encoder_sum[4];
 extern float loc_target[4];
+extern float loc_last_target[4];
 extern int Turn_Left_flag,Turn_Right_flag;
 extern int loc_Finish_flag;
-extern int Location_pid_flag;//???
-extern float loc_last_target[4];
-extern float loc_err;//
-extern float abs_loc_err;//?
-extern int pid_motor[4];//pidpwm?
-extern float turn_angle;//??
-extern int spin;//?
-extern int translation;
-extern pid_info LF_motor_pid;//?pid?
-extern pid_info RF_motor_pid;
-extern pid_info LB_motor_pid;
-extern pid_info RB_motor_pid;
+extern int Location_pid_flag;
+extern float loc_err;
+extern float abs_loc_err;
+extern int pid_motor[4];
+
 extern pid_info Pos_turn_pid[4];//
 extern float PID_Bias[4], PID_Last_bias[4];
 
