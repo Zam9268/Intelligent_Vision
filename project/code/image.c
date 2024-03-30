@@ -23,13 +23,19 @@ RoadType Road_Type; // Type of road element
 uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0; // Finding the left top turning point
+uint8 Last_Left_Up_Find=0;
+uint8 Last_Right_Up_Find=0;//记录上次的位置
 uint8 Right_Up_Find = 0; // Finding the right top turning point
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
+float err=0.00;
+float last_err=0.00;
 
 /*以下是其他函数中外部声明的变量*/
 extern uint8 right_data[64];//存储最终的数据    
 extern uint32 fifo_data_count;//单次接收的数组个数
+extern uint8 data_length;//数据长度
+extern uint8 i;//下标指针
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -42,6 +48,14 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1, // Weight of rows 60 to 69
 };
 
+const uint8 Zebra[60]={
+    30,30,30,30,30,30,30,30,30,30,
+    35,35,35,35,35,35,35,35,35,35,
+    45,45,45,45,45,45,45,45,45,45,
+    55,55,55,55,55,55,55,55,55,55,
+    65,65,65,65,65,65,65,65,65,65,
+    85,85,85,85,85,85,85,85,85,85,
+};
 uint8 OSTU_GetThreshold(uint8 *image, uint16 Width, uint16 Height)
 {
     uint8 HistGram[257] = {0}; // ???????С??? 257
@@ -359,77 +373,106 @@ void Outer_Analyse(void)
     }
         /* Preliminary analysis of different flags for track elements */
     if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
-    if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15)   Road_Type=RIGHT_TURN;
-    if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15)   Road_Type=LEFT_TURN;
+    if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
+    if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
     if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
 
+    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
 }
 
 /**
- * @brief ??????????????
- * @param start:??????? end:???????
- * @return ?????????????????????
+ * @brief 左边线连续性检测（有改进的空间，比如增加一个阈值的参数）
+ * @param start:起始行 end:终止行
+ * @return 返回不连续的行数
  */
-int Continuity_Change_Left(int start, int end)
+int Continuity_Change_Left(int start, int end,int mode)
 {
     int i,t,continuity_change_flag=0;
-    if(Left_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//????????????ж?
-    if(Search_Stop_Line <=5) return 1; //????????к????????ж?
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//??????籣??
-    if(end<=5)  end=5;//??????籣??
-    if(start<end)//?????start?????end?????????????
+    if(Left_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//丢线数过多就返回1（这句话没必要，在直道上检测肯定不会出现这种情况）
+    if(Search_Stop_Line <=5) return 1; //如果截止行过小（最长白列的白列点数小于等于5行），更没必要找了（这种情况出现的比较少）
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//起始行限幅（防止后续判断出现数组越界）
+    if(end<=5)  end=5;//终止行限幅（防止后续判断出现数组越界）
+    if(start<end)//原则上start要大于end
     {
         t=start;
         start=end;
         end=t;
     }
-    for(i=start;i>=end;i--)
+    if(mode==0)
     {
-        if(left_line[i]-left_line[i-1]>=5)//????5?????????ж??????????????
+        for(i=start;i>=end;i--)//在图像上从下到上开始扫描
         {
-            continuity_change_flag=i;
-            break;//??????????????????
+            if(abs(left_line[i]-left_line[i-1])>=5&&left_line[i-1]>=20&&left_line[i-3]>=20)//如果两行之间的差值大于5（这个阈值可以调整），防止过于靠近边界
+            {
+                continuity_change_flag=i;
+                break;//找到不连续的行就跳出循环
+            }
         }
     }
-    return continuity_change_flag;//????0?????????????
+    else if(mode==1)
+    {
+        for(i=end;i<=start;i++)//在图像上从下到上开始扫描
+        {
+            if(abs(left_line[i]-left_line[i-1])>=5&&left_line[i-1]>=20&&left_line[i-3]>=20)//如果两行之间的差值大于5（这个阈值可以调整），防止过于靠近边界
+            {
+                continuity_change_flag=i;
+                break;//找到不连续的行就跳出循环
+            }
+        }
+    }
+    return continuity_change_flag;//返回0说明没有不连续的行，返回其他值说明有不连续的行
 }
 
 /**
- * @brief ??????????????
- * @param start:??????? end:???????
- * @return ?????????????????????
+ * @brief 右边线连续性检测
+ * @param start:起始行 end:终止行
+ * @return 返回不连续的行数
  */
-int Continuity_Change_Right(int start, int end)
+int Continuity_Change_Right(int start, int end,int mode)
 {
     int i,t,continuity_change_flag=0;
-    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//????????????ж?
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//??????籣??
-    if(end <=5) end=5;//??????籣??
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//丢线数过多就返回1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//起始行限幅
+    if(end <=5) end=5;//终止行限幅
     if(start<end)
     {
         t=start;
         start=end;
         end=t;
     }
-    for(i=start;i>=end;i--)
+    if(mode==0)
     {
-        if(abs(right_line[i]-right_line[i-1])>=5)//????5?????????ж??????????????
+        for(i=start;i>=end;i--)
         {
-            continuity_change_flag=i;
-            break;//??????????????????
+            if(abs(right_line[i]-right_line[i-1])>=5)//如果两行之间的差值大于5
+            {
+                continuity_change_flag=i;
+                break;//找到不连续的行就跳出循环
+            }
         }
     }
-    return continuity_change_flag;//????0??????????????????????????????????????????????????
+    else if(mode==1)
+    {
+        for(i=end;i>=start;i++)
+        {
+            if(abs(right_line[i]-right_line[i-1])>=5)//如果两行之间的差值大于5
+            {
+                continuity_change_flag=i;
+                break;//找到不连续的行就跳出循环
+            }
+        }
+    }
+    return continuity_change_flag;//返回0说明没有不连续的行，返回其他值说明有不连续的行
 }
 
 /**
- * @brief ????????
- * @param line:????????
- * @return ?????????????????????
+ * @brief 连续性检测
+ * @param line:待检测的数组
+ * @return 返回最大的不连续值
  */
 uint8 Continuity_detect(uint8 *line)
 {
-    uint8 max_uncontinuity=0;//???????
+    uint8 max_uncontinuity=0;//最大不连续值
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
         if(line[i]-line[i-1]>max_uncontinuity)
@@ -437,21 +480,21 @@ uint8 Continuity_detect(uint8 *line)
             max_uncontinuity=line[i]-line[i-1];
         }
     }
-    return max_uncontinuity;//?????????????????????
+    return max_uncontinuity;//返回最大不连续值
 }
 
 /**
- * @brief ????仯?????
- * @param ????????????????????е?????????
- * @return ??
- * @attention ?????????????????????????????????????
+ * @brief 求出对应数组的变化值（变化值可以调整）
+ * @param 无
+ * @return 无
+ * @attention 无
  */
 void Derivative_Change(void)
 {
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
         Left_derivative[i]=(left_line[i]-left_line[i-1])/2;
-        Right_derivative[i]=(right_line[i]-right_line[i-1])/2;//????????????
+        Right_derivative[i]=(right_line[i]-right_line[i-1])/2;//求出对应数组的变化值
     }
 }
 
@@ -494,21 +537,21 @@ float Derivative_detect_min(uint8 *line)
 }
 
 /**
- * @brief ??????????????????????????
- * @param int start,int end ????У??????
- * @return ??
- * @attention ??
+ * @brief 左边界单调性检测
+ * @param int start 起始行, int end 终止行
+ * @return 返回单调性变化的行数
+ * @attention 无
  */
 int Monotonicity_Change_Left(int start, int end)
 {
     int i,monotonicity_change_line=0;
-    if(Left_Lost_Time>=0.9*IMAGE_HEIGHT)   return 0;//????????????ж?
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//??????籣??
-    if(end<=5) end=5;//??????籣??
-    if(start<=end)  return 0; //??????????????????????0
+    if(Left_Lost_Time>=0.9*IMAGE_HEIGHT)   return 1;//丢线数过多就返回1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//起始行限幅
+    if(end<=5) end=5;//终止行限幅
+    if(start<=end)  return 1; //如果起始行小于等于终止行，说明没有检测的必要
     for(i=start;i>=end;i--)
     {
-        /*????????????????·???5??????????????????????????????????????????*/
+        /*如果左边线某一点在相邻上下5行的点中的列坐标最大（最靠右），那么就默认该点为单调点*/
         if(left_line[i] >= left_line[i + 5] && left_line[i] >= left_line[i - 5] &&
                  left_line[i] >= left_line[i + 4] && left_line[i] >= left_line[i - 4] &&
                  left_line[i] >= left_line[i + 3] && left_line[i] >= left_line[i - 3] &&
@@ -519,25 +562,25 @@ int Monotonicity_Change_Left(int start, int end)
             break;
         }
     }
-    return monotonicity_change_line;
+    return monotonicity_change_line;//返回单调点所在的行数
 }
 
 /**
- * @brief ??????????????????????????
- * @param int start,int end ????У??????
- * @return ??
- * @attention ??
+ * @brief 右边界单调性检测
+ * @param int start 起始行, int end 终止行
+ * @return 返回单调性变化的行数
+ * @attention 无
  */
 int Monotonicity_Change_Right(int start,int end)
 {
     int i,monotonicity_change_line=0;
-    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//????????????ж?
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//??????籣??
-    if(end <=5) end=5;//??????籣??
-    if(start<=end)  return monotonicity_change_line;//????????????????
-    for(i=start;i>=end;i--)//?????????
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//丢线数过多就返回1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//起始行限幅
+    if(end <=5) end=5;//终止行限幅
+    if(start<=end)  return monotonicity_change_line;//如果起始行小于等于终止行，说明没有检测的必要
+    for(i=start;i>=end;i--)//从下往上扫
     {
-        /*????????????????????????????5??????????????????????????*/
+        /*如果右边线某一点在相邻上下5行的点中的列坐标最小（最靠左），那么就默认该点为单调点*/
         if(right_line[i] <= right_line[i + 5] && right_line[i] <= right_line[i - 5] &&
             right_line[i] <= right_line[i + 4] && right_line[i] <= right_line[i - 4] &&
             right_line[i] <= right_line[i + 3] && right_line[i] <= right_line[i - 3] &&
@@ -548,12 +591,12 @@ int Monotonicity_Change_Right(int start,int end)
             break;
         }
     }
-    return monotonicity_change_line;//????0?????????????????
+    return monotonicity_change_line;//返回单调点所在的行数
 }
 /**
- * @brief ?????????
- * @param height:???????
- * @return ???
+ * @brief 误差处理函数
+ * @param 无
+ * @return 对应的误差，左正右负
  */
 float Err_Handle(void)
 {
@@ -571,22 +614,24 @@ float Err_Handle(void)
         err+=sum_err[i]/sum_hight;//???????
     }
     */
+   /*误差消除方法：判断白列的位置，判断误差的正负；或者通过取平均来减小误差*/
+    last_err=err;//上次的误差传递
     
-    float err=0.00;
-    int weight_count=0;//??????
+    int weight_count=0;//权重计算
     for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)
     {
         err+=(IMAGE_WIDTH/2-((left_line[i]+right_line[i])>>1))*Weight[i];
-        weight_count+=Weight[i];//??????????
+        weight_count+=Weight[i];//计算权重总和
     }
-    err=err/weight_count;//??????
+    err=err/weight_count;//计算误差
+    if(abs(last_err-err)>=5)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）
     return err;
 }
 
 /**
- * @brief ???????
- * @param int x1, int y1, int x2,int y2 ???????????????????
- * @return ??????????????????????
+ * @brief 左边界补线函数
+ * @param int x1, int y1, int x2,int y2 起始点终止点的坐标
+ * @return 在图像上对原来的左边线数组进行修改
  */
 void Left_Add_Line(int x1, int y1, int x2,int y2)
 {
@@ -679,7 +724,8 @@ void Find_Down_Point(int start, int end)
             Left_Down_Find=i;//????????????
         }
         if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
-        abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15)
+        abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15
+        &&abs(left_line[i]-left_line[i-4])>=15)
         {
             Right_Down_Find=i;//????????????
         }
@@ -695,8 +741,11 @@ void Find_Down_Point(int start, int end)
 void Find_Up_Point(int start, int end)
 {
     int i,t;//?м????
+    if(Left_Down_Find!=0)   Last_Left_Up_Find=Left_Down_Find;//记录上一次的左下点
+    if(Right_Down_Find!=0)  Last_Right_Up_Find=Right_Down_Find;//记录上一次的右下点
     Left_Up_Find=0;//?????????λ????
     Right_Up_Find=0;//?????????λ????
+
     if(start<end)//?????start?????end
     {
         t=start;
@@ -707,7 +756,7 @@ void Find_Up_Point(int start, int end)
     if(end<=5)  end=5;
     if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5?е?????????????????????????ж?
     /*????????????????????????????????????????*/
-    for(i=start;i>=end;i--)//????????????????
+    for(i=end;i<=start;i++)//????????????????
     {
         if(Left_Up_Find == 0 && 
         abs(left_line[i]-left_line[i-1])<=5 &&
@@ -731,11 +780,15 @@ void Find_Up_Point(int start, int end)
         }
         if(Left_Up_Find!=0 && Right_Up_Find!=0)    break;//????????????
     }
-    if(abs(Right_Up_Find-Left_Up_Find)>=30)//?????????????????????????
+    if(abs(Right_Up_Find-Left_Up_Find)>=30&&left_line[Left_Up_Find]>=right_line[Right_Up_Find])//?????????????????????????
     {
         Right_Up_Find=0;
         Left_Up_Find=0;
     }
+    // if(right_line[Right_Up_Find]<=left_line[Left_Up_Find])
+    // {
+    //     Right_Up_Find=Last_Right_Up_Find;
+    // }
 }
 
 /**
@@ -816,7 +869,7 @@ void Cross_Detect(void)
         Right_Up_Find=0;
         if(Both_Lost_Time >=15)//???????????????
         {
-            Find_Up_Point(IMAGE_HEIGHT-1,30);//??????????????
+            Find_Up_Point(110,6);//??????????????
             if(Left_Up_Find ==0 && Right_Up_Find ==0) return ;//?????????????
         }
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
@@ -833,12 +886,12 @@ void Cross_Detect(void)
             else if(Left_Down_Find == 0 && Right_Down_Find !=0)//б?????
             {
                 Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Right_Add_Line(Right_Up_Find,Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???粹??
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???粹??
             }
             else if (Left_Down_Find !=0 && Right_Down_Find ==0)//б?????
             {
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Left_Add_Line(Left_Up_Find,Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???粹??
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???粹??
             }
             else if(Left_Down_Find == 0 && Right_Down_Find == 0)//??????
             {
@@ -846,32 +899,77 @@ void Cross_Detect(void)
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
             }
         }
+    // }
     }
 }
 
 /**
- * @brief ????????????????????????
- * @param uint8 row ???????? uint8 start_column ??????? uint8 end_column ???????
- * @return ???????????????????????5????
+ * @brief 检测黑白跳变点的个数
+ * @param uint8 row 检测行数 uint8 start_column 检测行数的起始列 uint8 end_column 检测行数的终止列
+ * @return 返回是否判断为斑马线
  */
 uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 {
-    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//???????
-    else if(row<=0) row=0;//???????
-    if(row<=5)  return 0;//?????????С????????
-    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//???????
-    else if(start_column<=0) start_column=0;//???????
-    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//???????
-    else if(end_column<=0) end_column=0;//???????
+    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//行数限幅
+    else if(row<=0) row=0;//列数限幅
+    if(row<=5)  return 0;//如果行数小于等于5，直接返回0
+    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//起始列限幅
+    else if(start_column<=0) start_column=0;//起始列限幅
+    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//终止列限幅
+    else if(end_column<=0) end_column=0;//终止列限幅
+    if(row<=30) row=30;//防止后续数组越界
+    else if(row>=89)  row=89;//防止后续数组越界
     uint8 count=0;
+    uint8 count_for_temp=0;
+    uint8 first_white_column=0;
+    uint8 first_black_column=0;
+    uint8 white_point_count=0;
+    uint8 mode=0;
     for(uint8 i=start_column;i<=end_column;i++)
     {
-        if(Image_Use[row][i]==WHITE_POINT&&Image_Use[row][i+1]==BLACK_POINT)
+        // if(mode==1)
+        // {
+        //     if(Image_Use[row][i]==WHITE_POINT&&first_white_column==0)//只有重置后方可重新记录
+        //     {
+        //         first_white_column=i;//记录第一个白点的列坐标
+        //     }
+        //     else if(Image_Use[row][i]==BLACK_POINT&&first_black_column==0)
+        //     {
+        //         first_black_column=i;//记录第一个黑点的列坐标
+        //         if(abs(first_black_column-first_white_column)<=10)//这个阈值可以调整，可以通过输入row的所在行转化到对应列的距离
+        //         {
+        //             first_white_column=0;//在成功记录后重置坐标
+        //             first_black_column=0;
+        //             count++;
+        //             if(count>=5)   return count;//如果黑白跳变点的个数大于等于5，直接返回
+        //         }
+        //     }
+        // }
+        // else if(mode==0)
+        // {
+        //     if(Image_Use[row][i]==WHITE_POINT)  white_point_count++;//计算白色点的值
+        // }
+        
+        if(Image_Use[row][i]==WHITE_POINT)  
         {
-            count++;
+            ips114_draw_point(i,row,RGB565_BLUE);
+            white_point_count++;//计算白色点的值
+        }
+        
+    }
+    
+    ips114_show_uint(188,60,row,3);
+    ips114_show_uint(188,80,end_column-start_column,3);
+    ips114_show_uint(188,100,white_point_count,3);
+    ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
+    if(mode==0)
+    {
+        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//如果白色点的个数和列数的差值小于等于（这个阈值要修改成可自动化调整的）
+        {
+            return 1;
         }
     }
-    return count;
+    return 0;
 }
 
 /**
@@ -891,29 +989,43 @@ void Island_Detect(void)
 
 }
 /**
- * @brief ????????
- * @param ??
- * @return ??
+ * @brief 斑马线检测（待改进，可以计算出距离斑马线的大概的距离）
+ * @param 无
+ * @return 无
+ * @attention 一般在直道上进行检测
  */
 void Zebra_Stripes_Detect(void)
 {
-    int continuity_change_right_flag =0;//??????0
-    int continuity_change_left_flag =0;//??????0
-    int monotonicity_change_right_flag =0;//????????0
-    int monotonicity_change_left_flag =0;//????????0
-
-    continuity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5);//?????????????
-    continuity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5);//?????????????
-    monotonicity_change_left_flag = Monotonicity_Change_Left(IMAGE_HEIGHT-1,5);//????????????
-    monotonicity_change_right_flag = Monotonicity_Change_Right(IMAGE_HEIGHT-1,5);//????????????
-
+    int continuity_change_right_flag =0;//右边线连续性标志位
+    int continuity_change_left_flag =0;//左边线连续性标志位
+    int monotonicity_change_right_flag =0;//右边线单调性标志位
+    int monotonicity_change_left_flag =0;//左边线单调性标志位
+    
+    continuity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,0);//求出左边线不连续性点的行坐标
+    continuity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,0);//求出右边线不连续点的行坐标
+    monotonicity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,1);//求出左边单调性变化的行坐标
+    monotonicity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,1);//求出右边单调性变化的行坐标
+    if(continuity_change_left_flag<=30||continuity_change_right_flag<=30)   
+    {
+        if(Road_Type==BANMAXIAN) Road_Type=STRAIGHT_ROAD;//从斑马线切回到直道
+        return ;
+    }
+    ips114_draw_line(94,60,left_line[continuity_change_left_flag],continuity_change_left_flag,RGB565_RED);
+    ips114_draw_line(98,0,left_line[monotonicity_change_left_flag],monotonicity_change_left_flag,RGB565_BLUE);
+    // ips114_show_uint(188,60,continuity_change_right_flag,3);
+    // ips114_show_uint(188,80,continuity_change_left_flag,3);
+    
     int i=0,j=0,change_count=0,start_line=0,endl_line=0,narrow_road_count=0;
     if(Search_Stop_Line >=60 && 30<=Longest_White_Column_Left[1] && Longest_White_Column_Left[1]<=IMAGE_WIDTH-30  &&
-    Longest_White_Column_Right[1] >=30  &&Longest_White_Column_Right[1]<=IMAGE_WIDTH-30 &&continuity_change_left_flag!=0 &&continuity_change_right_flag!=0)
+    abs(continuity_change_left_flag-continuity_change_right_flag)<=30 &&continuity_change_left_flag!=0 &&continuity_change_right_flag!=0)
     {
-        if(Black_White_Dump(continuity_change_left_flag-3,left_line[continuity_change_left_flag-3],right_line[continuity_change_left_flag-3])>=5)
+        uint8 count=Black_White_Dump(continuity_change_left_flag-3,left_line[continuity_change_left_flag-3],right_line[continuity_change_left_flag-3]);
+        uint8 higher_flag= (continuity_change_left_flag < continuity_change_right_flag) ? continuity_change_left_flag : continuity_change_right_flag; // 如果A小于B，那么C的值为A，否则C的值为B
+        uint8 lower_flag= (monotonicity_change_left_flag > monotonicity_change_right_flag) ? monotonicity_change_left_flag : monotonicity_change_right_flag; // 如果A大于B，那么C的值为A，否则C的值为B
+        if(Black_White_Dump((higher_flag+lower_flag)/2,left_line[higher_flag]-5,right_line[higher_flag]-5))
         {
-            if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//????????л?
+            Road_Type=BANMAXIAN;
+            // if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//斑马线是在直道的基础上进行判断的（但是一定要归类回直道，但是只用跑一圈似乎也没必要）
         }
     }
 }
@@ -925,20 +1037,25 @@ void test2(void)
     else if(Road_Type==RIGHT_TURN)  type=2;
     else if(Road_Type==LEFT_TURN)   type=3;
     else if(Road_Type==CROSSING)    type=4;
+    else if(Road_Type==BANMAXIAN)   type=5;
+    if(Road_Type==CROSSING) Cross_Detect();
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        // ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
+    // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
+    // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
     ips114_show_float(188,20,my_err,2,2);
-    ips114_show_uint(188,40,right_data[0],3);
-    ips114_show_uint(188,60,right_data[1],3);
-    ips114_show_uint(188,80,right_data[2],3);
-    ips114_show_uint(188,100,fifo_data_count,2);
-    ips114_show_uint(188,120,sizeof(right_data),3);
+    ips114_show_uint(188,40,type,3);
+    
+    
+    
 }
 
 /**
@@ -949,10 +1066,7 @@ void test2(void)
 void test(void)
 {
     uint8 mode=0;//模式为1表示为大津法，模式为2表示为边缘检测算子
-    if(right_data[0]==0x01) mode=1;
-    else if(right_data[0]==0x02) mode=0;
-    if(mode==1) ips114_draw_line(0,0,188,120,RGB565_GREEN);
-    else if(mode==0)    ips114_draw_line(188,0,0,120,RGB565_BLUE);
+    
     if(mode==1)
     {
         Image_Change();

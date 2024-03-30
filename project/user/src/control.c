@@ -6,49 +6,49 @@
 #include "math.h"
 #define Row   180 //148
 #define Col   180
-#define CONTROL_FREQUENCY  100//编码器读取频率(即周期为0.01s 10ms)
-float Vx, Vy, Vz;//三轴目标速度
-float target_motor[4];//目标pwm
-float Car_H = 0.8;//车长
-float Car_W = 0.6; // 车宽
-float turn_angle; // 转向角度
-int spin; // 旋转量
-int translation = 0; // 横移量
-int encoder[4];   // 四个编码器读出的值
-float encoder_sum[4];//四个编码器的累积数值
-float target_encoder_sum[4];//四个编码器的目标累计数值
-float loc_target[4];//位置式处理后输出的目标速度
-float loc_last_target[4];//记录上次的输出量
-int Turn_Left_flag,Turn_Right_flag;//左转标志，右转标志
-int loc_Finish_flag = 0;//位置式调整完成标志
-int Location_pid_flag = 1;//测试使用，可能后续还要使用
-float loc_err;//中线误差
-float abs_loc_err;//中线误差绝对值
-int pid_motor[4]; // PID输出的pwm
-int midline[Row]; // 中线位置数组
-float err_mid;//中线偏移误差
+#define CONTROL_FREQUENCY  100//????????????(???????0.01s 10ms)
+float Vx, Vy, Vz;//??????????
+float target_motor[4];//???pwm
+float Car_H = 0.8;//????
+float Car_W = 0.6; // ????
+float turn_angle; // ?????
+int spin; // ?????
+int translation = 0; // ??????
+int encoder[4];   // ????????????????
+float encoder_sum[4];//?????????????????
+float target_encoder_sum[4];//????????????????????
+float loc_target[4];//λ????????????????????
+float loc_last_target[4];//?????ε??????
+int Turn_Left_flag,Turn_Right_flag;//??????????????
+int loc_Finish_flag = 0;//λ????????????
+int Location_pid_flag = 1;//?????????????????????
+float loc_err;//???????
+float abs_loc_err;//???????????
+int pid_motor[4]; // PID?????pwm
+int midline[Row]; // ????λ??????
+float err_mid;//??????????
 float PID_Bias[4]={0.0}, PID_Last_bias[4]={0.0};
-float Keep_Bias; //车头角度误差
+float Keep_Bias; //?????????
 int test_count=0;
 float dt=0.005;
 
-pid_info Pos_turn_pid[4];//位置式处理后的pid
+pid_info Pos_turn_pid[4];//λ??????????pid
 
-pid_info Speed[4]; // 速度环pid
+pid_info Speed[4]; // ????pid
 
 /**
- * @brief 电机初始化
- * @param 无
- * @return无
+ * @brief ????????
+ * @param ??
+ * @return??
  */
 void Motor_Init(void)
 {
-  gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // gpio口给高电平
+  gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // gpio???????
   gpio_init(DIR_LB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
   gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
   gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
 
-  pwm_init(motor_LF, 15000, 0); // PWM通道初始化
+  pwm_init(motor_LF, 15000, 0); // PWM????????
   pwm_init(motor_LB, 15000, 0); //
   pwm_init(motor_RF, 15000, 0); // 
   pwm_init(motor_RB, 15000, 0); // 
@@ -58,9 +58,9 @@ void Motor_Init(void)
 
 
 /**
- * @brief 编码器初始化
- * @param 鏃?
- * @return 鏃??
+ * @brief ???????????
+ * @param ??
+ * @return ???
  */
 void Encoder_Init(void)
 {
@@ -71,30 +71,30 @@ void Encoder_Init(void)
 
   for(uint8 i=0;i<4;i++)
   {
-    encoder[i]=0;//清空编码器计数
+    encoder[i]=0;//????????????
   }
 }
 
 /**
- * @brief 获取编码器数值
- * @param 无
- * @return 无
+ * @brief ????????????
+ * @param ??
+ * @return ??
  */
 void Read_Encoder(void)
 {
-  // 读编码器
-  encoder[0] = -encoder_get_count(ENCODER_LF); // 左前
-  encoder[1] = encoder_get_count(ENCODER_LB); // 左后
-  encoder[2] = encoder_get_count(ENCODER_RF); // 右前
-  encoder[3] = -encoder_get_count(ENCODER_RB); // 右后
+  // ????????
+  encoder[0] = -encoder_get_count(ENCODER_LF); // ???
+  encoder[1] = encoder_get_count(ENCODER_LB); // ???
+  encoder[2] = encoder_get_count(ENCODER_RF); // ???
+  encoder[3] = -encoder_get_count(ENCODER_RB); // ???
 
-  // 计算车轮实际速度
+  // ????????????
   for(uint8 i=0;i<4;i++)
   {
-    Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 0.2637获取车轮速度，单位为m/s
+    Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 0.2637?????????????λ?m/s
   } 
   
-  // 清空编码器计数
+  // ????????????
   encoder_clear_count(ENCODER_LF);
   encoder_clear_count(ENCODER_LB);
   encoder_clear_count(ENCODER_RF);
@@ -102,38 +102,38 @@ void Read_Encoder(void)
 }
 
 /**
- * @brief 麦轮速度解算1
- * @param 无
- * @return 无
+ * @brief ??????????1
+ * @param ??
+ * @return ??
  */
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz)
 {
-  Speed[0].target_speed = -(+target_Vx + target_Vy + target_Vz); // 左前轮
-  Speed[1].target_speed = -(-target_Vx + target_Vy + target_Vz); // 左后
-  Speed[2].target_speed = -(-target_Vx + target_Vy - target_Vz); // 右前
-  Speed[3].target_speed = -(+target_Vx + target_Vy - target_Vz); // 右后
+  Speed[0].target_speed = -(+target_Vx + target_Vy + target_Vz); // ?????
+  Speed[1].target_speed = -(-target_Vx + target_Vy + target_Vz); // ???
+  Speed[2].target_speed = -(-target_Vx + target_Vy - target_Vz); // ???
+  Speed[3].target_speed = -(+target_Vx + target_Vy - target_Vz); // ???
 }
 
 /**
- * @brief 麦轮速度解算2
- * @param target_Vx x轴目标速度
- * @param target_Vy y轴目标速度
- * @param target_Vz 自旋速度
- * @return 无
+ * @brief ??????????2
+ * @param target_Vx x????????
+ * @param target_Vy y????????
+ * @param target_Vz ???????
+ * @return ??
  * @attention //
  */
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 {
-  Speed[0].target_speed = target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // 左前
-  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // 左后
-  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右前
-  Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // 右后
+  Speed[0].target_speed = target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // ???
+  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2); // ???
+  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // ???
+  Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); // ???
 }
          
 /**
- * @brief 位置式pid初始化
- * @param 无
- * @return 无
+ * @brief λ???pid?????
+ * @param ??
+ * @return ??
  */
 void Pos_PidInit(void)
 {
@@ -149,21 +149,21 @@ void Pos_PidInit(void)
     Pos_turn_pid[i].dError    = 0.00;
     Pos_turn_pid[i].output    = 0.00;
     Pos_turn_pid[i].output_last   = 0.00;
-    Pos_turn_pid[i].xuhao=i; //编码器序号
+    Pos_turn_pid[i].xuhao=i; //?????????
   }
 
-  //左前
-  Pos_turn_pid[0].kp = 0.5;   //0.5对应目标速度40
-  Pos_turn_pid[0].kd = 0.5;   //0.5对应目标速度40
-  //左后
+  //???
+  Pos_turn_pid[0].kp = 0.5;   //0.5?????????40
+  Pos_turn_pid[0].kd = 0.5;   //0.5?????????40
+  //???
   Pos_turn_pid[1].kp = 0.5;
   Pos_turn_pid[1].kd = 0.5;
-  //右前
+  //???
   Pos_turn_pid[2].kp = 0.5;
   Pos_turn_pid[2].kd = 0.5;
-  //右后
+  //???
   Pos_turn_pid[3].kp = 0.5;
-  Pos_turn_pid[3].kd = 0.5; //各个轮子分开调参
+  Pos_turn_pid[3].kd = 0.5; //??????????????
 
 }
 
@@ -181,141 +181,141 @@ void PidInit(void)
     Speed[i].dError    = 0.00;
     Speed[i].output    = 0.00;
     Speed[i].output_last   = 0.00;
-    Speed[i].xuhao=i; //编码器序号
+    Speed[i].xuhao=i; //?????????
   }
 
-  // 左前
+  // ???
   Speed[0].kp = -22.5;
   Speed[0].ki = -1.50;
-  // 左后
+  // ???
   Speed[1].kp = -30;
   Speed[1].ki = -0.5;
-  // 右前
+  // ???
   Speed[2].kp = -25;
   Speed[2].ki = -0.5;
-  //右后
+  //???
   Speed[3].kp = -25;
-  Speed[3].ki = -0.8; ////各个轮子分开调参 
+  Speed[3].ki = -0.8; ////?????????????? 
 
 }
 /**
- * @brief 增量式速度环(内环)
+ * @brief ?????????(???)
  * @param pid_info *pid 
- * @return 各个轮子的pwm
+ * @return ?????????pwm
  */
 void increment_pid(void)
 {
   for(uint8 i=0;i<4;i++)
   {
-      //速度环
-      Speed[i].lastlastError = Speed[i].lastError;  //记录上上次误差
-      Speed[i].lastError = Speed[i].error;          //记录上次误差
-      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //本次误差
-      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式处理
-      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+      //????
+      Speed[i].lastlastError = Speed[i].lastError;  //???????????
+      Speed[i].lastError = Speed[i].error;          //?????????
+      Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //???????
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //?????????
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //???
   }
 }
 /**
- * @brief 位置式pid处理
- * @param 输入：pid_info *pid四个轮子的pwm值 Target：目标距离的处理后的编码器总累计值 encoder：编码器累计所读的值
- * @return 输出的是速度pid->output，准备输入至速度环闭环
+ * @brief λ???pid????
+ * @param ????pid_info *pid????????pwm? Target?????????????????????????? encoder??????????????????
+ * @return ??????????pid->output??????????????????
  */
 float Location_pid(pid_info *pid, float Encoder, float Target)
 {
-    pid->error = Target - Encoder; //Calculate the deviation //计算偏差
+    pid->error = Target - Encoder; //Calculate the deviation //???????
     
-    pid->output = pid->kp * pid->error + pid->kd * (pid->error-pid->lastError); //原来是+=，现改为=      2024/3/26
+    pid->output = pid->kp * pid->error + pid->kd * (pid->error-pid->lastError); //?????+=??????=      2024/3/26
     
-    pid->lastError=pid->error;//保存上次偏差
+    pid->lastError=pid->error;//??????????
 	
     return pid->output;
 }
 /**
- * @brief 清空编码器累计值
- * @param 无
- * @return 无
+ * @brief ????????????
+ * @param ??
+ * @return ??
  */
 void clear_encoder_sum(void)
 {
-  encoder_sum[0] = 0;//编码器累计值
+  encoder_sum[0] = 0;//??????????
   encoder_sum[1] = 0;
   encoder_sum[2] = 0;
   encoder_sum[3] = 0;
 }
 /**
- * @brief 目标距离转化成目标编码器累计值
- * @param 输入：目标距离
- * @return 无
+ * @brief ???????????????????????
+ * @param ??????????
+ * @return ??
  */
 void Set_Distence_m(float distance)
 {
-  target_encoder_sum[0] = (distance/PI) *100 /0.2636719;//这里将目标距离转换成脉冲累计
+  target_encoder_sum[0] = (distance/PI) *100 /0.2636719;//??????????????????????
   target_encoder_sum[1] = target_encoder_sum[0];
   target_encoder_sum[2] = target_encoder_sum[0];
   target_encoder_sum[3] = target_encoder_sum[0];
 }
 
 /**************************************************************************
-位置环输出速度
+λ?????????
 **************************************************************************/
 void Drive_Motor()
 {
-  float LF_Target,LB_Target,RF_Target,RB_Target; //这里是算出来的脉冲 要传入速度环还需将位置环计算出来的脉冲转换为速度
+  float LF_Target,LB_Target,RF_Target,RB_Target; //????????????????? ????????????轫λ???????????????????????
 	loc_err = Err_Handle();
-	abs_loc_err = fabsf(Err_Handle());   //原本是中线误差Err_Handle()
+	abs_loc_err = fabsf(Err_Handle());   //????????????Err_Handle()
 
-   if(abs_loc_err < 1.0)//设定一个阈值范围，小于这个阈值时视为不再需要矫正,只用速度环做目标速度闭环
+   if(abs_loc_err < 1.0)//?趨????????Χ??С???????????????????????,?????????????????
   {
-    loc_Finish_flag = 1;//位置调整完成标志
-    clear_encoder_sum();//编码器累加值清0
+    loc_Finish_flag = 1;//λ??????????
+    clear_encoder_sum();//????????????0
     int i = 0;
     for(i = 0;i < 4; i++) 
     {
-      loc_target[i] = 0;//位置式调整不再起作用
+      loc_target[i] = 0;//λ?????????????????
     }
   }
    
-	if(loc_err > 0)       //不知道为什么右转的时候读出来的误差会小于0,这里到时候还要更改
-     Turn_Left_flag = 1;//左转标志位
+	if(loc_err > 0)       //???????????????????????????С??0,????????????
+     Turn_Left_flag = 1;//??????λ
   if(loc_err < 0)
-     Turn_Right_flag =1;//右转标志位
+     Turn_Right_flag =1;//??????λ
 
-  if(loc_Finish_flag == 0)//位置调整未完成
+  if(loc_Finish_flag == 0)//λ?????δ???
   {
-    Set_Distence_m(abs_loc_err);//输入速度转换成误差,还要调整一下参数
+    Set_Distence_m(abs_loc_err);//???????????????,?????????????
 	
 //     int i = 0;
 //     for(i = 0;i < 4; i++)
 //    {
 //        if(encoder_sum[i] < target_encoder_sum[i])
 //      {
-//          encoder_sum[i] += fabsf(encoder[i]);//编码器累计值
+//          encoder_sum[i] += fabsf(encoder[i]);//??????????
 //      }
 //        else
 //      {
-//          Location_pid_flag = 0;//不再进行位置式调整，测试用
-//          loc_target[i] = loc_last_target[i];//最后结果直接为上次处理完的速度，测试用
+//          Location_pid_flag = 0;//???????λ???????????????
+//          loc_target[i] = loc_last_target[i];//???????????δ????????????????
 //      }
 //    }
 		
     LF_Target = Location_pid(&Pos_turn_pid[0], encoder_sum[0], target_encoder_sum[0]);
     LB_Target = Location_pid(&Pos_turn_pid[1], encoder_sum[0], target_encoder_sum[1]);
     RF_Target = Location_pid(&Pos_turn_pid[2], encoder_sum[0], target_encoder_sum[2]);
-    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[0], target_encoder_sum[3]);//计算出脉冲数
+    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[0], target_encoder_sum[3]);//???????????
             
-    loc_target[0] = LF_Target* 0.2636719 *PI /100;//转化成速度
+    loc_target[0] = LF_Target* 0.2636719 *PI /100;//????????
     loc_target[1] = LB_Target* 0.2636719 *PI /100;
     loc_target[2] = RF_Target* 0.2636719 *PI /100;
-    loc_target[3] = RB_Target* 0.2636719 *PI /100;//单位为m/s
+    loc_target[3] = RB_Target* 0.2636719 *PI /100;//??λ?m/s
 
-  if(Turn_Left_flag==1)//左转
+  if(Turn_Left_flag==1)//???
   {
     loc_target[0] = -fabsf(loc_target[0]);
     loc_target[1] = -fabsf(loc_target[1]);
     loc_target[2] = fabsf(loc_target[2]);
     loc_target[3] = fabsf(loc_target[3]);
   }
-  else if(Turn_Right_flag==1)//右转
+  else if(Turn_Right_flag==1)//???
   {
     loc_target[0] = fabsf(loc_target[0]);
     loc_target[1] = fabsf(loc_target[1]);
@@ -323,40 +323,40 @@ void Drive_Motor()
     loc_target[3] = -fabsf(loc_target[3]);
   }
 	
-	  loc_last_target[0] = loc_target[0];//记录本次的输出速度
+	  loc_last_target[0] = loc_target[0];//??????ε???????
     loc_last_target[1] = loc_target[1];
     loc_last_target[2] = loc_target[2];
     loc_last_target[3] = loc_target[3];
   }
 }
 /**
- * @brief 串级pid 位置环+速度环
- * @param 无
- * @return 无
+ * @brief ????pid λ???+????
+ * @param ??
+ * @return ??
  */
 void turnloc_pid(void)
 {
-  Drive_Motor();//位置环输出速度
+  Drive_Motor();//λ?????????
 
   for(uint8 i=0;i<4;i++)
   {
-      //输入速度环处理
-      Speed[i].lastlastError = Speed[i].lastError;  //记录上上次误差
-      Speed[i].lastError = Speed[i].error;          //记录上次误差
-      Speed[i].error = Speed[i].target_speed + loc_target[i] - Speed[i].now_speed; //本次误差,可能会不加原本的目标速度
-      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式处理输出pwm
-      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+      //????????????
+      Speed[i].lastlastError = Speed[i].lastError;  //???????????
+      Speed[i].lastError = Speed[i].error;          //?????????
+      Speed[i].error = Speed[i].target_speed + loc_target[i] - Speed[i].now_speed; //???????,??????????????????
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //????????????pwm
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //???
   }
 
   Turn_Left_flag = 0;
-  Turn_Right_flag = 0;//标志位清零
+  Turn_Right_flag = 0;//???λ????
 
-  loc_Finish_flag = 0;//重置标志位，根据下次循环判断条件来变更
+  loc_Finish_flag = 0;//??????λ?????????????ж??????????
 }
 /**
- * @brief 速度闭环控制
- * @param 无
- * @return 无
+ * @brief ?????????
+ * @param ??
+ * @return ??
  * @attention 
  */
 void motor_close_control(void)
@@ -364,96 +364,96 @@ void motor_close_control(void)
   int j;
   for (j = 0; j < 4; j++) //???
   {
-    pid_motor[j]=Speed[j].output;//各轮子pwm赋值
+    pid_motor[j]=Speed[j].output;//??????pwm???
     // Speed[j].output=0;
   }
-    if (pid_motor[0] > 0) //正转
+    if (pid_motor[0] > 0) //???
     {
       gpio_set_level(DIR_LF, 0);                 // DIR0
-      pwm_set_duty(motor_LF, (int)pid_motor[0]); // 左前
+      pwm_set_duty(motor_LF, (int)pid_motor[0]); // ???
     }
-    else //鍙嶈浆
+    else //反转
     {
       gpio_set_level(DIR_LF, 1);
       pwm_set_duty(motor_LF, (int)-pid_motor[0]);
     }
 
-    if (pid_motor[1] > 0) //正转
+    if (pid_motor[1] > 0) //???
     {
       gpio_set_level(DIR_LB, 0);
       pwm_set_duty(motor_LB, (int)pid_motor[1]);
     }
-    else //反转
+    else //???
     {
       gpio_set_level(DIR_LB, 1);
       pwm_set_duty(motor_LB, (int)-pid_motor[1]);
     }
 
-    if (pid_motor[2] > 0) //正转
+    if (pid_motor[2] > 0) //???
     {
       gpio_set_level(DIR_RF, 1);
       pwm_set_duty(motor_RF, (int)pid_motor[2]);
     }
-    else //鍙嶈浆
+    else //反转
     {
-      gpio_set_level(DIR_RF, 0); //反转
+      gpio_set_level(DIR_RF, 0); //???
       pwm_set_duty(motor_RF, (int)-pid_motor[2]);
     }
 
-    if (pid_motor[3] > 0) //正转
+    if (pid_motor[3] > 0) //???
     {
       gpio_set_level(DIR_RB, 1);
       pwm_set_duty(motor_RB, (int)pid_motor[3]);
     }
-    else //反转
+    else //???
     {
       gpio_set_level(DIR_RB, 0);
       pwm_set_duty(motor_RB, (int)-pid_motor[3]);
     }
   }
 /**
- * @brief 电机开环控制
- * @param 无
- * @return 无
+ * @brief ???????????
+ * @param ??
+ * @return ??
  * @attention 
  */
 void motor_control(void)
 {
-  for (int j= 0; j < 4; j++) //电机pwm赋值
+  for (int j= 0; j < 4; j++) //???pwm???
   {
     if (pid_motor[j] > AMPLITUDE_MOTOR)
       pid_motor[j] = AMPLITUDE_MOTOR;
     if (pid_motor[j] < -AMPLITUDE_MOTOR)
       pid_motor[j] = -AMPLITUDE_MOTOR;
   }
-  if (pid_motor[0] > 0) //左前
+  if (pid_motor[0] > 0) //???
   {
     gpio_set_level(DIR_LF, 0);                 // DIR0
-    pwm_set_duty(motor_LF, (int)pid_motor[0]); // 正转
+    pwm_set_duty(motor_LF, (int)pid_motor[0]); // ???
   }
-  else //DIR1   反转
+  else //DIR1   ???
   {
     gpio_set_level(DIR_LF, 1);
     pwm_set_duty(motor_LF, (int)-pid_motor[0]);
   }
 
-  if (pid_motor[1] > 0) //左后
+  if (pid_motor[1] > 0) //???
   {
     gpio_set_level(DIR_LB, 0);               // DIR0
-    pwm_set_duty(motor_LB, (int)pid_motor[1]);// 正转
+    pwm_set_duty(motor_LB, (int)pid_motor[1]);// ???
   }
-  else //DIR1  反转
+  else //DIR1  ???
   {
     gpio_set_level(DIR_LB, 1);
     pwm_set_duty(motor_LB, (int)-pid_motor[1]);
   }
 
-  if (pid_motor[2] > 0) //右前
+  if (pid_motor[2] > 0) //???
   {
     gpio_set_level(DIR_RF, 1);
-    pwm_set_duty(motor_RF, (int)pid_motor[2]);// 正转
+    pwm_set_duty(motor_RF, (int)pid_motor[2]);// ???
   }
-  else //DIR0 反转
+  else //DIR0 ???
   {
     gpio_set_level(DIR_RF, 0);
     pwm_set_duty(motor_RF, (int)-pid_motor[2]);
@@ -462,9 +462,9 @@ void motor_control(void)
   if (pid_motor[3] > 0) //DIR1  
   {
     gpio_set_level(DIR_RB, 1);
-    pwm_set_duty(motor_RB, (int)pid_motor[3]);// 正转
+    pwm_set_duty(motor_RB, (int)pid_motor[3]);// ???
   }
-  else //DIR0  反转
+  else //DIR0  ???
   {
     gpio_set_level(DIR_RB, 0);
     pwm_set_duty(motor_RB, (int)-pid_motor[3]);
@@ -472,29 +472,29 @@ void motor_control(void)
 }
 
 /**
- * @brief 18鐢垫満缂栫爜鍣ㄩ噷绋嬭?绠楀嚱鏁帮紝鏍规嵁缂栫爜鍣ㄨ剦鍐叉暟璁＄畻杞﹁締琛岄┒璺濈?锛屽崟浣嶏細m
- * @param 鏃?
- * @return 鏃?
- * @attention 琛岄┒璺濈?璁＄畻鍏?紡 = (缂栫爜鍣ㄨ剦鍐叉暟 / 缂栫爜鍣ㄥ垎杈ㄧ巼) * (2 * 蟺 * 杞?瓙鍗婂緞) / 杞?瓙鍛ㄩ暱
+ * @brief 18电机编码器里程??算函数，根据编码器脉冲数计算车辆行驶距??，单位：m
+ * @param ??
+ * @return ??
+ * @attention 行驶距??计算???? = (编码器脉冲数 / 编码器分辨率) * (2 * π * ????半径) / ????周长
  */
 void Encoder_odometer(void)
 {
-  static float Angle_Bias = 0; //瑙掑害鍋忓樊
+  static float Angle_Bias = 0; //角度偏差
   static float V_enco[4] = {0}, Vx_enco = 0, Vy_enco = 0;
 
-  // Angle_Bias = (90 - Angle_Z) * PI / 180; //璁＄畻瑙掑害鍋忓樊
+  // Angle_Bias = (90 - Angle_Z) * PI / 180; //计算角度偏差
 
-/****璁＄畻杞﹁締閫熷害******/
-  // V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637涓虹紪鐮佸櫒鍒嗚鲸鐜?
+/****计算车辆速度******/
+  // V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637为编码器分辨??
   // V_enco[1] = 0.2636719 * PI * (float)encoder[1];
   // V_enco[2] = 0.2636719 * PI * (float)encoder[2];
   // V_enco[3] = 0.2636719 * PI * (float)encoder[3];
-  // Vx_enco=(V_enco[0]-V_enco[1]-V_enco[2]+V_enco[3])/4; //璁＄畻X杞撮�熷害
-  // Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4; //璁＄畻Y杞撮�熷害
-  // Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //璁＄畻X杞撮�熷害锛堜慨姝ｏ級
-  // Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //璁＄畻Y杞撮�熷害锛堜慨姝ｏ級
-  // Car_dis_x += Vx_enco * 0.01; //璁＄畻杞﹁締X杞磋?椹惰窛绂?
-  // Car_dis_y += Vy_enco * 0.01; //璁＄畻杞﹁締Y杞磋?椹惰窛绂?
+  // Vx_enco=(V_enco[0]-V_enco[1]-V_enco[2]+V_enco[3])/4; //计算X轴速度
+  // Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4; //计算Y轴速度
+  // Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //计算X轴速度（修正）
+  // Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //计算Y轴速度（修正）
+  // Car_dis_x += Vx_enco * 0.01; //计算车辆X轴??驶距??
+  // Car_dis_y += Vy_enco * 0.01; //计算车辆Y轴??驶距??
 
 // #if 1
 //  if (Angle_Bias >= 0)
@@ -502,7 +502,7 @@ void Encoder_odometer(void)
 //    Vx_1 = Vx_enco * sin(Angle_Bias);
 //    Vx_2 = Vx_enco * cos(Angle_Bias);
 //    Vy_1 = Vy_enco * cos(Angle_Bias);
-//    Vy_2 = Vy_enco * sin(Angle_Bias); //璁＄畻杞﹁締閫熷害鍦ㄤ笘鐣屽潗鏍囩郴涓嬬殑鍒嗛噺
+//    Vy_2 = Vy_enco * sin(Angle_Bias); //计算车辆速度在世界坐标系下的分量
 //    Vx_world = Vx_2 - Vy_2;
 //    Vy_world = Vx_1 + Vy_1;
 //  }
@@ -512,23 +512,23 @@ void Encoder_odometer(void)
 //    Vx_1 = Vx_enco * sin(Angle_Bias);
 //    Vx_2 = Vx_enco * cos(Angle_Bias);
 //    Vy_1 = Vy_enco * cos(Angle_Bias);
-//    Vy_2 = Vy_enco * sin(Angle_Bias); //璁＄畻杞﹁締閫熷害鍦ㄤ笘鐣屽潗鏍囩郴涓嬬殑鍒嗛噺
+//    Vy_2 = Vy_enco * sin(Angle_Bias); //计算车辆速度在世界坐标系下的分量
 //    Vx_world = Vx_2 + Vy_2;
 //    Vy_world = -Vx_1 + Vy_1;
 //  }
 // #endif
-//  Car_dis_x += Vx_world * 0.01; //璁＄畻杞﹁締X杞磋?椹惰窛绂伙紙淇??锛?
-//  Car_dis_y += Vy_world * 0.01; //璁＄畻杞﹁締Y杞磋?椹惰窛绂伙紙淇??锛?
+//  Car_dis_x += Vx_world * 0.01; //计算车辆X轴??驶距离（?????
+//  Car_dis_y += Vy_world * 0.01; //计算车辆Y轴??驶距离（?????
 
 //  Car_dis_x2 += Vx_world * 0.01;
 //  Car_dis_y2 += Vy_world * 0.01;
 }
 
 /**
- * @brief PID限幅
+ * @brief PID???
  *
- * @param Value    pid处理后的pwm
- * @param MaxValue 最大pwm
+ * @param Value    pid???????pwm
+ * @param MaxValue ???pwm
  * @return float
  */
 float PIDInfo_Limit(float Value, float MaxValue)

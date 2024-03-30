@@ -209,10 +209,10 @@ void arm_control(uint8 mode)
     {
       servo2_duty -= 10;
       system_delay_ms(300);
-      pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));//ֱ�Ӹ�ֵ�۲�
+      pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));//????????
     }
     if (!gpio_get_level(D4))
-      gpio_set_level(C9, 1); //�ߵ�ƽ�Ӵ���
+      gpio_set_level(C9, 1); //?????????
     else
       gpio_set_level(C9, 0);
     break;

@@ -38,7 +38,7 @@
 #include "isr.h"
 #include "control.h"
 
-extern pid_info Speed[4]; //速度pid
+extern pid_info Speed[4]; //???pid
 extern uint8 step;
 int count = 0;
 
@@ -52,7 +52,7 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//位置式pid
+        turnloc_pid();//λ???pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
     // if(pit_flag_get(PIT_CH0))
@@ -97,11 +97,11 @@ void LPUART1_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART1))
     {
         //????
-    #if DEBUG_UART_USE_INTERRUPT                        // ???? debug ????
-        debug_interrupr_handler();                      // ?? debug ???????? ???? debug ???????
-    #endif                                              // ????? DEBUG_UART_INDEX ?????????????????
-    // extern void UART1_handler(void);//?????????
-    // UART1_handler();
+    // #if DEBUG_UART_USE_INTERRUPT                        // ???? debug ????
+    //     debug_interrupr_handler();                      // ?? debug ???????? ???? debug ???????
+    // #endif                                              // ????? DEBUG_UART_INDEX ?????????????????
+    extern void UART1_handler(void);//?????????
+    UART1_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????
