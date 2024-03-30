@@ -50,6 +50,8 @@ extern int test_count;
 extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
+extern char str[];//定义接收字符串get
+
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -96,7 +98,11 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-        
+        // ips114_show_uint(188,20,right_data[0],2);
+        // ips114_show_uint(188,40,right_data[1],3);
+        // ips114_show_uint(188,60,right_data[2],2);
+        // ips114_show_uint(188,80,right_data[3],3);
+        // uart_write_buffer(UART_1,0x01);//发送字符串get
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -115,7 +121,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		 test();
+		//  test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");

@@ -5,10 +5,10 @@
 #include "stdint.h"
 #include "zf_common_headfile.h"
 
-#define DIR_LF D14//×óÇ°gpio
-#define DIR_LB D3//×óºógpio
-#define DIR_RF D12//ÓÒÇ°gpio
-#define DIR_RB D1//ÓÒºógpio
+#define DIR_LF D14//?gpio
+#define DIR_LB D3//gpio
+#define DIR_RF D12//?gpio
+#define DIR_RB D1//?gpio
 
 #define motor_LF PWM1_MODULE1_CHB_D15//????pwm??
 #define motor_LB PWM2_MODULE3_CHA_D2//????pwm??
@@ -31,43 +31,43 @@
 #define ENCODER_RB_LSB                   (QTIMER2_ENCODER2_CH1_C5)
 #define ENCODER_RB_DIR                   (QTIMER2_ENCODER2_CH2_C25)
 
-#define AMPLITUDE_MOTOR 3000 //pwmÏŞ·ù
+#define AMPLITUDE_MOTOR 3000 //pwm?
 
 //??pid??
 typedef struct{
-	float now_speed;	  //Êµ¼ÊËÙ¶È
-	float target_speed;	//Ä¿±êËÙ¶È
-	int target_pwm;		//Ä¿ï¿½ï¿½Pwm
-	uint8 xuhao;		//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿?
+	float now_speed;	  //??
+	float target_speed;	//??
+	int target_pwm;		//?Pwm
+	uint8 xuhao;		//?
 	float kp ;		        
 	float ki ;		        
 	float kd ;	          
-	float error;          //ï¿½ï¿½Ç°ï¿½ï¿½ï¿?
-	float lastError;	    //ï¿½Ï´ï¿½ï¿½ï¿½ï¿?
-	float lastlastError;  //ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿?
-	float dError;         //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Ä²ï¿½Ö?
-	float output;         //ï¿½ï¿½ï¿½Ö?
-	float output_last;    //ï¿½Ï´ï¿½ï¿½ï¿½ï¿½Ö?
+	float error;          //??
+	float lastError;	    //??
+	float lastlastError;  //??
+	float dError;         //???
+	float output;         //?
+	float output_last;    //??
 }pid_info;
 
 
-extern float Car_H;//ï¿½ï¿½ï¿½ï¿½
-extern float Car_W;//ï¿½ï¿½ï¿½ï¿½
-extern int encoder[4];//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+extern float Car_H;//
+extern float Car_W;//
+extern int encoder[4];//
 extern float encoder_sum[4];
 extern float target_encoder_sum[4];
 extern float loc_target[4];
 extern int Turn_Left_flag,Turn_Right_flag;
 extern int loc_Finish_flag;
-extern int Location_pid_flag;//Î»ÖÃÊ½´¦ÀíÔÊĞí±êÖ¾£¬²âÊÔÓÃ
+extern int Location_pid_flag;//???
 extern float loc_last_target[4];
-extern float loc_err;//ÖĞÏßÎó²î
-extern float abs_loc_err;//ÖĞÏßÎó²î¾ø¶ÔÖµ
-extern int pid_motor[4];//pid´¦ÀíºóÊä³öµÄpwmÖµ
-extern float turn_angle;//×ªÏò½Ç¶È
-extern int spin;//Ğı×ªÁ¿
+extern float loc_err;//
+extern float abs_loc_err;//?
+extern int pid_motor[4];//pidpwm?
+extern float turn_angle;//??
+extern int spin;//?
 extern int translation;
-extern pid_info LF_motor_pid;//ï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½pidï¿½á¹¹ï¿½ï¿½
+extern pid_info LF_motor_pid;//?pid?
 extern pid_info RF_motor_pid;
 extern pid_info LB_motor_pid;
 extern pid_info RB_motor_pid;
