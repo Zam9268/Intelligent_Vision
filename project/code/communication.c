@@ -104,7 +104,7 @@ void get_uartdata(void)
                     {
                         right_data[j]=0;//清空数组
                     }
-                    uart_write_string(UART_1,str);//发送字符串get
+                    uart_write_string(UART_1,str);//发送字符串get，注意如果main.c里面用了vofa的话，就要注释掉，否则也会发送给art，这样发送就会有问题
                 }
                 else
                 {

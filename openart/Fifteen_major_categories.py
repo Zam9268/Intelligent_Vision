@@ -71,7 +71,7 @@ while(1):
       uart_num=uart.any() #获取当前串口数据数量
       print(uart_num)#打印当前串口缓冲区数量
       if(uart_num):
-         uart_str=uart.read(uart_num).decode()
+         uart_str=uart.read(uart_num).decode().strip()#读取串口数据，并解码，strip()函数用于去除字符串两边的空格
          time.sleep_ms(100)#给art足够的时间来读取uart发送来的数据
          print(uart_str)
          if(uart_str=="get"): #接收成功
