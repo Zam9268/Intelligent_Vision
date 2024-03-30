@@ -7,71 +7,72 @@
 
 uint16 servo1_duty = 50;
 uint16 servo2_duty = 50;
-uint16 servo3_duty = 50;//ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½
+uint16 servo3_duty = 50;//³õÊ¼µç»ú
 
 uint32 servo1_pwm = 0;
 uint32 servo2_pwm = 0;
-uint32 servo3_pwm = 0;//ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½
+uint32 servo3_pwm = 0;//Èý¸ö¶æ»úµÄpwmÖµ
 
 uint8 step = 1;
 uint8 side_step = 1;
-uint8 arm_flag = 0;//ï¿½ï¿½Ê±ï¿½ï¿½É±ï¿½Ö¾
+uint8 arm_flag = 0;//¼ÆÊýÍê³É±êÖ¾
 uint8 arm_pick_flag = ARM_PICK_DONE; //
 uint8 arm_state_flag = ARM_STATE_OFF;
 
 uint8 one_pick = 0;
-uint8 arm_put_down = 0;//ï¿½ï¿½Ðµï¿½Û·ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½Ä±ï¿½Ö¾Î»
+uint8 arm_put_down = 0;//»úÐµ±Û·ÅÏÂ±êÖ¾Î»
 
 
 void PIT_CH2_Int_Init(uint32 ldval)
 {
-    pit_ms_init(PIT_CH_TIME, ldval);//ï¿½ï¿½Ê¼ï¿½ï¿½CH2Í¨ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½Îª ldval ms
+    pit_ms_init(PIT_CH2, ldval);//³õÊ¼»¯ÖÜÆÚÎª ldval ms
     interrupt_global_enable(0);
 }
 
 void my_pwm_gpio(void)
 {
   pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(35));
-  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50)); //ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½Í¹ï¿½ï¿½Ðµï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½
-  pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(79)); //ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ì¨ï¿½ï¿½ï¿½12  73  133
+  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50)); //³õÊ¼»¯Ç°±Û¶ÈÊý
+  pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(79)); //ÔÆÌ¨¶æ»ú¶ÈÊý12  73  133
 
-  gpio_init(C9, GPO, 0, GPO_PUSH_PULL);                                       //ï¿½ï¿½ï¿½ï¿½ï¿½                              //60Îªï¿½ï¿½ß·ï¿½Í¼Æ¬ï¿½ï¿½88ï¿½Ò±ß·ï¿½Í¼Æ¬
+  gpio_init(C9, GPO, 0, GPO_PUSH_PULL);                                       //µç´ÅÌú                             
 
-  gpio_init(B14, GPO, 0, GPO_PUSH_PULL); //ï¿½ï¿½ï¿½ï¿½ï¿½
-  gpio_init(B16, GPO, 0, GPO_PUSH_PULL); //ï¿½ï¿½ï¿½ï¿½ï¿½
-  gpio_init(B17, GPO, 0, GPO_PUSH_PULL); //ï¿½ï¿½ï¿½ï¿½ï¿½
+  gpio_init(B14, GPO, 0, GPO_PUSH_PULL); //
+  gpio_init(B16, GPO, 0, GPO_PUSH_PULL); //
+  gpio_init(B17, GPO, 0, GPO_PUSH_PULL); //
 
-  gpio_init(C12, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ï¿½
-  gpio_init(C13, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ï¿½
-  gpio_init(C14, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ï¿½
-  gpio_init(C15, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ï¿½
+  gpio_init(C12, GPI, 1, GPI_PULL_UP); 
+  gpio_init(C13, GPI, 1, GPI_PULL_UP); 
+  gpio_init(C14, GPI, 1, GPI_PULL_UP); 
+  gpio_init(C15, GPI, 1, GPI_PULL_UP); 
 
-  gpio_init(C26, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ë¿ªï¿½ï¿½
-  gpio_init(C27, GPI, 1, GPI_PULL_UP); //ï¿½ï¿½ï¿½ë¿ªï¿½ï¿½
+  gpio_init(C26, GPI, 1, GPI_PULL_UP); //
+  gpio_init(C27, GPI, 1, GPI_PULL_UP); //
 }
 
-/**************************************************************************
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½_servo3_angle,_servo2_angle,_step_countï¿½ï¿½ï¿½ï¿½ï¿½1Ä¿ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½2Ä¿ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½
-ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
-ï¿½ï¿½×¢ï¿½ï¿½_step_countÔ½Ð¡ï¿½ï¿½ï¿½Ù¶ï¿½Ô½ï¿½ì£¨Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½Ù£ï¿½10ï¿½ï¿½ï¿½ï¿½ï¿½Ù£ï¿½50ï¿½ï¿½ï¿½ï¿½ï¿½Ù£ï¿½100ï¿½ï¿½
-ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½servo_slow_ctrl(148,110,10);
-**************************************************************************/
+//-------------------------------------------------------------------------------------------------------------------
+// º¯Êý¼ò½é     ¶æ»úÁ¬Ðø¿ØÖÆº¯Êý
+// ²ÎÊýËµÃ÷     _servo1_angle               ¶æ»ú1µÄÄ¿±ê½Ç¶È
+// ²ÎÊýËµÃ÷     _servo2_angle               ¶æ»ú2µÄÄ¿±ê½Ç¶È
+// ·µ»Ø²ÎÊý     _step_count                 ¶æ»úÁ¬Ðø¿ØÖÆ¼ä¸ô´ÎÊý
+// Ê¹ÓÃÊ¾Àý     servo_slow_ctrl(90, 90, 100);
+// ±¸×¢ÐÅÏ¢     
+//-------------------------------------------------------------------------------------------------------------------
 void servo_slow_ctrl(uint16 _servo3_angle, uint16 _servo2_angle, float _step_count)
 {
-  float servo3_start = (float)servo3_duty, servo2_start = (float)servo2_duty;//?bugï¿½ï¿½ï¿½ÖµÄµØ·ï¿½ï¿½ï¿½
-  float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count, servo2_step = (float)(_servo2_angle - servo2_duty) / _step_count;//Ã¿Ò»ï¿½ï¿½ï¿½ï¿½ÒªÖ´ï¿½ÐµÄ½Ç¶ï¿½
+  float servo3_start = (float)servo3_duty, servo2_start = (float)servo2_duty;//ÉèÖÃ³õÊ¼½Ç¶ÈÖµ
+  float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count, servo2_step = (float)(_servo2_angle - servo2_duty) / _step_count;//Ã¿Ò»²½ÐèÒªÖ´ÐÐµÄ²½Êý
   while (1)
   {
     system_delay_ms(5);
-		//fabsfï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ãµ¥ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½Öµï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½Ë«ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½Öµï¿½ï¿½È»ï¿½ó½«½ï¿½ï¿½×ªï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-    if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ç¶È¼Óµï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½
+		//fabsf()º¯ÊýÇó¸¡µãÊý¾ø¶ÔÖµ
+    if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//Ö´ÐÐ½Ç¶È±ÈÉè¶¨µÄµ¥²½½Ç¶ÈÒª´ó
       servo3_start += servo3_step;
-    else//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÐ¡ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½
-      servo3_start = _servo3_angle;//ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½Ö±ï¿½Ó¸ï¿½ï¿½ï¿½Îª_servo3_angle
+    else//½Ç¶È±ÈÉè¶¨µÄµ¥²½½Ç¶ÈÒªÐ¡
+      servo3_start = _servo3_angle;//Ö±½Ó¸üÐÂÎªÄ¿±ê½Ç¶È
 		
-    servo1_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//ï¿½é¿´Õ¼ï¿½Õ±ï¿½
-    pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTYï¿½ï¿½×ªï¿½ï¿½ï¿½Ç¶ï¿½×ªï¿½ï¿½ï¿½É¶ï¿½ï¿½Õ¼ï¿½Õ±ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+    servo1_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//·½±ãdebug²é¿´pwmÖµ
+    pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTY½«½Ç¶È×ª»¯³É¶ÔÓ¦µÄpwm
 
     if (fabsf(servo2_start - (float)_servo2_angle) >= servo2_step)
       servo2_start += servo2_step;
@@ -80,130 +81,130 @@ void servo_slow_ctrl(uint16 _servo3_angle, uint16 _servo2_angle, float _step_cou
     servo2_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start);
     pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start));
 
-    if (fabsf(servo3_start - (float)_servo3_angle) <= 1 && fabsf(servo2_start - (float)_servo2_angle) <= 1)//1Îªï¿½ï¿½î·¶Î§ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä½Ç¶ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡Ê±
+    if (fabsf(servo3_start - (float)_servo3_angle) <= 1 && fabsf(servo2_start - (float)_servo2_angle) <= 1)//1ÎªÎó²î·¶Î§£¬²»ÉèÖÃ0µÄÔ­ÒòÊÇ¸¡µãÊý´æÔÚ³ÌÐòÉÏµÄÎó²î
     {
       servo3_duty = (uint16)_servo3_angle;
-      servo2_duty = (uint16)_servo2_angle;//
+      servo2_duty = (uint16)_servo2_angle;//¸üÐÂ½Ç¶È
       return;
     }
   }
 }
-/**************************************************************************
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½_servo3_angle,_step_countï¿½ï¿½ï¿½ï¿½ï¿½1Ä¿ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½2Ä¿ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½
-ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
-ï¿½ï¿½×¢ï¿½ï¿½_step_countÔ½Ð¡ï¿½ï¿½ï¿½Ù¶ï¿½Ô½ï¿½ì£¨Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½Ù£ï¿½10ï¿½ï¿½ï¿½ï¿½ï¿½Ù£ï¿½50ï¿½ï¿½ï¿½ï¿½ï¿½Ù£ï¿½100ï¿½ï¿½
-ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½servo_slow_ctrl(148,10);servo3_duty
-**************************************************************************/
+//-------------------------------------------------------------------------------------------------------------------
+// º¯Êý¼ò½é     ²àÃæ¶æ»úÁ¬Ðø¿ØÖÆº¯Êý
+// ²ÎÊýËµÃ÷     _servo3_angle               ¶æ»ú3µÄÄ¿±ê½Ç¶È
+// ·µ»Ø²ÎÊý     _step_count                 ¶æ»úÁ¬Ðø¿ØÖÆ¼ä¸ô´ÎÊý
+// Ê¹ÓÃÊ¾Àý     servo_slow_ctrl(90, 90, 100);
+// ±¸×¢ÐÅÏ¢     
+//-------------------------------------------------------------------------------------------------------------------
 void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count)
 {
-  float servo3_start = (float)servo3_duty;//ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½
-  float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count;//Ã¿Ò»ï¿½ï¿½ï¿½ï¿½ÒªÖ´ï¿½ÐµÄ½Ç¶ï¿½
+  float servo3_start = (float)servo3_duty;//ÉèÖÃ³õÊ¼½Ç¶ÈÖµ
+  float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count;//Ã¿Ò»²½ÐèÒªÖ´ÐÐµÄ²½Êý
   while (1)
   {
     system_delay_ms(5);
-		//fabsfï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ãµ¥ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½Öµï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½Ë«ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½Öµï¿½ï¿½È»ï¿½ó½«½ï¿½ï¿½×ªï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½È¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-    if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ç¶È¼Óµï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½
+		//fabsf()º¯ÊýÇó¸¡µãÊý¾ø¶ÔÖµ
+    if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//Ö´ÐÐ½Ç¶È±ÈÉè¶¨µÄµ¥²½½Ç¶ÈÒª´ó
       servo3_start += servo3_step;
-    else//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÖµÐ¡ï¿½Úµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½Ç¶ï¿½
-      servo3_start = _servo3_angle;//ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½Ö±ï¿½Ó¸ï¿½ï¿½ï¿½Îª_servo3_angle
+    else//½Ç¶È±ÈÉè¶¨µÄµ¥²½½Ç¶ÈÒªÐ¡
+      servo3_start = _servo3_angle;//Ö±½Ó¸üÐÂÎªÄ¿±ê½Ç¶È
 		
-    servo3_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//ï¿½é¿´Õ¼ï¿½Õ±ï¿½
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTYï¿½ï¿½×ªï¿½ï¿½ï¿½Ç¶ï¿½×ªï¿½ï¿½ï¿½É¶ï¿½ï¿½Õ¼ï¿½Õ±ï¿½(ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+    servo3_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//pwmÖµ
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTY¶æ»ú½Ç¶È×ª»¯³ÉpwmÖµ
 
-    if (fabsf(servo3_start - (float)_servo3_angle) <= 1)//1Îªï¿½ï¿½î·¶Î§ï¿½ï¿½ï¿½ï¿½ï¿½Ú¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½î£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä½Ç¶ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡Ê±
+    if (fabsf(servo3_start - (float)_servo3_angle) <= 1)//1ÎªÎó²î·¶Î§£¬²»ÉèÖÃ0µÄÔ­ÒòÊÇ¸¡µãÊý´æÔÚ³ÌÐòÉÏµÄÎó²î
     {
-      servo3_duty = (uint16)_servo3_angle;//ï¿½ï¿½ï¿½Â¶ï¿½ï¿½ï¿½Ç¶ï¿½
+      servo3_duty = (uint16)_servo3_angle;//¸üÐÂ½Ç¶È
       return;
     }
   }
 }
 /**************************************************************************
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü£ï¿½ï¿½ï¿½Ðµï¿½Û¿ï¿½ï¿½ï¿½Ä£Ê½Ñ¡ï¿½ï¿½
-ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½mode
-ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½
-ï¿½ï¿½×¢ï¿½ï¿½1. Ê°È¡Ä£Ê½ 2. ï¿½ï¿½ï¿½ï¿½Ä£Ê½ 3. ï¿½ï¿½ï¿½ï¿½Ä£Ê½ 4. ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 5. ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Îªï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Ô½×¶ï¿½
-ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½arm_control(1);
+º¯Êý¹¦ÄÜ£º»úÐµ±Û¿ØÖÆÄ£Ê½Ñ¡Ôñ
+Èë¿Ú²ÎÊý£ºmode
+·µ»ØÖµ£ºÎÞ
+±¸×¢£º1. Ê°È¡Ä£Ê½ 2. ÊÕÄÉÄ£Ê½ 3. ¹éÖÐÄ£Ê½ 4. µ÷ÊÔÄ£Ê½£¨°´¼ü£© 5. ÆäËûÄ¬ÈÏÎª¹éÖÐ
+µ÷ÓÃÊ¾Àý£ºarm_control(1);
 **************************************************************************/
 void arm_control(uint8 mode)
 {
-//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½Ê¾ï¿½Ö·ï¿½ï¿½ï¿½
+//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÊ¹ÓÃ
   switch (mode)
   {
 
-  case 1:                  //Ä£Ê½1ï¿½ï¿½Ê°È¡Ä£Ê½
-    gpio_set_level(C9, 1); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½
-//	  ips114_show_string( 0 , 40,   "SUCCESS");                          //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½É¹ï¿½
+  case 1:                  //Ä£Ê½1Ê°È¡Ä£Ê½
+    gpio_set_level(C9, 1); //µç´ÅÌú¸øµç
+//	  ips114_show_string( 0 , 40,   "SUCCESS");                          //²âÊÔÓÃ
     servo_slow_ctrl(148, 141, 5);
-	  ips114_show_string( 0 , 40,   "SUCCESS");                          //ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½á¶¯
+	  ips114_show_string( 0 , 40,   "SUCCESS");                          //²âÊÔÓÃ
     break;
 
-  case 2: //Ä£Ê½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
+  case 2: //Ä£Ê½2ÊÕÄÉÄ£Ê½
     gpio_set_level(C9, 1);
     switch (step)
   {
     case 1:
-        servo_slow_ctrl(148, 110, 10);
+        servo_slow_ctrl(148, 141, 10);
         PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    if(arm_flag==1)//ÑÓÊ±¼ÆÊýÍê³É
     {
        mode = 2;
        step = 2;
-       arm_flag = 0;//ï¿½ï¿½Õ¼ï¿½Ê±ï¿½ï¿½Ö¾Î»
+       arm_flag = 0;//ÇåÁã¼ÆÊý±êÖ¾Î»
     }
     case 2:
-    servo_slow_ctrl(22, 110, 50); // 58 110   58  34//ï¿½ï¿½ï¿½ï¿½Ù¶È²ï¿½Òªï¿½Ò¸ï¿½,ï¿½ï¿½×ªÇ°ï¿½Û£ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½
+    servo_slow_ctrl(22, 141, 50); // 58 110   58  34//¶¯Ç°±Û
     PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    if(arm_flag==1)//ÑÓÊ±¼ÆÊýÍê³É
     {
        mode = 2;
        step = 3;
        arm_flag = 0;
     }
     case 3:
-    servo_slow_ctrl(22, 38, 100); //ï¿½ï¿½ï¿½×²ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½Ê±ï¿½ä£º2023ï¿½ï¿½4ï¿½ï¿½24ï¿½ï¿½18:02:30
+    servo_slow_ctrl(22, 38, 100); //ÊÕºó±Û
     PIT_CH2_Int_Init(10);
-      if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+      if(arm_flag==1)//ÑÓÊ±¼ÆÊýÍê³É
     {
        arm_flag = 0;
-       step = 0;//ï¿½ï¿½ï¿½step
-       mode = 3;//ï¿½ï¿½ï¿½Ù½ï¿½ï¿½ï¿½Øµï¿½Ä£Ê½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Ä£Ê½3ï¿½Ïµï¿½
+       step = 0;//Çå¿Õstep
+       mode = 3;//ÌøÖÁÄ¬ÈÏÄ£Ê½3
     }
     break;
   }
-  case 3: //Ä£Ê½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
+  case 3: //¹éÖÐÄ£Ê½(Ä¬ÈÏ)
     gpio_set_level(C9, 0);
-    servo_slow_ctrl(50, 50, 100);//Ä¬ï¿½ï¿½Ä£Ê½
+    servo_slow_ctrl(50, 50, 100);//Ä¬ÈÏÄ£Ê½
+	  step = 1;//½«²½ÖèÖØÖÃÎªÒ»£¬´ËÊ±modeÒÑ¾­±ä¸üÎª3£¬²»»áÔÙ·µ»ØÖÁmode2Ö´ÐÐ
     break;
 
-  case 4: //Ä£Ê½4ï¿½ï¿½ï¿½ï¿½ï¿½á±£ï¿½ï¿½Ä£Ê½
+  case 4: //µ÷ÊÔÄ£Ê½£¨°´¼ü£©
     gpio_set_level(C9, 1);
     servo_slow_ctrl(148, 110, 10);
     break;
 
-  case 5: //Ä£Ê½5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½
-          //ï¿½ï¿½ï¿½Â²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C14,ï¿½ï¿½Ó¦ï¿½ï¿½C30ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½
+  case 5: //µ÷ÊÔÄ£Ê½£¨°´¼ü£©
     if (!gpio_get_level(C14) && gpio_get_level(C27))
     {
       servo3_duty += 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
     }
-    //ï¿½ï¿½ï¿½Â²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C26ï¿½ï¿½Ó¦ï¿½ï¿½C30ï¿½ï¿½ï¿½ï¿½Ç¶È¼ï¿½Ð¡
+    //ï¿½ï¿½ï¿½Â²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C26ï¿½ï¿½Ó¦ï¿½ï¿½C30ï¿½ï¿½ï¿½ï¿½Ç¶È¼ï¿½Ð?
     if (!gpio_get_level(C26) && gpio_get_level(C27))
     {
       servo3_duty -= 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
     }
-    //ï¿½ï¿½ï¿½Ï²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C14ï¿½ï¿½Ó¦ï¿½ï¿½C31ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½
+    //ï¿½ï¿½ï¿½Ï²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C14ï¿½ï¿½Ó¦ï¿½ï¿½C31ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿?
     if (!gpio_get_level(C14) && !gpio_get_level(C27))
     {
       servo2_duty += 10;
       system_delay_ms(300);
       pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));
     }
-    //ï¿½ï¿½ï¿½Ï²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C26ï¿½ï¿½Ó¦ï¿½ï¿½C31ï¿½ï¿½ï¿½ï¿½Ç¶È¼ï¿½Ð¡
+    //ï¿½ï¿½ï¿½Ï²ï¿½C27ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½C26ï¿½ï¿½Ó¦ï¿½ï¿½C31ï¿½ï¿½ï¿½ï¿½Ç¶È¼ï¿½Ð?
     if (!gpio_get_level(C26) && !gpio_get_level(C27))
     {
       servo2_duty -= 10;
@@ -215,57 +216,57 @@ void arm_control(uint8 mode)
     else
       gpio_set_level(C9, 0);
     break;
-  case 6: //Ä£Ê½6ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Û¿ï¿½ï¿½ï¿½
-  gpio_set_level(C9, 1);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½
+  case 6: //Ä£Ê½6²à±ß¶æ»úÊ°È¡
+  gpio_set_level(C9, 1);//µç´ÅÌú¸øµç
     switch (side_step)
   {
     case 1:
-        side_servo_slow_ctrl(20, 30);//ï¿½ï¿½ï¿½ï¿½
+        side_servo_slow_ctrl(20, 30);//²à±ß¶æ»ú¿ØÖÆ£¬ÎüÃÅ
         PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    if(arm_flag==1)//¼ÆÊýÑÓÊ±Íê³É±êÖ¾
     {
        mode = 6;
        side_step = 2;
-       arm_flag = 0;//ï¿½ï¿½Õ¼ï¿½Ê±ï¿½ï¿½Ö¾Î»
+       arm_flag = 0;//ÖØÖÃ¼ÆÊý±êÖ¾
     }
     case 2:
-    side_servo_slow_ctrl(141, 50); //ï¿½ï¿½ï¿½ï¿½
+    side_servo_slow_ctrl(141, 50); //·ÅÃÅ
     PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    if(arm_flag==1)//¼ÆÊýÑÓÊ±Íê³É±êÖ¾
     {
        mode = 6;
        side_step = 3;
-       arm_flag = 0;
+       arm_flag = 0;//ÖØÖÃ¼ÆÊý±êÖ¾
     }
     case 3:
-    side_servo_slow_ctrl(22, 100); //ï¿½ï¿½ï¿½ï¿½
-    PIT_CH2_Int_Init(10);
-      if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    side_servo_slow_ctrl(22, 100); //ÃÅ»Ø¹é³õÊ¼Î»ÖÃ
+    PIT_CH2_Int_Init(100);
+      if(arm_flag==1)//¼ÆÊýÑÓÊ±Íê³É±êÖ¾
     {
        arm_flag = 0;
-       side_step = 4;//ï¿½ï¿½ï¿½side_step
-       mode = 0;//ï¿½ï¿½ï¿½Ù½ï¿½ï¿½ï¿½Øµï¿½Ä£Ê½2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½Ä£Ê½3ï¿½Ïµï¿½
+       side_step = 4;//¸üÐÂ²½Öè
+       mode = 0;//Ä£Ê½±äÎª0
     }
     case 4:
-    gpio_set_level(C9, 0);//ï¿½ï¿½ï¿½ï¿½Ä¬ï¿½Ï¶Ïµï¿½
-    side_servo_slow_ctrl(50, 100); //ï¿½Ö¸ï¿½ï¿½ï¿½Ê¼×´Ì¬
-    PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É±ï¿½Ö¾
+    gpio_set_level(C9, 0);//µç´ÅÌú¶Ïµç
+    side_servo_slow_ctrl(50, 100); //»Ø¹é³õÊ¼×´Ì¬
+    PIT_CH2_Int_Init(100);
+    if(arm_flag==1)//¼ÆÊýÑÓÊ±Íê³É±êÖ¾
     {
        arm_flag = 0;
-       side_step = 0;//ï¿½ï¿½ï¿½side_step
-       mode = 0;//ï¿½ï¿½ï¿½Ù½ï¿½ï¿½ï¿½Øµï¿½Ä£Ê½6
+       side_step = 0;//È«²¿Íê³É£¬²½ÖèÖÃ0
+       mode = 0;//Ä£Ê½ÖØÖÃ
     }
     break;
   }
   default:
-    break; //ï¿½ï¿½ï¿½Ó¦C30ï¿½ï¿½servo1ï¿½ï¿½ï¿½ï¿½ï¿½Ú¶ï¿½Ó¦C31ï¿½ï¿½servo2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦C6ï¿½ï¿½servo3ï¿½ï¿½
+    break; //ÍË³ö
   }
 }
-//*******************************ï¿½ï¿½ï¿½Ô»ï¿½Ðµï¿½ï¿½******************************//
+//*******************************¶æ»ú²âÊÔº¯Êý******************************//
 void text_arm(void)
 {
-	my_pwm_gpio();//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-	arm_control(1);//ï¿½ï¿½ï¿½ëº¯ï¿½ï¿½ï¿½ï¿½Ã»ï¿½Ð·ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½É¹ï¿½
-//	ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½Ê¾ï¿½Ö·ï¿½ï¿½ï¿½
+	my_pwm_gpio();//³õÊ¼»¯
+	arm_control(2);//²âÊÔ¶æ»úÄ£Ê½2
+//	ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÍ¨¹ý
 }

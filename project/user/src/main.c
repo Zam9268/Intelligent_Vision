@@ -78,14 +78,14 @@ int main(void)
     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
     interrupt_global_enable(0);    //开中断
-	ips114_clear();                //清屏
+	  ips114_clear();                //清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
     Camera_Init();                 //摄像头初始化
     
     pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
     pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
-    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
+//    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
     pit_ms_init(PIT_CH3,15);    // 通道3初始化, 15ms
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -118,8 +118,8 @@ int main(void)
 		// 	motor_close_control();
         // }
 //        Move_Transfrom(1000,1000,0);
-//        text_arm();
-		//    test();
+       text_arm();
+//		    test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
