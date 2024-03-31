@@ -67,11 +67,13 @@ int main(void)
     CLOCK_EnableClock(kCLOCK_Pit);//???????PIT???
     debug_init();                  // ??????????
     system_delay_ms(300);           //?????????????????????
-	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    PidInit();//PID???????????????
-   My_Communication_Init();//????????????
-    ips114_init();//????????
-   ips114_set_dir(IPS114_PORTAIT);
+
+	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    PidInit();//速度环初始化
+    Pos_PidInit();//位置式pid初始化
+    My_Communication_Init();//通信初始化
+    ips114_init();//屏幕初始化
+    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
@@ -83,7 +85,7 @@ int main(void)
     
     pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
     pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
-//    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
+    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
     pit_ms_init(PIT_CH3,15);    // 通道3初始化, 15ms
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -120,8 +122,8 @@ int main(void)
 		// 	motor_close_control();
         // }
 //        Move_Transfrom(1000,1000,0);
-       text_arm();
-//		    test();
+//       text_arm();
+		    test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");

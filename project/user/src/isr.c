@@ -38,7 +38,7 @@
 #include "isr.h"
 #include "control.h"
 
-extern pid_info Speed[4]; //???pid
+extern pid_info Speed[4]; //串级pid处理结果pid
 extern uint8 step;
 int count = 0;
 
@@ -52,7 +52,7 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//λ???pid
+        turnloc_pid();//串级pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
     // if(pit_flag_get(PIT_CH0))

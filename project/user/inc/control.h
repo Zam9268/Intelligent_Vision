@@ -63,10 +63,10 @@ extern int loc_Finish_flag;
 extern int Location_pid_flag;
 extern float loc_err;
 extern float abs_loc_err;
+
 extern int pid_motor[4];
 
 extern pid_info Pos_turn_pid[4];//
-extern float PID_Bias[4], PID_Last_bias[4];
 
 
 void Motor_Init(void);

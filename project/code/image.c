@@ -377,7 +377,7 @@ void Outer_Analyse(void)
     if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
     if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
 
-    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+//    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
 }
 
 /**
@@ -624,7 +624,7 @@ float Err_Handle(void)
         weight_count+=Weight[i];//计算权重总和
     }
     err=err/weight_count;//计算误差
-    if(abs(last_err-err)>=5)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）
+//    if(abs(last_err-err)>=5)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）
     return err;
 }
 
@@ -1037,11 +1037,11 @@ void test2(void)
     else if(Road_Type==RIGHT_TURN)  type=2;
     else if(Road_Type==LEFT_TURN)   type=3;
     else if(Road_Type==CROSSING)    type=4;
-    else if(Road_Type==BANMAXIAN)   type=5;
-    if(Road_Type==CROSSING) Cross_Detect();
-    for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
+//    else if(Road_Type==BANMAXIAN)   type=5;
+//    if(Road_Type==CROSSING) Cross_Detect();
+    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
     {
-        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
         ips114_draw_point(left_line[i],i,RGB565_BLUE);
         // ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
