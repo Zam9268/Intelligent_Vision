@@ -376,7 +376,7 @@ void Outer_Analyse(void)
     if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
     if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
     if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-
+    
     if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
 }
 
@@ -630,7 +630,7 @@ float Err_Handle(void)
     }
     else   
     {
-        if((abs(last_err-err)>=15))    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）)
+        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）)
     } 
     return err;
 }
@@ -879,10 +879,11 @@ void Cross_Detect(void)
             Find_Up_Point(110,6);//??????????????
             if(Left_Up_Find ==0 && Right_Up_Find ==0) return ;//?????????????
         }
+        else    return;//如果左右丢线数过少，就不判断了
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
         {
             down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//??????????????????
-            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+2);//??????????????
+            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//第二个参数要尽量大一点，否则十字在下拐点丢失的时候会补不了线
             if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//?????????????????棬?????????
             if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//?????????????????棬?????????
             if(Left_Down_Find!=0 && Right_Down_Find!=0)//???????????????
@@ -965,10 +966,10 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
         
     }
     
-    ips114_show_uint(188,60,row,3);
-    ips114_show_uint(188,80,end_column-start_column,3);
-    ips114_show_uint(188,100,white_point_count,3);
-    ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
+    // ips114_show_uint(188,60,row,3);
+    // ips114_show_uint(188,80,end_column-start_column,3);
+    // ips114_show_uint(188,100,white_point_count,3);
+    // ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
     if(mode==0)
     {
         if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//如果白色点的个数和列数的差值小于等于（这个阈值要修改成可自动化调整的）
@@ -1048,9 +1049,9 @@ void test2(void)
     if(Road_Type==CROSSING) Cross_Detect();
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-//        ips114_draw_point(left_line[i],i,RGB565_BLUE);
-        // ips114_draw_point(right_line[i],i,RGB565_GREEN);
+        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
     // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
     // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
