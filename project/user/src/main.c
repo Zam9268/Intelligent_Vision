@@ -50,7 +50,7 @@ extern int test_count;
 extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
-extern char str[];//定义接收字符串get
+extern char str[];//发送的字符串，为why
 
 // ????????????????????????????????????
 // ????? ?????????????????
@@ -77,8 +77,8 @@ int main(void)
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
-    interrupt_global_enable(0);    //开中断
-	  ips114_clear();                //清屏
+    interrupt_global_enable(0);    //全局中断使能
+	  ips114_clear();                //显示屏清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
     Camera_Init();                 //摄像头初始化
@@ -104,7 +104,6 @@ int main(void)
         // ips114_show_uint(188,40,right_data[1],3);
         // ips114_show_uint(188,60,right_data[2],2);
         // ips114_show_uint(188,80,right_data[3],3);
-        // uart_write_buffer(UART_1,0x01);//发送字符串get
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -122,8 +121,8 @@ int main(void)
 		// 	motor_close_control();
         // }
 //        Move_Transfrom(1000,1000,0);
-//       text_arm();
-		    test();
+//        text_arm();
+		 test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
@@ -146,13 +145,13 @@ int main(void)
 }
 
 /**
- * @brief 串口1的信息收发函数，用于art的信息传递
+ * @brief 串口1中断函数
  * @param 无
  * @return 无
  */
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//进入接收中断处理函数
-    get_uartdata();//取出对应的接收到的信息
+    uart1_rx_interrupt_handler();//串口1接收中断处理函数
+    get_uartdata();//取串口数据
 }
 
