@@ -64,19 +64,21 @@ void PIT_IRQHandler(void)
     }
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//?????????????????????????????
+       Read_Encoder();//读取编码器
        
        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;
+        extern uint8 arm_flag;//成功进入中断
         count++;
-        if(count>100)
+        if(count>1000)
         {
+					  count = 0;//每次计完数记得清零
             arm_flag = 1;
-            pit_disable(PIT_CH2);//?????????????
+					  ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过，确实会进入判断条件来修改数值
+            pit_disable(PIT_CH2);//中断禁止函数
         }
         pit_flag_clear(PIT_CH2);
     }

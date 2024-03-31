@@ -265,6 +265,16 @@
           <WinNumber>1</WinNumber>
           <ItemText>encoder_sum</ItemText>
         </Ww>
+        <Ww>
+          <count>23</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>arm_flag,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>24</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>count,0x0A</ItemText>
+        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>
@@ -316,6 +326,11 @@
           <count>9</count>
           <WinNumber>2</WinNumber>
           <ItemText>loc_target[4]</ItemText>
+        </Ww>
+        <Ww>
+          <count>10</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>count,0x0A</ItemText>
         </Ww>
       </WatchWindow2>
       <Tracepoint>
