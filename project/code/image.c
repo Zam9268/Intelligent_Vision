@@ -624,7 +624,14 @@ float Err_Handle(void)
         weight_count+=Weight[i];//计算权重总和
     }
     err=err/weight_count;//计算误差
-    if(abs(last_err-err)>=5)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）
+    if(last_err==0&&err==0)
+    {
+        return err;
+    }
+    else   
+    {
+        if((abs(last_err-err)>=15))    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）)
+    } 
     return err;
 }
 
@@ -1041,8 +1048,8 @@ void test2(void)
     if(Road_Type==CROSSING) Cross_Detect();
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
-        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+//        ips114_draw_point(left_line[i],i,RGB565_BLUE);
         // ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
     // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
