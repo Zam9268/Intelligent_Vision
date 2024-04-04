@@ -69,17 +69,18 @@ int main(void)
     system_delay_ms(300);           //系统延时，保证初始化完成
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
     PidInit();//PID初始化
-   My_Communication_Init();//串口通讯初始化
+
+//   My_Communication_Init();//串口通讯初始化
     ips114_init();//显示屏初始化
    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
-   
+    gpio_init()
     interrupt_global_enable(0);    //全局中断使能
 	  ips114_clear();                //显示屏清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
-    Camera_Init();                 //摄像头初始化
+//    Camera_Init();                 //摄像头初始化
     
     pit_ms_init(PIT_CH0,15);    // ?定时器0初始化，间隔为15ms
     pit_ms_init(PIT_CH1,10);    // ?定时器1初始化，间隔为10ms
@@ -98,10 +99,11 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-        // ips114_show_uint(188,20,right_data[0],2);
-        // ips114_show_uint(188,40,right_data[1],3);
-        // ips114_show_uint(188,60,right_data[2],2);
-        // ips114_show_uint(188,80,right_data[3],3);
+		ips114_show_uint(0,0,0,3);
+         ips114_show_uint(188,20,encoder[0],2);
+         ips114_show_uint(188,40,encoder[1],3);
+         ips114_show_uint(188,60,encoder[2],2);
+         ips114_show_uint(188,80,encoder[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -120,7 +122,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		 test();
+//		 test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
@@ -128,7 +130,7 @@ int main(void)
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-//        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
     //    printf("%.2f,%.2f,%.2f,%.2f\r\n",loc_target[0] ,Speed[0].now_speed, loc_target[2], loc_target[3]);

@@ -1049,9 +1049,9 @@ void test2(void)
     if(Road_Type==CROSSING) Cross_Detect();
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
-        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        ips114_draw_point(left_line[i],i,RGB565_BLUE);
-        ips114_draw_point(right_line[i],i,RGB565_GREEN);
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        // ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        // ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
     // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
     // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
@@ -1092,7 +1092,5 @@ void test(void)
         Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
         Outer_Analyse();//Analyze the elements of the edge line array
     }
-    
 	test2();
-  
 }
