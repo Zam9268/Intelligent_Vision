@@ -37,9 +37,11 @@
 #include "zf_common_debug.h"
 #include "isr.h"
 #include "control.h"
+#include "image.h"
 
 extern pid_info Speed[4]; //???pid
 extern uint8 step;
+extern uint8 flag_test;
 int count = 0;
 
 void CSI_IRQHandler(void)
@@ -52,7 +54,7 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//¦Ë???pid
+        turnloc_pid();//ï¿½ï¿½???pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
     // if(pit_flag_get(PIT_CH0))
@@ -64,21 +66,21 @@ void PIT_IRQHandler(void)
     }
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//¶ÁÈ¡±àÂëÆ÷
+       Read_Encoder();//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
        
        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;//³É¹¦½øÈëÖÐ¶Ï
+        extern uint8 arm_flag;//ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
         count++;
         if(count>1000)
         {
-					  count = 0;//Ã¿´Î¼ÆÍêÊý¼ÇµÃÇåÁã
+					  count = 0;//Ã¿ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½
             arm_flag = 1;
-					  ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÍ¨¹ý£¬È·Êµ»á½øÈëÅÐ¶ÏÌõ¼þÀ´ÐÞ¸ÄÊýÖµ
-            pit_disable(PIT_CH2);//ÖÐ¶Ï½ûÖ¹º¯Êý
+					  ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½È·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½Öµ
+            pit_disable(PIT_CH2);//ï¿½Ð¶Ï½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
         }
         pit_flag_clear(PIT_CH2);
     }
@@ -86,6 +88,8 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH3))
     {
         pit_flag_clear(PIT_CH3);
+        if(flag_test==0) count++;
+        
     }
 
     __DSB();

@@ -4,12 +4,13 @@
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
 /*???????????????*/
-uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//???????????
-int center[IMAGE_HEIGHT];//????????
-uint8 the_maxlen_position;//??????λ??
-uint8 num;//??????Ч????
+uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//左边线数组，右边线数组
+int center[IMAGE_HEIGHT];//中线数组（不过用不上）
+uint8 the_maxlen_position;//赛道最长宽
+uint8 num;//赛道最长宽的位置
 uint8 Longest_White_Column_Left[2]; // Record the longest white column in this iteration
 uint8 Last_Longest_White_Column_Left[2]; // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
+uint8 Left_Line_Start, Right_Line_Start; // Starting point of the left and right lines
 uint8 Longest_White_Column_Right[2]; // The longest white column on the right side, not used
 uint8 Right_Lost_Flag[IMAGE_HEIGHT]; // Lost line flag for the right boundary
 uint8 Left_Lost_Flag[IMAGE_HEIGHT]; // Lost line flag for the left boundary
@@ -26,6 +27,7 @@ uint8 Left_Up_Find = 0; // Finding the left top turning point
 uint8 Last_Left_Up_Find=0;
 uint8 Last_Right_Up_Find=0;//记录上次的位置
 uint8 Right_Up_Find = 0; // Finding the right top turning point
+uint8 flag_test=0;
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
@@ -36,6 +38,7 @@ extern uint8 right_data[64];//存储最终的数据
 extern uint32 fifo_data_count;//单次接收的数组个数
 extern uint8 data_length;//数据长度
 extern uint8 i;//下标指针
+extern int count;//外部声明
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -244,16 +247,20 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
  */
 void Center_line_deal_plus(uint8 start_column,uint8 end_column)
 {
+    begin:
+    
     for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
     {
         left_line[i]=0;
         right_line[i]=0;
         Right_Lost_Flag[i]=0; // Clear the right line lost flag to 0
         Left_Lost_Flag[i]=0; // Clear the left line lost flag to 0
-        
     }
-    Left_Lost_Time=0;
-    Right_Lost_Time=0;//计数值清零
+    Left_Lost_Time=0;//左丢线计数值清零
+    Right_Lost_Time=0;//右丢线计数值清零
+    Both_Lost_Time=0;//左右同时丢线计数值清零
+    Boundry_Start_Left=0;
+    Boundry_Start_Right=0;//边界起始点清零
     /* Reset white column count */
     for(uint8 i=0;i<=IMAGE_WIDTH-1;i++)
     {
@@ -273,6 +280,10 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
             {
                 break;
             }
+        }
+        if(Image_Use[119][j]==BLACK_POINT&&Image_Use[118][j]==BLACK_POINT)//如果是有效列，则下面两行不能全为白色
+        {
+            White_Column[j]=0;//对应白列清零
         }
     }
     /* Find the longest white column */
@@ -297,6 +308,8 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
     
     /* Start searching for boundaries */
     int right_border,left_border;// Define intermediate variables for boundaries
+    uint8 left_start_flag=0;
+    uint8 right_start_flag=0;
     for(int i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
     {
         for(int j=Longest_White_Column_Left[1];j>=2;j--)// Search for the left boundary from the middle to the left
@@ -320,6 +333,14 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
             {
                 right_border=j;// Store the boundary information
                 Right_Lost_Flag[i]=0;// Set the boundary flag to 0
+                if(right_start_flag==0)
+                {
+                    if(Right_Lost_Flag[i-1]==1)      //如果上次丢线了，这次没丢线，说明该点为起始行
+                    {
+                        Right_Line_Start=i;
+                        right_start_flag=1;
+                    }
+                }
                 break;
             }
             else if(j>=IMAGE_WIDTH-1-2)// If reaching the right boundary
@@ -331,6 +352,28 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
         }
         left_line[i]=left_border;// Store the corresponding boundary information
         right_line[i]=right_border;
+    }
+    /*矫正判断（在弯道换成直道的时候可能会中线突变到两旁）*/
+    Outer_Analyse();
+    if(Longest_White_Column_Left[1]<=60&&Left_Lost_Time>=60&&Right_Lost_Time<=5)
+    {
+        if(right_line[Boundry_Start_Right]<=(IMAGE_WIDTH/2))//此时中线出赛道
+        {
+            Last_Longest_White_Column_Left[1]=94;
+	        Longest_White_Column_Left[1]=94;
+            flag_test++;
+            goto begin;//这里可以用迭代吧，我个人觉得
+        }
+    }
+    else if(Longest_White_Column_Left[1]>=128&&Right_Lost_Time>=60&&Left_Lost_Time<=5)
+    {
+        if(left_line[Boundry_Start_Left]>=(IMAGE_WIDTH/2))//此时中线出赛道
+        {
+            Last_Longest_White_Column_Left[1]=94;
+	        Longest_White_Column_Left[1]=94;
+            flag_test++;
+            goto begin;//这里可以用迭代吧，我个人觉得
+        }
     }
 }
 
@@ -1050,8 +1093,8 @@ void test2(void)
     for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
     {
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        // ips114_draw_point(left_line[i],i,RGB565_BLUE);
-        // ips114_draw_point(right_line[i],i,RGB565_GREEN);
+        ips114_draw_point(left_line[i],i,RGB565_BLUE);
+        ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
     // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
     // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
@@ -1059,11 +1102,12 @@ void test2(void)
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
-    ips114_show_float(188,20,my_err,2,2);
+    ips114_show_uint(188,20,flag_test,2);
     ips114_show_uint(188,40,type,3);
-    
-    
-    
+    ips114_show_uint(188,60,right_line[Boundry_Start_Right],3);
+    ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
+    ips114_show_uint(188,100,Left_Lost_Time,3);   
+    ips114_show_uint(188,120,Right_Lost_Time,3);
 }
 
 /**
@@ -1088,9 +1132,8 @@ void test(void)
         output_address=Scharr_Edge(*mt9v03x_image);
 		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
         memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-		Simple_Binaryzation(*Image_Use,threshold);
+		Simple_Binaryzation(*Image_Use,threshold);/*完成这一套图像处理要9200us，挺慢的，但是稳一点，受光照影响极小*/
         Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
-        Outer_Analyse();//Analyze the elements of the edge line array
-    }
-	test2();
+    }	
+    test2();
 }

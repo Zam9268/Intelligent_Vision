@@ -8,12 +8,11 @@ sensor.skip_frames(time = 2000)     # Wait for settings take effect.
 clock = time.clock()                # Create a clock object to track the FPS.
 #目标检测思路：在找到一张卡片后，直接在该卡片中心的周围进行二次检测即可，不需要扫描全图
 #设置模型路径
-face_detect = 'yolo3_iou_smartcar_final_with_post_processing.tflite'
+face_detect = 'target_detect_3.tflite'
 #载入模型
 net = tf.load(face_detect)
 
 #函数：计算透视W矩阵
-def cal_mtx()
 while(True):
     clock.tick()
     img = sensor.snapshot()

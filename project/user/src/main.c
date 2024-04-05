@@ -52,6 +52,7 @@ extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
 extern char str[];//发送的字符串，为why
 
+
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -79,12 +80,12 @@ int main(void)
 	  ips114_clear();                //显示屏清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
-//    Camera_Init();                 //摄像头初始化
+   Camera_Init();                 //摄像头初始化
     
     pit_ms_init(PIT_CH0,15);    // ?定时器0初始化，间隔为15ms
     pit_ms_init(PIT_CH1,10);    // ?定时器1初始化，间隔为10ms
 //    pit_ms_init(PIT_CH2,15);    // ?定时器2初始化，间隔为15ms
-    pit_ms_init(PIT_CH3,15);    // 定时器3初始化，间隔为15ms
+    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
@@ -95,14 +96,15 @@ int main(void)
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;
+    pit_us_init(PIT_CH3,100);    // 定时器3初始化，间隔为15ms
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-		ips114_show_uint(0,0,0,3);
-         ips114_show_uint(188,20,encoder[0],2);
-         ips114_show_uint(188,40,encoder[1],3);
-         ips114_show_uint(188,60,encoder[2],2);
-         ips114_show_uint(188,80,encoder[3],3);
+		// ips114_show_uint(0,0,0,3);
+        //  ips114_show_uint(188,20,count,2);
+        //  ips114_show_uint(188,40,encoder[1],3);
+        //  ips114_show_uint(188,60,encoder[2],2);
+        //  ips114_show_uint(188,80,encoder[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -121,7 +123,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-//		 test();
+		 test();
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
