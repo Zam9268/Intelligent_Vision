@@ -75,7 +75,6 @@ int main(void)
    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
-    gpio_init()
     interrupt_global_enable(0);    //全局中断使能
 	  ips114_clear();                //显示屏清屏
     Motor_Init();                  //电机初始化

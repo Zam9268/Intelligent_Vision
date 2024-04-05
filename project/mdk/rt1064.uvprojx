@@ -464,6 +464,11 @@
               <FileType>1</FileType>
               <FilePath>..\code\communication.c</FilePath>
             </File>
+            <File>
+              <FileName>perspective.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\perspective.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
