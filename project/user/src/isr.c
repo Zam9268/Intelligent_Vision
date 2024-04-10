@@ -55,17 +55,11 @@ void PIT_IRQHandler(void)
         turnloc_pid();//串级pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
-    // if(pit_flag_get(PIT_CH0))
-    // {
-    //     void Read_imu (void);
-    //     Read_imu;
-    //     pit_flag_clear(PIT_CH0);
-    // }
     }
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//读取编码器
-       
+     //读取编码器
+       Read_Encoder();
        pit_flag_clear(PIT_CH1);
     }
     
@@ -77,7 +71,7 @@ void PIT_IRQHandler(void)
         {
 					  count = 0;//每次计完数记得清零
             arm_flag = 1;
-					  ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过，确实会进入判断条件来修改数值
+			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过，确实会进入判断条件来修改数值
             pit_disable(PIT_CH2);//中断禁止函数
         }
         pit_flag_clear(PIT_CH2);
@@ -100,8 +94,8 @@ void LPUART1_IRQHandler(void)
     // #if DEBUG_UART_USE_INTERRUPT                        // ???? debug ????
     //     debug_interrupr_handler();                      // ?? debug ???????? ???? debug ???????
     // #endif                                              // ????? DEBUG_UART_INDEX ?????????????????
-    extern void UART1_handler(void);//?????????
-    UART1_handler();
+    // extern void UART1_handler(void);//?????????
+    // UART1_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????

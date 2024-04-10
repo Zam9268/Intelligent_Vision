@@ -40,10 +40,11 @@
 #include "take.h"
 #include "Vofa.h"
 #include "math.h"
+#include "control.h"
 #include "communication.h"
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
-extern float PID_motor[4];//???pid?????????
+extern int pid_motor[4];//???pid?????????
 extern pid_info Speed[4];//???pid????
 Vofa_HandleTypedef vofa1;//vofa????????
 extern int test_count;
@@ -68,14 +69,15 @@ int main(void)
     debug_init();                  // ??????????
     system_delay_ms(300);           //?????????????????????
 
+	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
 	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//速度环初始化
     Pos_PidInit();//位置式pid初始化
-    My_Communication_Init();//通信初始化
-    ips114_init();//屏幕初始化
-    ips114_set_dir(IPS114_PORTAIT);
-    ips114_set_font(IPS114_6X8_FONT);
-    ips114_set_color(RGB565_RED, RGB565_BLACK);
+    // My_Communication_Init();//通信初始化
+     ips114_init();//屏幕初始化
+     ips114_set_dir(IPS114_PORTAIT);
+     ips114_set_font(IPS114_6X8_FONT);
+     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
     interrupt_global_enable(0);    //全局中断使能
 	  ips114_clear();                //显示屏清屏
@@ -122,7 +124,9 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		 test();
+		       test();
+					
+		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
 //		printf("\n");
@@ -133,7 +137,7 @@ int main(void)
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-    //    printf("%.2f,%.2f,%.2f,%.2f\r\n",loc_target[0] ,Speed[0].now_speed, loc_target[2], loc_target[3]);
+        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
        //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
