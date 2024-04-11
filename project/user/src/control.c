@@ -8,6 +8,7 @@
 float Car_H = 0.8;//车长
 float Car_W = 0.6; // 车宽
 int encoder[4];   // 编码器数据
+int encoder_test[4];//暂时代替的编码器数值
 float encoder_sum[4];//编码器累加值
 float target_encoder_sum[4];//目标编码器累加值
 float loc_target[4];//位置式处理后的速度
@@ -18,11 +19,15 @@ int Location_pid_flag = 1;//位置式处理允许标志
 float loc_err;//位置式输入误差
 float abs_loc_err;//位置式输入误差绝对值
 int pid_motor[4]; // PID处理后的电机pwm
+float bili_act_turn = 1.4;
+float loc_kp = 1.35;//位置式pd，方便调参使用 1.35位置式暂时最优 24/4/4
+float loc_kd = 0.80;                         //0.80
+int test_count=0;
 float dt=0.005;
 
 pid_info Pos_turn_pid[4];//位置式pid
 
-pid_info Speed[4]; // 位置pid
+pid_info Speed[4]; // 增量式pid
 
 /**
  * @brief 电机初始化
@@ -75,14 +80,13 @@ void Read_Encoder(void)
   encoder[1] = -encoder_get_count(ENCODER_LB); // 左后
   encoder[2] = encoder_get_count(ENCODER_RF); // 右前
   encoder[3] = encoder_get_count(ENCODER_RB); // 右后，正转读正
-
-  // ????????????
+	
   for(uint8 i=0;i<4;i++)
   {
     Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 编码器数据转换成车轮速度，单位为cm/s
   } 
   
-  // ????????????
+  // 编码器清空
   encoder_clear_count(ENCODER_LF);
   encoder_clear_count(ENCODER_LB);
   encoder_clear_count(ENCODER_RF);
@@ -141,17 +145,17 @@ void Pos_PidInit(void)
   }
 
   //左前
-  Pos_turn_pid[0].kp = 0.5;   //0.5对应速度40
-  Pos_turn_pid[0].kd = 0.5;   //0.5对应速度40
+  Pos_turn_pid[0].kp = loc_kp;   //0.5对应速度40   0.3//  3/30   1.0  24/4/4纯p
+  Pos_turn_pid[0].kd = loc_kd;   //0.5对应速度40   0.8           
   //左后
-  Pos_turn_pid[1].kp = 0.5;
-  Pos_turn_pid[1].kd = 0.5;
+  Pos_turn_pid[1].kp = loc_kp;
+  Pos_turn_pid[1].kd = loc_kd;
   //右前
-  Pos_turn_pid[2].kp = 0.5;
-  Pos_turn_pid[2].kd = 0.5;
+  Pos_turn_pid[2].kp = loc_kp;
+  Pos_turn_pid[2].kd = loc_kd;
   //右后
-  Pos_turn_pid[3].kp = 0.5;
-  Pos_turn_pid[3].kd = 0.5; //PD赋值
+  Pos_turn_pid[3].kp = loc_kp;
+  Pos_turn_pid[3].kd = loc_kd; //PD赋值
 
 }
 
@@ -173,17 +177,17 @@ void PidInit(void)
   }
 
   // ???
-  Speed[0].kp = -22.5;
-  Speed[0].ki = -1.50;
+  Speed[0].kp = -26;  //-22.5
+  Speed[0].ki = -1.80;  //-1.5
   // ???
-  Speed[1].kp = -30;
-  Speed[1].ki = -0.5;
+  Speed[1].kp = -34.5;    //-30
+  Speed[1].ki = -0.6;   //-0.5
   // ???
-  Speed[2].kp = -25;
-  Speed[2].ki = -0.5;
+  Speed[2].kp = -28.75;    //-25
+  Speed[2].ki = -0.6;   //-0.5
   //???
-  Speed[3].kp = -25;
-  Speed[3].ki = -0.8; //PI赋值
+  Speed[3].kp = -28.75;    //-25
+  Speed[3].ki = -1.0; //PI赋值 -0.8
 
 }
 /**
@@ -195,17 +199,20 @@ void increment_pid(void)
 {
   for(uint8 i=0;i<4;i++)
   {
-      //????
-      Speed[i].lastlastError = Speed[i].lastError;  //记录上上次误差
-      Speed[i].lastError = Speed[i].error;          //记录上次误差
+      //
+     
       Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //计算本次误差
       Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式处理
+		
+			Speed[i].lastlastError = Speed[i].lastError;  //记录上上次误差
+      Speed[i].lastError = Speed[i].error;          //记录上次误差
+		
       Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
   }
 }
 /**
  * @brief 位置式pid(单环)
- * @param pid_info *pid:pid结构体pwm? 
+ * @param pid_info *pid:pid结构体pwm
  *        Target目标距离转换成的编码器数值 
  *        encoder编码器读数
  * @return pid->output 可以是其他值，在此处是脉冲数
@@ -252,46 +259,38 @@ void Drive_Motor()
 {
   float LF_Target,LB_Target,RF_Target,RB_Target; //各个轮子处理输出的脉冲值
 	loc_err = Err_Handle();
-	abs_loc_err = fabsf(Err_Handle());   //Err_Handle()
+	abs_loc_err = fabsf(Err_Handle())*bili_act_turn;   //Err_Handle()
 
-   if(abs_loc_err < 1.0)//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
+   if(abs_loc_err < 2.0 )//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
   {
     loc_Finish_flag = 1;//位置式完成标志
     clear_encoder_sum();//清空编码器累计值
     int i = 0;
     for(i = 0;i < 4; i++) 
     {
+			target_encoder_sum[i] = 0;//目标
       loc_target[i] = 0;//各个轮子的位置式输出速度归零
     }
   }
    
-	if(loc_err > 0)       //这里还有点小bug，右转弯识别出的误差居然是<0,逆天
+	if(loc_err > 0)       //右转弯识别出的误差是<0
      Turn_Left_flag = 1;//左转标志位
   if(loc_err < 0)
      Turn_Right_flag =1;//右转标志位
 
-  if(loc_Finish_flag == 0)//位置式调整
+  if(loc_Finish_flag == 0)//位置式调整未完成
   {
     Set_Distence_m(abs_loc_err);//转换中线误差
+
+    encoder_sum[0] += fabsf(encoder[0]);//编码器累加值
+    encoder_sum[1] += fabsf(encoder[1]);
+    encoder_sum[2] += fabsf(encoder[2]);
+    encoder_sum[3] += fabsf(encoder[3]);
 	
-//     int i = 0;
-//     for(i = 0;i < 4; i++)
-//    {
-//        if(encoder_sum[i] < target_encoder_sum[i])
-//      {
-//          encoder_sum[i] += fabsf(encoder[i]);//测试使用
-//      }
-//        else
-//      {
-//          Location_pid_flag = 0;//位置式调整允许标志
-//          loc_target[i] = loc_last_target[i];//记录上次处理结果
-//      }
-//    }
-		
     LF_Target = Location_pid(&Pos_turn_pid[0], encoder_sum[0], target_encoder_sum[0]);
-    LB_Target = Location_pid(&Pos_turn_pid[1], encoder_sum[0], target_encoder_sum[1]);
-    RF_Target = Location_pid(&Pos_turn_pid[2], encoder_sum[0], target_encoder_sum[2]);
-    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[0], target_encoder_sum[3]);//位置式处理
+    LB_Target = Location_pid(&Pos_turn_pid[1], encoder_sum[1], target_encoder_sum[1]);
+    RF_Target = Location_pid(&Pos_turn_pid[2], encoder_sum[2], target_encoder_sum[2]);
+    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[3], target_encoder_sum[3]);//位置式处理，尝试给同一个速度
             
     loc_target[0] = LF_Target* 0.2636719 *PI /100;//将脉冲数转换成编码器速度
     loc_target[1] = LB_Target* 0.2636719 *PI /100;
@@ -305,7 +304,7 @@ void Drive_Motor()
     loc_target[2] = fabsf(loc_target[2]);
     loc_target[3] = fabsf(loc_target[3]);
   }
-  else if(Turn_Right_flag==1)//右转，或者在中线左侧
+  else if(Turn_Right_flag==1)//右转，或者在中线
   {
     loc_target[0] = fabsf(loc_target[0]);
     loc_target[1] = fabsf(loc_target[1]);
@@ -317,12 +316,17 @@ void Drive_Motor()
     loc_last_target[1] = loc_target[1];
     loc_last_target[2] = loc_target[2];
     loc_last_target[3] = loc_target[3];
+
+	for(uint8 i=0;i<4;i++)
+	{
+	loc_target[i] = PIDInfo_Limit(loc_target[i], 40.0);//输出速度限幅
+	}
   }
 }
 /**
  * @brief 串级pid 双环(位置环+速度环)
  * @param 无
- * @return ?无
+ * @return 无
  */
 void turnloc_pid(void)
 {
@@ -338,7 +342,7 @@ void turnloc_pid(void)
       Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
   }
 
-  Turn_Left_flag = 0;
+  Turn_Left_flag  = 0;
   Turn_Right_flag = 0;//左转/右转标志位清零
 
   loc_Finish_flag = 0;//位置式完成标志清零
@@ -473,8 +477,4 @@ float PIDInfo_Limit(float Value, float MaxValue)
 	}
 
 	return Value;
-}
-void test_pos(void)
-{
-    turnloc_pid();
 }

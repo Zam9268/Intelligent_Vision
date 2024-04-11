@@ -39,7 +39,7 @@
 #include "control.h"
 #include "image.h"
 
-extern pid_info Speed[4]; //???pid
+extern pid_info Speed[4]; //´®¼¶pid´¦Àí½á¹ûpid
 extern uint8 step;
 extern uint8 flag_test;
 int count = 0;
@@ -54,20 +54,14 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//ï¿½ï¿½???pid
+        turnloc_pid();//´®¼¶pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
-    // if(pit_flag_get(PIT_CH0))
-    // {
-    //     void Read_imu (void);
-    //     Read_imu;
-    //     pit_flag_clear(PIT_CH0);
-    // }
     }
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-       
+     //¶ÁÈ¡±àÂëÆ÷
+       Read_Encoder();
        pit_flag_clear(PIT_CH1);
     }
     
@@ -79,8 +73,8 @@ void PIT_IRQHandler(void)
         {
 					  count = 0;//Ã¿ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½
             arm_flag = 1;
-					  ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½È·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½Öµ
-            pit_disable(PIT_CH2);//ï¿½Ð¶Ï½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
+			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÍ¨¹ý£¬È·Êµ»á½øÈëÅÐ¶ÏÌõ¼þÀ´ÐÞ¸ÄÊýÖµ
+            pit_disable(PIT_CH2);//ÖÐ¶Ï½ûÖ¹º¯Êý
         }
         pit_flag_clear(PIT_CH2);
     }
@@ -104,8 +98,8 @@ void LPUART1_IRQHandler(void)
     // #if DEBUG_UART_USE_INTERRUPT                        // ???? debug ????
     //     debug_interrupr_handler();                      // ?? debug ???????? ???? debug ???????
     // #endif                                              // ????? DEBUG_UART_INDEX ?????????????????
-//    extern void UART1_handler(void);//?????????
-//    UART1_handler();
+    // extern void UART1_handler(void);//?????????
+    // UART1_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????

@@ -191,7 +191,7 @@ uint8 *Scharr_Edge(uint8 *image5)
         scharr_image[0][j]=*(image5);
         image5++;//地址自增
     }
-    for(int i=1;i<IMAGE_HEIGHT-1;i++)
+    for(int i=1;i<IMAGE_HEIGHT-1;i++)//？
     {
         scharr_image[i][0]=*(image5);//第一列不作处理
         image5++;//地址自增

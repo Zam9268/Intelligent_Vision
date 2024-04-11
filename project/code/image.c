@@ -418,9 +418,9 @@ void Outer_Analyse(void)
     if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
     if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
     if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
-    if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-    
-    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+    // if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
+
+//    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
 }
 
 /**
@@ -661,20 +661,20 @@ float Err_Handle(void)
     last_err=err;//上次的误差传递
     
     int weight_count=0;//权重计算
-    for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)
+    for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)//原本是int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--，现在将中线识别提前
     {
         err+=(IMAGE_WIDTH/2-((left_line[i]+right_line[i])>>1))*Weight[i];
         weight_count+=Weight[i];//计算权重总和
     }
     err=err/weight_count;//计算误差
-    if(last_err==0&&err==0)
-    {
-        return err;
-    }
-    else   
-    {
-        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）)
-    } 
+//    if(last_err==0&&err==0)
+//    {
+//        return err;
+//    }
+//    else   
+//    {
+//        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//如果本次误差太大，就返回上次误差（防止部分元素误差突变）)
+//    } 
     return err;
 }
 
@@ -775,7 +775,7 @@ void Find_Down_Point(int start, int end)
         }
         if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
         abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15
-        &&abs(left_line[i]-left_line[i-4])>=15)
+        &&abs(left_line[i]-left_line[i-4])>=15)//这里改过，添加了最后一个判断条件
         {
             Right_Down_Find=i;//????????????
         }
@@ -806,7 +806,7 @@ void Find_Up_Point(int start, int end)
     if(end<=5)  end=5;
     if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5?е?????????????????????????ж?
     /*????????????????????????????????????????*/
-    for(i=end;i<=start;i++)//????????????????
+    for(i=end;i<=start;i++)//???????????????? 这里疑似有问题，i++是否会导致数组越界？
     {
         if(Left_Up_Find == 0 && 
         abs(left_line[i]-left_line[i-1])<=5 &&
@@ -920,7 +920,8 @@ void Cross_Detect(void)
         if(Both_Lost_Time >=15)//???????????????
         {
             Find_Up_Point(110,6);//??????????????
-            if(Left_Up_Find ==0 && Right_Up_Find ==0) return ;//?????????????
+            if(Left_Up_Find ==0 && Right_Up_Find ==0) 
+            return ;//?????????????
         }
         else    return;//如果左右丢线数过少，就不判断了
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
@@ -1003,7 +1004,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
         
         if(Image_Use[row][i]==WHITE_POINT)  
         {
-            ips114_draw_point(i,row,RGB565_BLUE);
+            // ips114_draw_point(i,row,RGB565_BLUE);
             white_point_count++;//计算白色点的值
         }
         
@@ -1061,8 +1062,8 @@ void Zebra_Stripes_Detect(void)
         if(Road_Type==BANMAXIAN) Road_Type=STRAIGHT_ROAD;//从斑马线切回到直道
         return ;
     }
-    ips114_draw_line(94,60,left_line[continuity_change_left_flag],continuity_change_left_flag,RGB565_RED);
-    ips114_draw_line(98,0,left_line[monotonicity_change_left_flag],monotonicity_change_left_flag,RGB565_BLUE);
+    // ips114_draw_line(94,60,left_line[continuity_change_left_flag],continuity_change_left_flag,RGB565_RED);
+    // ips114_draw_line(98,0,left_line[monotonicity_change_left_flag],monotonicity_change_left_flag,RGB565_BLUE);
     // ips114_show_uint(188,60,continuity_change_right_flag,3);
     // ips114_show_uint(188,80,continuity_change_left_flag,3);
     
@@ -1073,11 +1074,11 @@ void Zebra_Stripes_Detect(void)
         uint8 count=Black_White_Dump(continuity_change_left_flag-3,left_line[continuity_change_left_flag-3],right_line[continuity_change_left_flag-3]);
         uint8 higher_flag= (continuity_change_left_flag < continuity_change_right_flag) ? continuity_change_left_flag : continuity_change_right_flag; // 如果A小于B，那么C的值为A，否则C的值为B
         uint8 lower_flag= (monotonicity_change_left_flag > monotonicity_change_right_flag) ? monotonicity_change_left_flag : monotonicity_change_right_flag; // 如果A大于B，那么C的值为A，否则C的值为B
-        if(Black_White_Dump((higher_flag+lower_flag)/2,left_line[higher_flag]-5,right_line[higher_flag]-5))
-        {
-            Road_Type=BANMAXIAN;
-            // if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//斑马线是在直道的基础上进行判断的（但是一定要归类回直道，但是只用跑一圈似乎也没必要）
-        }
+        // if(Black_White_Dump((higher_flag+lower_flag)/2,left_line[higher_flag]-5,right_line[higher_flag]-5))
+        // {
+            //            Road_Type=BANMAXIAN;
+             // if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//斑马线是在直道的基础上进行判断的（但是一定要归类回直道，但是只用跑一圈似乎也没必要）
+        // }
     }
 }
 
@@ -1087,17 +1088,17 @@ void test2(void)
     if(Road_Type==STRAIGHT_ROAD)    type=1;
     else if(Road_Type==RIGHT_TURN)  type=2;
     else if(Road_Type==LEFT_TURN)   type=3;
-    else if(Road_Type==CROSSING)    type=4;
-    else if(Road_Type==BANMAXIAN)   type=5;
-    if(Road_Type==CROSSING) Cross_Detect();
-    for(uint8 i=0;i<=IMAGE_HEIGHT-1;i++)
+//    else if(Road_Type==CROSSING)    type=4;
+//    else if(Road_Type==BANMAXIAN)   type=5;
+//    if(Road_Type==CROSSING) Cross_Detect();
+    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
     {
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
         ips114_draw_point(left_line[i],i,RGB565_BLUE);
         ips114_draw_point(right_line[i],i,RGB565_GREEN);
     }
-    // ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
-    // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+//    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
+//    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
@@ -1129,7 +1130,7 @@ void test(void)
     else if(mode==0)
     {
         uint8 *output_address;//?????????
-        output_address=Scharr_Edge(*mt9v03x_image);
+        output_address=Scharr_Edge(*mt9v03x_image);//这一行出了问题
 		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
         memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
 		Simple_Binaryzation(*Image_Use,threshold);/*完成这一套图像处理要9200us，挺慢的，但是稳一点，受光照影响极小*/
