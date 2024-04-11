@@ -75,7 +75,7 @@ while(True):
         img_coordinate=[]#定义一个列表，用来存放矩形的四个角的坐标
         print("********")#打印间隔符
         if show:#如果show为True，则显示矩形的四个角的坐标
-            for p in r.corners():#存储矩形的四个角点的坐标
+            for p in r.corners():#存储矩形的四个角点的坐标，r.corners返回对象的4个角的4 (x,y)元组列表。从左上方开始按顺时针顺序返回角的坐标
                 img.draw_circle(p[0], p[1], 2, color = (0, 255, 0))#画出矩形的四个角点，半径为2个像素点，颜色为绿色
                 img_coordinate.append([p[0]-80, 120-p[1]])
                 print(p[0]-80,120-p[1])

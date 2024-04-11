@@ -72,9 +72,9 @@ void Read_Encoder(void)
 {
   // ????????
   encoder[0] = -encoder_get_count(ENCODER_LF); // 左前
-  encoder[1] = encoder_get_count(ENCODER_LB); // 左后
+  encoder[1] = -encoder_get_count(ENCODER_LB); // 左后
   encoder[2] = encoder_get_count(ENCODER_RF); // 右前
-  encoder[3] = -encoder_get_count(ENCODER_RB); // 右后，正转读正
+  encoder[3] = encoder_get_count(ENCODER_RB); // 右后，正转读正
 
   // ????????????
   for(uint8 i=0;i<4;i++)

@@ -96,7 +96,7 @@ int main(void)
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;
-    pit_us_init(PIT_CH3,100);    // 定时器3初始化，间隔为15ms
+//
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
@@ -131,8 +131,8 @@ int main(void)
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
-        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
+//        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
     //    printf("%.2f,%.2f,%.2f,%.2f\r\n",loc_target[0] ,Speed[0].now_speed, loc_target[2], loc_target[3]);
        //printf("test");
