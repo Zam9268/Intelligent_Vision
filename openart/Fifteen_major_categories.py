@@ -57,7 +57,7 @@ lcd = seekfree.LCD180(3)#初始化屏幕
 lcd.full()  # 将背景颜色显示到整个屏幕
 uart = UART(2, baudrate=115200)#初始化UART2，波特率设置为115200
 
-net_path = "mobilenet_v2-2024-03-03T08-27-26.947Z_in-int8_out-int8_channel_ptq.tflite"                                  # 定义模型的路径，这个模型由eiq进行提供，自己要训练
+net_path = "mobilenet_v2-2024-03-09T03-30-55.865Z_in-int8_out-int8_channel_ptq.tflite"                                  # 定义模型的路径，这个模型由eiq进行提供，自己要训练
 labels = [line.rstrip() for line in open("/sd/mobilenet_v2_total_labels.txt")]   # 加载标签
 net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路径 load_to_fb：模型会被加载到帧缓冲区
 
@@ -65,19 +65,6 @@ test_data=[0x12,0x32]#可以发送多组数据，但是注意：第一个数据�
 
 
 while(1):
-   while(sending):
-      send_data(test_data,2)
-      time.sleep_ms(100)#每次使用uart发送数据，都要给一定的延迟，让单片机有足够的时间处理uart发送的数据
-      uart_num=uart.any() #获取当前串口数据数量
-      print(uart_num)#打印当前串口缓冲区数量
-      if(uart_num):
-         uart_str=uart.read(uart_num).decode().strip()#读取串口数据，并解码，strip()函数用于去除字符串两边的空格
-         time.sleep_ms(100)#给art足够的时间来读取uart发送来的数据
-         print(uart_str)
-         if(uart_str=="get"): #接收成功
-            print(uart_str)
-            sending=0
-
    sensor.set_auto_whitebal(False)#关闭白平衡
    img = sensor.snapshot()
    #这个是通过色块来找图片

@@ -139,7 +139,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		       test();
+		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);

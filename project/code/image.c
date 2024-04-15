@@ -418,6 +418,8 @@ void Outer_Analyse(void)
     if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
     if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
     if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
+    if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
+    if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
     // if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
 
 //    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
@@ -1091,12 +1093,12 @@ void test2(void)
 //    else if(Road_Type==CROSSING)    type=4;
 //    else if(Road_Type==BANMAXIAN)   type=5;
 //    if(Road_Type==CROSSING) Cross_Detect();
-    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    {
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        ips114_draw_point(left_line[i],i,RGB565_BLUE);
-        ips114_draw_point(right_line[i],i,RGB565_GREEN);
-    }
+    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+    // {
+    //     ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+    //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
+    //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
+    // }
 //    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
 //    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      

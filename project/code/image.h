@@ -17,7 +17,8 @@ typedef enum{
     LEFT_TURN,
     RIGHT_TURN,
     CROSSING,
-    HUANDAO,
+    LEFT_HUANDAO,
+    RIGHT_HUANDAO,
     PODAO,
     BANMAXIAN
 }RoadType;//定义赛道元素类型枚举
