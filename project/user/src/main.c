@@ -62,16 +62,32 @@ extern char str[];//发送的字符串，为why
 #define PIT_CH_Enco (PIT_CH1)    // ??????????????
 #define PIT_PRIORITY (PIT_IRQn) // ??????????????????
 
-uint8 returnn;
+
 int main(void)
 {
     clock_init(SYSTEM_CLOCK_600M); //系统时钟初始化
     CLOCK_EnableClock(kCLOCK_Pit);//pit时钟初始化
     debug_init();                  //debug初始化
     system_delay_ms(300);           //系统延时，保证初始化完成
+    key_init(10);//按键初始化
+	pit_ms_init(PIT_CH3,10);    // 通道3初始化, 10ms，用于按键扫描
+    while(1)//长按超过1s才会启动
+    {
+        static unsigned int key_count=0;
+        if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //按键1长按
+        {
+            key_count++;
+            key_clear_state(KEY_1);
+        }
+        if(key_count>100)
+        {
+            break;
+        }
+    }
+    
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
     PidInit();//PID初始化
-
+    
 //   My_Communication_Init();//串口通讯初始化
     ips114_init();//显示屏初始化
    ips114_set_dir(IPS114_PORTAIT);
@@ -81,12 +97,15 @@ int main(void)
     CLOCK_EnableClock(kCLOCK_Pit);//???????PIT???
     debug_init();                  // ??????????
     system_delay_ms(300);           //?????????????????????
-
+//    exti_init(C12, EXTI_TRIGGER_FALLING); 
+//	exti_init(C13, EXTI_TRIGGER_FALLING); 
+//	exti_init(C14, EXTI_TRIGGER_FALLING); 
+//	exti_init(C15, EXTI_TRIGGER_FALLING); 
 	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
 	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//速度环初始化
     Pos_PidInit();//位置式pid初始化
-    // My_Communication_Init();//通信初始化
+    My_Communication_Init();//通信初始化
      ips114_init();//屏幕初始化
      ips114_set_dir(IPS114_PORTAIT);
      ips114_set_font(IPS114_6X8_FONT);
@@ -96,12 +115,12 @@ int main(void)
 	  ips114_clear();                //显示屏清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
-   Camera_Init();                 //摄像头初始化
+//   Camera_Init();                 //摄像头初始化
     
     pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
     pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
     pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
-    pit_ms_init(PIT_CH3,15);    // 通道3初始化, 15ms
+    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
@@ -112,15 +131,15 @@ int main(void)
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;
+    unsigned char countt=0,countt1=0,countt2=0,countt3=0;
 //
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-		// ips114_show_uint(0,0,0,3);
-        //  ips114_show_uint(188,20,count,2);
-        //  ips114_show_uint(188,40,encoder[1],3);
-        //  ips114_show_uint(188,60,encoder[2],2);
-        //  ips114_show_uint(188,80,encoder[3],3);
+         ips114_show_uint(188,20,right_data[0],2);
+         ips114_show_uint(188,40,right_data[1],3);
+         ips114_show_uint(188,60,right_data[2],2);
+         ips114_show_uint(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -139,7 +158,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 //        text_arm();
-		       test();	
+//		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
@@ -150,9 +169,9 @@ int main(void)
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
 //        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
-        printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
-        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
+        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+        // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
+        // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
        //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
@@ -172,5 +191,16 @@ void UART1_handler(void)
 {
     uart1_rx_interrupt_handler();//串口1接收中断处理函数
     get_uartdata();//取串口数据
+}
+
+/**
+ * @brief 串口4中断函数
+ * @param 无
+ * @return 无
+ */
+void UART4_handler(void)
+{
+   uart4_rx_interrupt_handler();//串口1接收中断处理函数
+   get_uartdata();//取串口数据
 }
 

@@ -39,7 +39,7 @@
 #include "control.h"
 #include "image.h"
 
-extern pid_info Speed[4]; //´®¼¶pid´¦Àí½á¹ûpid
+extern pid_info Speed[4]; //pidè¾“å‡ºé€Ÿåº¦ç»“æ„ä½“
 extern uint8 step;
 extern uint8 flag_test;
 int count = 0;
@@ -54,13 +54,13 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//´®¼¶pid
+        turnloc_pid();//ï¿½ï¿½ï¿½ï¿½pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
     }
     if(pit_flag_get(PIT_CH1))
     {
-     //¶ÁÈ¡±àÂëÆ÷
+     //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
        Read_Encoder();
        pit_flag_clear(PIT_CH1);
     }
@@ -73,8 +73,8 @@ void PIT_IRQHandler(void)
         {
 					  count = 0;//Ã¿ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½
             arm_flag = 1;
-			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÍ¨¹ı£¬È·Êµ»á½øÈëÅĞ¶ÏÌõ¼şÀ´ĞŞ¸ÄÊıÖµ
-            pit_disable(PIT_CH2);//ÖĞ¶Ï½ûÖ¹º¯Êı
+			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½È·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ş¸ï¿½ï¿½ï¿½Öµ
+            pit_disable(PIT_CH2);//ï¿½Ğ¶Ï½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
         }
         pit_flag_clear(PIT_CH2);
     }
@@ -83,7 +83,7 @@ void PIT_IRQHandler(void)
     {
         pit_flag_clear(PIT_CH3);
         if(flag_test==0) count++;
-        
+        key_scanner();//é”®ç›˜æ‰«æ
     }
 
     __DSB();
@@ -105,11 +105,16 @@ void LPUART1_IRQHandler(void)
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????
 }
 
+/**
+ * @brief ä¸²å£2ä¸­æ–­å‡½æ•°
+ * @param æ— 
+ * @return æ— 
+ */
 void LPUART2_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // ????
+        
         
     }
         
@@ -132,9 +137,10 @@ void LPUART4_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
         // ????
-        flexio_camera_uart_handler();
-        
-        gps_uart_callback();
+        // flexio_camera_uart_handler();
+        // gps_uart_callback();
+        extern void UART4_handler(void);//?????????
+        UART4_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????
@@ -145,7 +151,7 @@ void LPUART5_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
         // ????
-        camera_uart_handler();
+        // camera_uart_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ?????

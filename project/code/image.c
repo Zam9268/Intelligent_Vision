@@ -404,6 +404,7 @@ void Easy_Filtering(uint8 start_row,uint8 end_row,uint8 start_column,uint8 end_c
  */
 void Outer_Analyse(void)
 {
+    static uint8 my_init_flag=0;//初始化标志位，只会执行一次
     /*其他有用的标志位的分析*/
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
@@ -414,15 +415,29 @@ void Outer_Analyse(void)
         if(Boundry_Start_Right==0&&Right_Lost_Flag[i]==0) Boundry_Start_Right=i;// Record the starting point of the right boundary
         Road_Wide[i]=right_line[i]-left_line[i];// Record the road width
     }
+    if(my_init_flag==0)//元素判断类型只能在坡道和直道之间进行切换
+    {
         /* Preliminary analysis of different flags for track elements */
-    if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
-    if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
-    if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
-    if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
-    if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
-    // if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-
-//    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+        if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
+        if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
+        if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
+        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
+        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
+        if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
+        my_init_flag++;
+    }
+    if(Road_Type!=RAMP)
+    {
+        if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
+        if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
+        if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
+        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
+        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
+        if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
+    }
+    if(Road_Type==STRAIGHT_ROAD)    Ramp_Detect();
+    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+    if(Road_Type==RAMP)   Ramp_Detect();//回溯检测
 }
 
 /**
@@ -957,6 +972,31 @@ void Cross_Detect(void)
     }
 }
 
+unsigned int Road_Min_Width[2]={188,0};//记录赛道最窄处的高度和宽度
+void Ramp_Detect(void)
+{
+    if(Road_Type!=STRAIGHT_ROAD)    return;//如果不是直道，就不检测
+    for(uint8 i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
+    {
+        if(Road_Wide[i]<Road_Min_Width[0])
+        {
+            Road_Min_Width[0]=(right_line[i]-left_line[i]);//记录赛道最窄处的宽度
+            Road_Min_Width[1]=i;//记录赛道最窄处的宽度的对应行数
+        }
+    }
+    /*判断对应的宽度是否越界*/
+    uint8 my_count=0;
+    /*从最高行往下的6行进行判断*/
+    for(uint8 i=IMAGE_HEIGHT-Search_Stop_Line;i<=IMAGE_HEIGHT-Search_Stop_Line+5;i++)
+    {
+        if((Road_Wide[i]-Road_Min_Width[0])>=20)//这个差值可以修改
+        {
+            my_count++;
+        }
+    }
+    if(my_count>=5) Road_Type=RAMP;//如果连续6行的宽度都大于最窄处的宽度，就判断为坡道
+    else Road_Type=STRAIGHT_ROAD;//否则就为直道
+}
 /**
  * @brief 检测黑白跳变点的个数
  * @param uint8 row 检测行数 uint8 start_column 检测行数的起始列 uint8 end_column 检测行数的终止列

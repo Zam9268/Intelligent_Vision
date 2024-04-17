@@ -47,12 +47,11 @@ blob_threshold=(100, 40, -128, 14, -128, 127)#原来的反蓝色滤波，因为�
 # 初始化摄像头
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)#经典RGB三通道
-sensor.set_framesize(sensor.QVGA)#QVGA：240*320
+sensor.set_framesize(sensor.QQVGA)#QVGA：240*320
 sensor.set_brightness(950)#亮度设置
 sensor.skip_frames(time = 20)
 sensor.set_auto_gain(False)
-sensor.set_auto_whitebal(False,(0,0x80,0))  # must turn this off to prevent image washout...
-#sensor.set_auto_whitebal(True,(0,0,0))
+sensor.set_auto_whitebal(True,(0,0,0))
 lcd = seekfree.LCD180(3)#初始化屏幕
 lcd.full()  # 将背景颜色显示到整个屏幕
 uart = UART(2, baudrate=115200)#初始化UART2，波特率设置为115200
@@ -63,17 +62,19 @@ net = tf.load(net_path, load_to_fb=True)#new_path：预训练模型的文件路�
 
 test_data=[0x12,0x32]#可以发送多组数据，但是注意：第一个数据是接收不到的
 
-
 while(1):
-   sensor.set_auto_whitebal(False)#关闭白平衡
-   img = sensor.snapshot()
-   #这个是通过色块来找图片
-   for blobs in img.find_blobs([blob_threshold]):
-      if blobs.h() < 70 or blobs.w() < 70:#当找到的色块大于一定值才会进行识别
+    led=LED(1)
+    led.on()
+    while(1):
+        send_data(test_data,2)
+    img = sensor.snapshot()
+    #这个是通过色块来找图片
+    for blobs in img.find_blobs([blob_threshold]):
+        if blobs.h() < 70 or blobs.w() < 70:#当找到的色块大于一定值才会进行识别
          continue#小于的话会进行不断识别
-      img = img.draw_rectangle(blobs.rect(),color = (255, 0, 0))    # 绘制矩形外框，便于在IDE上查看识别到的矩形位置，
-      #img = img.draw_string(10,10, "%s = %f" % (sorted_list[i][0], sorted_list[i][1]),color=(255, 0, 0), scale=3)
-      img1 = img.copy(1,1,blobs.rect())  # 拷贝矩形框内的图像，提高检测效率
+        img = img.draw_rectangle(blobs.rect(),color = (255, 0, 0))    # 绘制矩形外框，便于在IDE上查看识别到的矩形位置，
+        #img = img.draw_string(10,10, "%s = %f" % (sorted_list[i][0], sorted_list[i][1]),color=(255, 0, 0), scale=3)
+        img1 = img.copy(1,1,blobs.rect())  # 拷贝矩形框内的图像，提高检测效率
       #lcd.show_image(img, 320, 240, zoom=2)#
 
       # 将矩形框内的图像使用训练好的模型进行分类
@@ -87,7 +88,7 @@ while(1):
       # 请注意，如果x_overlap和y_overlap较小，则在较小的比例下可以搜索更多区域...
 
       # 默认设置只是进行一次检测...更改它们以搜索图像...
-      for obj in tf.classify(net , img1, min_scale=1.0, scale_mul=0.5, x_overlap=0.0, y_overlap=0.0):
+        for obj in tf.classify(net , img1, min_scale=1.0, scale_mul=0.5, x_overlap=0.0, y_overlap=0.0):
          #net：预训练模型,EIQ传入 img1：待检测的图像，min_scale：滑动窗口缩小的最小比例，这里设置为1.0，意味着滑动窗口大小不会改变
          #scale_mul：滑动窗口缩小的比例，这里设置为0.5，意味着滑动窗口每次缩小50%，但是因为min_scale=1.0，所以滑动窗口大小不会改变
          #x_overlap：滑动窗口在x方向的重叠率，这里设置为0.0，意味着滑动窗口在x方向上不重叠，同理y_overlap也是一样
@@ -106,57 +107,57 @@ while(1):
          #key= lambda x:x[1]表示对zip后面的元组按照第二个元素进行排序，也就是按照概率值进行排序
          #而reverse = True表示对zip后面的元组进行降序排序，由大到小进行排序
          # 打印准确率最高的结果
-         for i in range(1):#只运行一次，好像没有什么用，但是不要删，取出第一个元素值（也就是对应概率最高的元素），将这个类别和概率作为字符串显示
-               #print("%s = %f" % (sorted_list[i][0], sorted_list[i][1]))#sorted_list[i][0]指的是标签内的名字
-               img = img.draw_string(10,10, "%s=" % (sorted_list[i][0]),color=(255, 0, 0), scale=3)
-               img = img.draw_string(10,50, "%f" % (sorted_list[i][1]),color=(255, 0, 0), scale=3)
-               print("%s=%f",sorted_list[i][0],sorted_list[i][1])
-               lcd.show_image(img, 320, 240, zoom=2)#zoom=2表示将图像放大2倍
+        for i in range(1):#只运行一次，好像没有什么用，但是不要删，取出第一个元素值（也就是对应概率最高的元素），将这个类别和概率作为字符串显示
+           #print("%s = %f" % (sorted_list[i][0], sorted_list[i][1]))#sorted_list[i][0]指的是标签内的名字
+            img = img.draw_string(10,10, "%s=" % (sorted_list[i][0]),color=(255, 0, 0), scale=3)
+            img = img.draw_string(10,50, "%f" % (sorted_list[i][1]),color=(255, 0, 0), scale=3)
+            print("%s=%f",sorted_list[i][0],sorted_list[i][1])
+            lcd.show_image(img, 320, 240, zoom=2)#zoom=2表示将图像放大2倍
                #time.sleep_ms(200)                                                         #sorted_list[i][1]指的是模型输出的概率值
          #对概率最高的进行匹配，选择最恰当的那一个进行发送数据
-         if sorted_list[i][0]=='ambulance':
+        if sorted_list[i][0]=='ambulance':
             print('ambulance')
 
-         elif sorted_list[i][0]=='armoredcar':
+        elif sorted_list[i][0]=='armoredcar':
             print('armoredcar')
 
-         elif sorted_list[i][0]=='bulletproof':
+        elif sorted_list[i][0]=='bulletproof':
             print('bulletproof')
 
-         elif sorted_list[i][0]=='dagger':
+        elif sorted_list[i][0]=='dagger':
             print('dagger')
 
-         elif sorted_list[i][0]=='explosive':
+        elif sorted_list[i][0]=='explosive':
             print('explosive')
 
-         elif sorted_list[i][0]=='fire_axe':
+        elif sorted_list[i][0]=='fire_axe':
             print('fire_axe')
 
-         elif sorted_list[i][0]=='fire_engine':
+        elif sorted_list[i][0]=='fire_engine':
             print('fire_engine')
 
-         elif sorted_list[i][0]=='firearms':
+        elif sorted_list[i][0]=='firearms':
             print('firearms')
 
-         elif sorted_list[i][0]=='first_aid_kit':
+        elif sorted_list[i][0]=='first_aid_kit':
             print('first_aid_kit')
 
-         elif sorted_list[i][0]=='flashlight':
+        elif sorted_list[i][0]=='flashlight':
             print('flashlight')
 
-         elif sorted_list[i][0]=='helmet':
+        elif sorted_list[i][0]=='helmet':
             print('helmet')
 
-         elif sorted_list[i][0]=='intercom':
+        elif sorted_list[i][0]=='intercom':
             print('intercom')
 
-         elif sorted_list[i][0]=='motorcycle':
+        elif sorted_list[i][0]=='motorcycle':
             print('motorcycle')
 
-         elif sorted_list[i][0]=='spontoon':
+        elif sorted_list[i][0]=='spontoon':
             print('spontoon')
 
-         elif sorted_list[i][0]=='telescope':
+        elif sorted_list[i][0]=='telescope':
             print('telescope')
 
 #2023年5月10日22:50:11
