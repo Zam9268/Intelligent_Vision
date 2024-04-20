@@ -70,22 +70,22 @@ int main(void)
     debug_init();                  //debug初始化
     system_delay_ms(300);           //系统延时，保证初始化完成
     key_init(10);//按键初始化
-	pit_ms_init(PIT_CH3,10);    // 通道3初始化, 10ms，用于按键扫描
-    while(1)//长按超过1s才会启动
-    {
-        static unsigned int key_count=0;
-        if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //按键1长按
-        {
-            key_count++;
-            key_clear_state(KEY_1);
-        }
-        if(key_count>100)
-        {
-            break;
-        }
-    }
+	// pit_ms_init(PIT_CH3,10);    // 通道3初始化, 10ms，用于按键扫描
+    // while(1)//长按超过1s才会启动
+    // {
+    //     static unsigned int key_count=0;
+    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //按键1长按
+    //     {
+    //         key_count++;
+    //         key_clear_state(KEY_1);
+    //     }
+    //     if(key_count>100)
+    //     {
+    //         break;
+    //     }
+    // }
     
-	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
+//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
     PidInit();//PID初始化
     
 //   My_Communication_Init();//串口通讯初始化
@@ -105,7 +105,7 @@ int main(void)
 	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//速度环初始化
     Pos_PidInit();//位置式pid初始化
-    My_Communication_Init();//通信初始化
+    // My_Communication_Init();//通信初始化
      ips114_init();//屏幕初始化
      ips114_set_dir(IPS114_PORTAIT);
      ips114_set_font(IPS114_6X8_FONT);
@@ -136,10 +136,10 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-         ips114_show_uint(188,20,right_data[0],2);
-         ips114_show_uint(188,40,right_data[1],3);
-         ips114_show_uint(188,60,right_data[2],2);
-         ips114_show_uint(188,80,right_data[3],3);
+        //  ips114_show_uint(188,20,right_data[0],2);
+        //  ips114_show_uint(188,40,right_data[1],3);
+        //  ips114_show_uint(188,60,right_data[2],2);
+        //  ips114_show_uint(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -168,7 +168,7 @@ int main(void)
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-//        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+       printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
