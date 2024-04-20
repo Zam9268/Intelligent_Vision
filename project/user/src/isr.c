@@ -38,10 +38,12 @@
 #include "isr.h"
 #include "control.h"
 #include "image.h"
+#include "imu660ra.h"
 
 extern pid_info Speed[4]; //串级pid处理结果pid
 extern uint8 step;
 extern uint8 flag_test;
+extern float loc_target[4];//位置环外环输出速度
 int count = 0;
 
 void CSI_IRQHandler(void)
@@ -54,24 +56,27 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//串级pid
+    //   turnloc_pid();//串级pid
+		increment_pid();//增量式pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
+
     }
     if(pit_flag_get(PIT_CH1))
     {
      //读取编码器
        Read_Encoder();
+       Get_angle();//周期为5ms
        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;//锟缴癸拷锟斤拷锟斤拷锟叫讹拷
+        extern uint8 arm_flag;//
         count++;
         if(count>1000)
         {
-					  count = 0;//每锟轿硷拷锟斤拷锟斤拷锟角碉拷锟斤拷锟斤拷
+					  count = 0;//
             arm_flag = 1;
 			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过，确实会进入判断条件来修改数值
             pit_disable(PIT_CH2);//中断禁止函数
@@ -81,8 +86,9 @@ void PIT_IRQHandler(void)
     
     if(pit_flag_get(PIT_CH3))
     {
+        // Drive_Motor();//位置式处理，改为外环
+			
         pit_flag_clear(PIT_CH3);
-        if(flag_test==0) count++;
         
     }
 

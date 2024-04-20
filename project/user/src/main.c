@@ -30,7 +30,7 @@
 * 
 * ?????
 * ????              ????                ???
-* 2022-09-21        SeekFree            first version
+* 2022-09-21        SeekFree            first version12
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
@@ -42,6 +42,7 @@
 #include "math.h"
 #include "control.h"
 #include "communication.h"
+#include "imu660ra.h"
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern int pid_motor[4];//???pid?????????
@@ -69,88 +70,60 @@ int main(void)
     CLOCK_EnableClock(kCLOCK_Pit);//pit时钟初始化
     debug_init();                  //debug初始化
     system_delay_ms(300);           //系统延时，保证初始化完成
+
+    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
 	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
     PidInit();//PID初始化
+    Pos_PidInit();//位置式pid初始化
 
 //   My_Communication_Init();//串口通讯初始化
     ips114_init();//显示屏初始化
-   ips114_set_dir(IPS114_PORTAIT);
+    ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
-    clock_init(SYSTEM_CLOCK_600M); // ???????
-    CLOCK_EnableClock(kCLOCK_Pit);//???????PIT???
-    debug_init();                  // ??????????
-    system_delay_ms(300);           //?????????????????????
+    ips114_clear();                //显示屏清屏
 
-	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
-	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    PidInit();//速度环初始化
-    Pos_PidInit();//位置式pid初始化
-    // My_Communication_Init();//通信初始化
-     ips114_init();//屏幕初始化
-     ips114_set_dir(IPS114_PORTAIT);
-     ips114_set_font(IPS114_6X8_FONT);
-     ips114_set_color(RGB565_RED, RGB565_BLACK);
-   
-    interrupt_global_enable(0);    //全局中断使能
-	  ips114_clear();                //显示屏清屏
+ /****************模块初始化*****************/   
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
-   Camera_Init();                 //摄像头初始化
+    Camera_Init();                 //摄像头初始化
+	 my_imu660ra_init();//陀螺仪初始化
     
+ /****************中断通道初始化*****************/  
     pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
-    pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
+    pit_ms_init(PIT_CH1,5);    // 通道1初始化，10ms
     pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
-    pit_ms_init(PIT_CH3,15);    // 通道3初始化, 15ms
+    pit_ms_init(PIT_CH3,25);    // 通道3初始化, 25ms，外环
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-    Last_Longest_White_Column_Left[1]=94;
-	  Longest_White_Column_Left[1]=94;
-	  Speed[3].target_speed=40.0;
-    Speed[2].target_speed=40.0;
-    Speed[1].target_speed=40.0;
-    Speed[0].target_speed=40.0;
-    pit_us_init(PIT_CH3,100);    // 定时器3初始化，间隔为15ms
-	// Speed[1].target_pwm=1500;
+  Last_Longest_White_Column_Left[1]=94;
+	Longest_White_Column_Left[1]=94;
+//	  Speed[3].target_speed=0.0;
+//    Speed[2].target_speed=0.0;
+//    Speed[1].target_speed=0.0;
+//    Speed[0].target_speed=0.0;//右前轮
+
+    interrupt_global_enable(0);    //全局中断使能
     while(1)
-    {   
-		// ips114_show_uint(0,0,0,3);
-        //  ips114_show_uint(188,20,count,2);
-        //  ips114_show_uint(188,40,encoder[1],3);
-        //  ips114_show_uint(188,60,encoder[2],2);
-        //  ips114_show_uint(188,80,encoder[3],3);
-        // for(uint8 i=0;i<4;i++)
-        // {
-        //     target_motor[i]=1000;
-        // }
-//		motor_control();
-        // ?????????????????????            	
-		// ips114_show_string( 0 , 10,   "SUCCESS");                          // ????????
-        // for(uint16 i=0;i<1800;i++)
-        // {
-        //     Speed[2].target_speed=3.00*sin(2*PI*i/180.0);
-        //     // Speed[2].target_speed=3.00*sin(2*PI*i/180.0);
-        //     // // Speed[3].target_speed=3.00*sin(2*PI*i/180.0);
-        //     // printf("%d,%d,%d\r\n",(int)PID_motor[1],(int)PID_motor[2],(int)PID_motor[3]);
-		// 	system_delay_ms(100);
-		// 	motor_close_control();
-        // }
-//        Move_Transfrom(1000,1000,0);
-//        text_arm();
-		       test();
-					
-		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
-//        Vofa_JustFloat(&vofa1,other_data,5);
-//        uart_write_buffer(UART_1,other_data,5);
-//		printf("\n");
-//        uart_write_buffer(UART_8,other_data,5);
-//		printf("test!\n");
-        // Vofa_SendData(&vofa1,other_data,5);
-		// Read_Encoder();
-        printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
-        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
+    {       
+	// ips114_show_string( 0 , 10,   "SUCCESS");                          // 
+    // text_arm();
+	// test();
+
+
+//     Turn_Angle_PD(90.0);//测试成功
+     Encoder_odometer();//还要转换一下坐标轴
+    //   ips114_show_float(0,20,Speed[1].output,2,2);
+    //        Vofa_JustFloat(&vofa1,other_data,5);
+    //        uart_write_buffer(UART_1,other_data,5);
+    //		printf("\n");
+    //        uart_write_buffer(UART_8,other_data,5);
+    //		printf("test!\n");
+    // Vofa_SendData(&vofa1,other_data,5);
+    // printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+    // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
        //printf("test");

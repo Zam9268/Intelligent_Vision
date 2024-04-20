@@ -14,3 +14,4 @@ void my_imu660ra_init();
 void IMU660ra_newValues();
 void Get_angle();
 float Kalman_Filter_x(float Accel,float Gyro);
+void test_imu();
