@@ -72,7 +72,7 @@ void PIT_IRQHandler(void)
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;//
+        extern uint8 arm_flag;//????????????????????????????
         count++;
         if(count>1000)
         {
@@ -111,11 +111,16 @@ void LPUART1_IRQHandler(void)
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????
 }
 
+/**
+ * @brief 串口2中断函数
+ * @param 无
+ * @return 无
+ */
 void LPUART2_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // ????
+        
         
     }
         
@@ -138,9 +143,10 @@ void LPUART4_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
         // ????
-        flexio_camera_uart_handler();
-        
-        gps_uart_callback();
+        // flexio_camera_uart_handler();
+        // gps_uart_callback();
+        extern void UART4_handler(void);//?????????
+        UART4_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????
@@ -151,7 +157,7 @@ void LPUART5_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
         // ????
-        camera_uart_handler();
+        // camera_uart_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ?????

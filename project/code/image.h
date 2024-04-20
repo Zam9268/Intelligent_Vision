@@ -17,8 +17,9 @@ typedef enum{
     LEFT_TURN,
     RIGHT_TURN,
     CROSSING,
-    HUANDAO,
-    PODAO,
+    LEFT_HUANDAO,
+    RIGHT_HUANDAO,
+    RAMP,
     BANMAXIAN
 }RoadType;//定义赛道元素类型枚举
 
@@ -28,5 +29,6 @@ void Center_line_deal(uint8 start_column,uint8 end_column);
 void Image_denoising(uint8 *bin_image);
 void test(void);
 void Zebra_Stripes_Detect(void);
+void Ramp_Detect(void);
 
 #endif

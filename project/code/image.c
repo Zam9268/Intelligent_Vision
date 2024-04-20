@@ -378,6 +378,172 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
 }
 
 /**
+ * @brief 对某个点的坐标求出相邻区域的白点个数
+ * @param 无
+ * @return 返回相邻8个点的白色元素的个数，如果要求黑色个数的元素，那就8-返回值
+ * @attention 无
+ */
+uint8 Get_White_Point(uint8 x,uint8 y)
+{
+    if(x<=1|| x>=IMAGE_WIDTH-2|| y<=1|| y>=IMAGE_HEIGHT-2)    return 0;//边界条件
+    uint8 white_point=0;
+    for(uint8 i=x-1;i<=x+1;i++)
+    {
+        for(uint8 j=y-1;j<=y+1;j++)
+        {
+            if(Image_Use[j][i]==WHITE_POINT)    white_point++;
+        }
+    }
+    return white_point;//返回对应元素的白色像素点的值
+}
+
+/**
+ * @brief 对边线的卡片进行寻找
+ * @param 无
+ * @return 无
+ * @attention 无
+ */
+void Border_Car_Detect(void)
+{
+    
+}
+
+int deviation[8][2]={{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};//第一个为x坐标，第二个为y坐标
+int devitation_right[8][2]={{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};//右边线的偏移量
+struct Line_Edge
+{
+    uint8 row;//行
+    uint8 column;//列
+    uint8 flag;//找到的标志位
+    uint8 grow;//生长方向
+};
+struct Line_Edge left_edge[80];
+struct Line_Edge right_edge[80];
+/**
+ * @brief 对卡片中心进行矫正（只能在总钻风正对卡片时使用）
+ * @param 无
+ * @return 无
+ * @attention 方法：1切换到大津法，然后检测中心点，然后根据中心点进行矫正（中心点矫正求出来的中心坐标会略有偏移）
+ *              2.八邻域爬线，把线爬出一个大约正方形方框，然后求出中心点
+ */
+void Search_Center(void)
+{
+    uint8 my_detect_mode=0;
+    if(my_detect_mode==0)//上一届师兄的
+    {
+        uint8 Top_h=0,Top_w=0,Bottom_h=0,Botton_w=0;//定义图像的宽高
+        uint8 ter_h =100,ter_w=60,Mid_h=0,Mid_w=0;
+        float cam_dis_h=0,cam_dis_w=0;
+        for(uint8 i=60;i<IMAGE_HEIGHT-2;i++)//从上到下，由左向右扫线
+        {
+            for(uint8 j=2;j<IMAGE_WIDTH-2;j++)
+            {
+                 if (Image_Use[i][j] == 255 && (Image_Use[i - 2][j] == 0 && Image_Use[i - 2][j - 1] == 0 && Image_Use[i][j - 1] == 0) 
+                 && (Image_Use[i][j + 1] == 255 && Image_Use[i][j + 3] == 255 && Image_Use[i][j + 6] == 255 && Image_Use[i][j + 9] == 255) && 
+                 Image_Use[i + 1][j] == 255 && Image_Use[i + 3][j] == 255 
+                 && Image_Use[i + 1][j - 5] == 0 && Image_Use[i + 2][j - 10] == 0 && Image_Use[i + 3][j - 10] == 0 && Image_Use[i + 2][j - 15] == 0)
+            {
+                Top_h = i;
+                Top_w = j;
+                break;
+            }
+            }
+
+        }
+    }
+    else if(my_detect_mode==1)//采用八邻域巡线找出对应的中心点（自己新写的）
+    {
+        uint8 start_x=94,start_y=60;//起始点
+        for(uint8 i=start_y;i<=IMAGE_HEIGHT-1;i++)
+        {
+            if(Image_Use[i][start_x]==WHITE_POINT&&Image_Use[i-1][start_x]==BLACK_POINT&&Image_Use[i-2][start_x]==BLACK_POINT
+            &&Image_Use[i-5][start_x]==BLACK_POINT&&Image_Use[i-3][start_x-3]==BLACK_POINT&&Image_Use[i-3][start_x+3]==BLACK_POINT
+            &&Get_White_Point(start_x,i)>=5)//同时要满足周围白点数较多，防止噪声
+            {
+                start_y=i;//存储起始点的行数
+                break;
+            }
+        }
+        uint8 temp_x=start_x,temp_y=start_y;
+        uint8 search_cout=80;
+        uint8 my_count_left=0,my_count_right=0;
+        while(search_cout--)
+        {
+            for(uint8 i=0;i<=7;i++)//八邻域扫线
+            {
+                if(Image_Use[start_x+deviation[i][0]][start_y+deviation[i][1]]==WHITE_POINT)
+                {
+                    start_x=start_x+deviation[i][0];
+                    start_y=start_y+deviation[i][1];
+                    left_edge[my_count_left].row=start_y;
+                    left_edge[my_count_left].column=start_x;
+                    left_edge[my_count_left].flag=1;
+                    left_edge[my_count_left].grow=i;
+                    my_count_left++;
+                    break;
+                }
+                if(i==7)/*如果执行到这的话就说明存在某个点断开了，那就要退出循环*/
+                {
+                    goto end;
+                }
+            }
+        }
+        end:
+        search_cout=80;
+        while(search_cout--)
+        {
+            for(uint8 i=0;i<=7;i++)
+            {
+                if(Image_Use[temp_x+devitation_right[i][0]][temp_y+devitation_right[i][1]]==WHITE_POINT)
+                {
+                    temp_x=temp_x+devitation_right[i][0];
+                    temp_y=temp_y+devitation_right[i][1];
+                    right_edge[my_count_right].row=temp_y;
+                    right_edge[my_count_right].column=temp_x;
+                    right_edge[my_count_right].flag=1;
+                    right_edge[my_count_right].grow=i;
+                    my_count_right++;
+                    break;
+                }
+                if(i==7)
+                {
+                    goto finnal_end;
+                }
+            }
+			finnal_end: break;
+        }
+        
+        /*求出中心点：前几个点列坐标相差较大，横坐标相差较小，后几个点横坐标相差较大，横坐标相差较小
+                    方法2：看其与左上角的距离，距离最小者为左上顶点*/
+        int left_center_x=0;
+		int left_center_y=0;
+		int right_center_x=0;
+		int right_center_y=0;
+        for(uint8 i=5;i<=my_count_left-6;i++)
+        {
+            if(abs(left_edge[i].row-left_edge[i-5].row)<=2&&abs(left_edge[i].column-left_edge[i-5].column)>=4
+            &&abs(left_edge[i].row-left_edge[i+5].row)>=4&&abs(left_edge[i].column-left_edge[i+5].column)<=2)
+            {
+                left_center_x=left_edge[i].column;
+                left_center_y=left_edge[i].row;
+                break;
+            }
+        }
+        for(uint8 i=5;i<=my_count_right-6;i++)
+        {
+            if(abs(right_edge[i].row-right_edge[i-5].row)<=2&&abs(right_edge[i].column-right_edge[i-5].column)>=4
+            &&abs(right_edge[i].row-right_edge[i+5].row)>=4&&abs(right_edge[i].column-right_edge[i+5].column)<=2)
+            {
+                right_center_x=right_edge[i].column;
+                right_center_y=right_edge[i].row;
+                break;
+            }
+        }
+        /*将两个边界点进行逆透视变换，在现实坐标中求出中心点的位置*/
+    }
+}
+
+/**
  * @brief 简单的膨胀操作
  * @param uint8 start_row：起始行；uint8 end_row：终止行；uint8 start_column：起始列；uint8 end_column 终止列   uint8 threshold：阈值
  * @return 无
@@ -404,6 +570,7 @@ void Easy_Filtering(uint8 start_row,uint8 end_row,uint8 start_column,uint8 end_c
  */
 void Outer_Analyse(void)
 {
+    static uint8 my_init_flag=0;//初始化标志位，只会执行一次
     /*其他有用的标志位的分析*/
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
@@ -414,13 +581,29 @@ void Outer_Analyse(void)
         if(Boundry_Start_Right==0&&Right_Lost_Flag[i]==0) Boundry_Start_Right=i;// Record the starting point of the right boundary
         Road_Wide[i]=right_line[i]-left_line[i];// Record the road width
     }
+    if(my_init_flag==0)//元素判断类型只能在坡道和直道之间进行切换
+    {
         /* Preliminary analysis of different flags for track elements */
-    if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
-    if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
-    if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
-    // if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-
-//    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+        if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
+        if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
+        if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
+        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
+        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
+        if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
+        my_init_flag++;
+    }
+    if(Road_Type!=RAMP)
+    {
+        if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
+        if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
+        if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
+        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
+        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
+        if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
+    }
+    if(Road_Type==STRAIGHT_ROAD)    Ramp_Detect();
+    if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
+    if(Road_Type==RAMP)   Ramp_Detect();//回溯检测
 }
 
 /**
@@ -955,6 +1138,31 @@ void Cross_Detect(void)
     }
 }
 
+unsigned int Road_Min_Width[2]={188,0};//记录赛道最窄处的高度和宽度
+void Ramp_Detect(void)
+{
+    if(Road_Type!=STRAIGHT_ROAD)    return;//如果不是直道，就不检测
+    for(uint8 i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
+    {
+        if(Road_Wide[i]<Road_Min_Width[0])
+        {
+            Road_Min_Width[0]=(right_line[i]-left_line[i]);//记录赛道最窄处的宽度
+            Road_Min_Width[1]=i;//记录赛道最窄处的宽度的对应行数
+        }
+    }
+    /*判断对应的宽度是否越界*/
+    uint8 my_count=0;
+    /*从最高行往下的6行进行判断*/
+    for(uint8 i=IMAGE_HEIGHT-Search_Stop_Line;i<=IMAGE_HEIGHT-Search_Stop_Line+5;i++)
+    {
+        if((Road_Wide[i]-Road_Min_Width[0])>=20)//这个差值可以修改
+        {
+            my_count++;
+        }
+    }
+    if(my_count>=5) Road_Type=RAMP;//如果连续6行的宽度都大于最窄处的宽度，就判断为坡道
+    else Road_Type=STRAIGHT_ROAD;//否则就为直道
+}
 /**
  * @brief 检测黑白跳变点的个数
  * @param uint8 row 检测行数 uint8 start_column 检测行数的起始列 uint8 end_column 检测行数的终止列
@@ -1091,12 +1299,12 @@ void test2(void)
 //    else if(Road_Type==CROSSING)    type=4;
 //    else if(Road_Type==BANMAXIAN)   type=5;
 //    if(Road_Type==CROSSING) Cross_Detect();
-    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    {
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-        ips114_draw_point(left_line[i],i,RGB565_BLUE);
-        ips114_draw_point(right_line[i],i,RGB565_GREEN);
-    }
+    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+    // {
+    //     ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+    //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
+    //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
+    // }
 //    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
 //    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      

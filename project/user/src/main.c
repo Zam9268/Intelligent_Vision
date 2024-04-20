@@ -63,7 +63,7 @@ extern char str[];//发送的字符串，为why
 #define PIT_CH_Enco (PIT_CH1)    // ??????????????
 #define PIT_PRIORITY (PIT_IRQn) // ??????????????????
 
-uint8 returnn;
+
 int main(void)
 {
     clock_init(SYSTEM_CLOCK_600M); //系统时钟初始化
@@ -145,5 +145,16 @@ void UART1_handler(void)
 {
     uart1_rx_interrupt_handler();//串口1接收中断处理函数
     get_uartdata();//取串口数据
+}
+
+/**
+ * @brief 串口4中断函数
+ * @param 无
+ * @return 无
+ */
+void UART4_handler(void)
+{
+   uart4_rx_interrupt_handler();//串口1接收中断处理函数
+   get_uartdata();//取串口数据
 }
 

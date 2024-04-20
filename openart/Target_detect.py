@@ -1,9 +1,13 @@
 import seekfree, pyb
 import sensor, image, time, tf, gc
+import os,sys
+import openmv_numpy as np
+sys.path.append('D:\\Smart_Car\\Project\\Intelligent_Vision\\openart')#这个路径为对应的openmv_numpy的路径
+os.system('pip install --upgrade openmv_numpy')
 
 sensor.reset()                      # Reset and initialize the sensor.
 sensor.set_pixformat(sensor.RGB565) # Set pixel format to RGB565 (or GRAYSCALE)
-sensor.set_framesize(sensor.QVGA)   # Set frame size to QVGA (320x240)
+sensor.set_framesize(sensor.QQVGA)   # Set frame size to QVGA (320x240)
 sensor.skip_frames(time = 2000)     # Wait for settings take effect.
 clock = time.clock()                # Create a clock object to track the FPS.
 #目标检测思路：在找到一张卡片后，直接在该卡片中心的周围进行二次检测即可，不需要扫描全图
@@ -12,11 +16,19 @@ face_detect = 'target_detect_3.tflite'
 #载入模型
 net = tf.load(face_detect)
 
-#函数：计算透视W矩阵
+Inverse_Perspective=[[2.470379, -0.07614613, 2.842548], [0.1327659, 2.200122, -9.900547], [-0.0001568885, -0.007409661, 1]]
+#上面这个是最新的逆透视矩阵，效果非常好
+fixed_deta_y=25  #y坐标上的偏差
 while(True):
     clock.tick()
     img = sensor.snapshot()
-
+    #部分图像点的坐标测试
+    #while(1):
+    #   point=np.array([[20],[0],[1]])#创建3*1矩阵
+    #   my_new_perspective=np.array([[2.470379, -0.07614613, 2.842548], [0.1327659, 2.200122, -9.900547], [-0.0001568885, -0.007409661, 1]])
+    #   result_matrix=my_new_perspective*point
+    #   finnal_matrix = np.array([[result_matrix[0][0]/result_matrix[2][0]-780], [result_matrix[1][0]/result_matrix[2][0]], [1]])
+    #   print(finnal_matrix)#将坐标转化为笛卡尔坐标系
     #使用模型进行识别
     for obj in tf.detect(net,img):
         x1,y1,x2,y2,label,scores = obj
@@ -30,5 +42,15 @@ while(True):
             w = int(w*img.width())
             h = int(h*img.height())
             img.draw_rectangle((x1,y1,w,h),thickness=2)#thickness表示控制线的宽度，值越大线越粗。。
+            center_x = x1 + w/2
+            center_y = y1 + h/2
+            center_x=center_x-80;#坐标矫正
+            center_y=120-center_y;#坐标矫正，一定要加上去哇
+            print("center_x和center_y的坐标", center_x, center_y)
+            point=np.array([[center_x],[center_y],[1]])#创建3*1矩阵
+            my_new_perspective=np.array([[2.470379, -0.07614613, 2.842548], [0.1327659, 2.200122, -9.900547], [-0.0001568885, -0.007409661, 1]])
+            result_matrix=my_new_perspective*point
+            finnal_matrix = np.array([[result_matrix[0][0]/result_matrix[2][0]], [result_matrix[1][0]/result_matrix[2][0]+fixed_deta_y], [1]])
 
+            print(finnal_matrix)#将坐标转化为笛卡尔坐标系
     print(clock.fps())
