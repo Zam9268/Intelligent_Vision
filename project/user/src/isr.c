@@ -139,8 +139,8 @@ void LPUART4_IRQHandler(void)
         // ????
         // flexio_camera_uart_handler();
         // gps_uart_callback();
-        extern void UART4_handler(void);//?????????
-        UART4_handler();
+//        extern void UART4_handler(void);//?????????
+//        UART4_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????
