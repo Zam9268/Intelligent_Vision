@@ -38,10 +38,12 @@
 #include "isr.h"
 #include "control.h"
 #include "image.h"
+#include "imu660ra.h"
 
-extern pid_info Speed[4]; //pidè¾“å‡ºé€Ÿåº¦ç»“æ„ä½“
+extern pid_info Speed[4]; //´®¼¶pid´¦Àí½á¹ûpid
 extern uint8 step;
 extern uint8 flag_test;
+extern float loc_target[4];//Î»ÖÃ»·Íâ»·Êä³öËÙ¶È
 int count = 0;
 
 void CSI_IRQHandler(void)
@@ -54,36 +56,40 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))//
     {
-        turnloc_pid();//ï¿½ï¿½ï¿½ï¿½pid
+    //   turnloc_pid();//´®¼¶pid
+		increment_pid();//ÔöÁ¿Ê½pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
+
     }
     if(pit_flag_get(PIT_CH1))
     {
-     //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+     //¶ÁÈ¡±àÂëÆ÷
        Read_Encoder();
+       Get_angle();//ÖÜÆÚÎª5ms
        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;//ï¿½É¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½
+        extern uint8 arm_flag;//????????????????????????????
         count++;
         if(count>1000)
         {
-					  count = 0;//Ã¿ï¿½Î¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµï¿½ï¿½ï¿½ï¿½ï¿½
+					  count = 0;//
             arm_flag = 1;
-			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½È·Êµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ş¸ï¿½ï¿½ï¿½Öµ
-            pit_disable(PIT_CH2);//ï¿½Ğ¶Ï½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
+			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // ²âÊÔÍ¨¹ı£¬È·Êµ»á½øÈëÅĞ¶ÏÌõ¼şÀ´ĞŞ¸ÄÊıÖµ
+            pit_disable(PIT_CH2);//ÖĞ¶Ï½ûÖ¹º¯Êı
         }
         pit_flag_clear(PIT_CH2);
     }
     
     if(pit_flag_get(PIT_CH3))
     {
+        // Drive_Motor();//Î»ÖÃÊ½´¦Àí£¬¸ÄÎªÍâ»·
+			
         pit_flag_clear(PIT_CH3);
-        if(flag_test==0) count++;
-        key_scanner();//é”®ç›˜æ‰«æ
+        
     }
 
     __DSB();
@@ -106,9 +112,9 @@ void LPUART1_IRQHandler(void)
 }
 
 /**
- * @brief ä¸²å£2ä¸­æ–­å‡½æ•°
- * @param æ— 
- * @return æ— 
+ * @brief ´®¿Ú2ÖĞ¶Ïº¯Êı
+ * @param ÎŞ
+ * @return ÎŞ
  */
 void LPUART2_IRQHandler(void)
 {

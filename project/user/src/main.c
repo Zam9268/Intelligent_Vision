@@ -30,7 +30,7 @@
 * 
 * ?????
 * ????              ????                ???
-* 2022-09-21        SeekFree            first version
+* 2022-09-21        SeekFree            first version12
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
@@ -42,6 +42,7 @@
 #include "math.h"
 #include "control.h"
 #include "communication.h"
+#include "imu660ra.h"
 
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern int pid_motor[4];//???pid?????????
@@ -51,7 +52,7 @@ extern int test_count;
 extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
-extern char str[];//发送的字符串，为why
+extern char str[];//?????????????why
 
 
 // ????????????????????????????????????
@@ -65,16 +66,16 @@ extern char str[];//发送的字符串，为why
 
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_600M); //系统时钟初始化
-    CLOCK_EnableClock(kCLOCK_Pit);//pit时钟初始化
-    debug_init();                  //debug初始化
-    system_delay_ms(300);           //系统延时，保证初始化完成
-    // key_init(10);//按键初始化
-	// pit_ms_init(PIT_CH3,10);    // 通道3初始化, 10ms，用于按键扫描
-    // while(1)//长按超过1s才会启动
+    clock_init(SYSTEM_CLOCK_600M); //?????????
+    CLOCK_EnableClock(kCLOCK_Pit);//pit???????
+    debug_init();                  //debug?????
+    system_delay_ms(300);           //??????????????????
+    // key_init(10);//?????????
+	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
+    // while(1)//????????1s???????
     // {
     //     static unsigned int key_count=0;
-    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //按键1长按
+    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
     //     {
     //         key_count++;
     //         key_clear_state(KEY_1);
@@ -85,28 +86,28 @@ int main(void)
     //     }
     // }
     
-//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
-//    PidInit();//PID初始化
+//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa??λ???????
+//    PidInit();//PID?????
 //    
-//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
+//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//?????????1??????????art???
 //	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-   PidInit();//速度环初始化
-   Pos_PidInit();//位置式pid初始化
-    My_Communication_Init();//通信初始化
-     ips114_init();//屏幕初始化
+   PidInit();//?????????
+   Pos_PidInit();//λ???pid?????
+    My_Communication_Init();//???????
+     ips114_init();//????????
      ips114_set_dir(IPS114_PORTAIT);
      ips114_set_font(IPS114_6X8_FONT);
      ips114_set_color(RGB565_RED, RGB565_BLACK);
    
-   interrupt_global_enable(0);    //全局中断使能
-	  ips114_clear();                //显示屏清屏
-   Motor_Init();                  //电机初始化
-   Encoder_Init();                //编码器初始化
-  Camera_Init();                 //摄像头初始化
+   interrupt_global_enable(0);    //????ж????
+	  ips114_clear();                //?????????
+   Motor_Init();                  //????????
+   Encoder_Init();                //???????????
+  Camera_Init();                 //??????????
     
-   pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
-   pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
-   pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
+   pit_ms_init(PIT_CH0,15);    // ???0???????15ms
+   pit_ms_init(PIT_CH1,10);    // ???1???????10ms
+   pit_ms_init(PIT_CH2,15);    // ???2???????15ms
     
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -170,24 +171,24 @@ int main(void)
 }
 
 /**
- * @brief 串口1中断函数
- * @param 无
- * @return 无
+ * @brief ????1?ж????
+ * @param ??
+ * @return ??
 
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//串口1接收中断处理函数
-    get_uartdata();//取串口数据
+    uart1_rx_interrupt_handler();//????1?????ж????????
+    get_uartdata();//?????????
 }
  */
 /**
- * @brief 串口4中断函数
- * @param 无
- * @return 无
+ * @brief ????4?ж????
+ * @param ??
+ * @return ??
 
 void UART4_handler(void)
 {
-   uart4_rx_interrupt_handler();//串口1接收中断处理函数
-   get_uartdata();//取串口数据
+   uart4_rx_interrupt_handler();//????1?????ж????????
+   get_uartdata();//?????????
 }
  */
