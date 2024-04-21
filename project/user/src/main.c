@@ -114,6 +114,8 @@ int main(void)
 
 
 //     Turn_Angle_PD(90.0);//测试成功
+
+
      Encoder_odometer();//还要转换一下坐标轴
     //   ips114_show_float(0,20,Speed[1].output,2,2);
     //        Vofa_JustFloat(&vofa1,other_data,5);
