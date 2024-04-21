@@ -52,7 +52,7 @@ extern int test_count;
 extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
-extern char str[];//发送的字符串，为why
+extern char str[];//?????????????why
 
 
 // ????????????????????????????????????
@@ -66,46 +66,62 @@ extern char str[];//发送的字符串，为why
 
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_600M); //系统时钟初始化
-    CLOCK_EnableClock(kCLOCK_Pit);//pit时钟初始化
-    debug_init();                  //debug初始化
-    system_delay_ms(300);           //系统延时，保证初始化完成
-
-    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
-	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
-    PidInit();//PID初始化
-    Pos_PidInit();//位置式pid初始化
-
-//   My_Communication_Init();//串口通讯初始化
-    ips114_init();//显示屏初始化
-    ips114_set_dir(IPS114_PORTAIT);
-    ips114_set_font(IPS114_6X8_FONT);
-    ips114_set_color(RGB565_RED, RGB565_BLACK);
-    ips114_clear();                //显示屏清屏
-
- /****************模块初始化*****************/   
-    Motor_Init();                  //电机初始化
-    Encoder_Init();                //编码器初始化
-    Camera_Init();                 //摄像头初始化
-	 my_imu660ra_init();//陀螺仪初始化
+    clock_init(SYSTEM_CLOCK_600M); //?????????
+    CLOCK_EnableClock(kCLOCK_Pit);//pit???????
+    debug_init();                  //debug?????
+    system_delay_ms(300);           //??????????????????
+    // key_init(10);//?????????
+	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
+    // while(1)//????????1s???????
+    // {
+    //     static unsigned int key_count=0;
+    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
+    //     {
+    //         key_count++;
+    //         key_clear_state(KEY_1);
+    //     }
+    //     if(key_count>100)
+    //     {
+    //         break;
+    //     }
+    // }
     
- /****************中断通道初始化*****************/  
-    pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
-    pit_ms_init(PIT_CH1,5);    // 通道1初始化，10ms
-    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
-    pit_ms_init(PIT_CH3,25);    // 通道3初始化, 25ms，外环
+//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa???????????
+//    PidInit();//PID?????
+//    
+//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//?????????1??????????art???
+//	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+   PidInit();//?????????
+   Pos_PidInit();//?????pid?????
+    My_Communication_Init();//???????
+     ips114_init();//????????
+     ips114_set_dir(IPS114_PORTAIT);
+     ips114_set_font(IPS114_6X8_FONT);
+     ips114_set_color(RGB565_RED, RGB565_BLACK);
+   
+   interrupt_global_enable(0);    //????§?????
+	  ips114_clear();                //?????????
+   Motor_Init();                  //????????
+   Encoder_Init();                //???????????
+  Camera_Init();                 //??????????
+    
+   pit_ms_init(PIT_CH0,15);    // ???0???????15ms
+   pit_ms_init(PIT_CH1,10);    // ???1???????10ms
+   pit_ms_init(PIT_CH2,15);    // ???2???????15ms
+    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-  Last_Longest_White_Column_Left[1]=94;
-	Longest_White_Column_Left[1]=94;
-//	  Speed[3].target_speed=0.0;
-//    Speed[2].target_speed=0.0;
-//    Speed[1].target_speed=0.0;
-//    Speed[0].target_speed=0.0;//右前轮
-
-    interrupt_global_enable(0);    //全局中断使能
+   Last_Longest_White_Column_Left[1]=94;
+	  Longest_White_Column_Left[1]=94;
+//	  Speed[3].target_speed=40.0;
+//    Speed[2].target_speed=40.0;
+//    Speed[1].target_speed=40.0;
+//    Speed[0].target_speed=40.0;
+//    unsigned char countt=0,countt1=0,countt2=0,countt3=0;
+//
+	// Speed[1].target_pwm=1500;
     while(1)
     {       
 	// ips114_show_string( 0 , 10,   "SUCCESS");                          // 
@@ -139,24 +155,24 @@ int main(void)
 }
 
 /**
- * @brief 串口1中断函数
- * @param 无
- * @return 无
- */
+ * @brief ????1?§?????
+ * @param ??
+ * @return ??
+
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//串口1接收中断处理函数
-    get_uartdata();//取串口数据
+    uart1_rx_interrupt_handler();//????1?????§?????????
+    get_uartdata();//?????????
 }
-
-/**
- * @brief 串口4中断函数
- * @param 无
- * @return 无
  */
+/**
+ * @brief ????4?§?????
+ * @param ??
+ * @return ??
+
 void UART4_handler(void)
 {
-   uart4_rx_interrupt_handler();//串口1接收中断处理函数
-   get_uartdata();//取串口数据
+   uart4_rx_interrupt_handler();//????1?????§?????????
+   get_uartdata();//?????????
 }
-
+ */
