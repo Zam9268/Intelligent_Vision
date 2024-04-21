@@ -24,11 +24,11 @@ void My_Communication_Init(void)
 {
     fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//初始化缓冲区
     uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1通信模块
-    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通信模块
+//    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通信模块
     uart_rx_interrupt(UART_1,1);//串口1接收中断使能
-    uart_rx_interrupt(UART_4,1);//串口2接收中断使能
+//    uart_rx_interrupt(UART_4,1);//串口2接收中断使能
     NVIC_SetPriority(LPUART1_IRQn,0);//设置串口1中断优先级
-    NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
+//    NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
 }
 
 /**
@@ -107,6 +107,7 @@ void get_uartdata(void)
                         right_data[j]=0;//清空数组
                     }
                     uart_write_string(UART_1,str);//发送字符串get，注意如果main.c里面用了vofa的话，就要注释掉(while1的printf函数)，否则也会发送给art，这样发送就会有问题
+                    
                 }
                 else
                 {
@@ -129,6 +130,27 @@ void get_uartdata(void)
             get_states=0;//否则状态为0
             fifo_get_data[0]=0;//清空
         }
+    }
+}
+
+unsigned int last_distance_x;//目标检测算法中得到的目标x坐标
+unsigned int last_distance_y;//得到的y坐标
+unsigned int card_count;//目标检测算法中得到的卡片目标总数量
+uint8 find_card_flag=0;//寻找卡片标志位
+/**
+ * @brief 串口1和串口4接收的数据总处理函数
+ * @param 无
+ * @return 无
+ * @attention 1. 如何区分串口1和串口4发送的数据呢？很简单，这里art（目标检测）连在串口1上面，一般目标检测都是发两个数据，所以这里的数据长度是2。
+ *            而如果是art（分类检测）连在串口4上面，这个时候都是发一个数据，故这里的数据长度是1。
+ *            2. 如果检测到的距离和上一次的距离距离较小，那么就默认为同一个目标，否则就是新的目标，对于同一个目标，只更新坐标，不更新数量。
+ */
+void uart_data_handle(void)
+{
+    if(data_length==2)//如果是目标检测接收到的数据
+    {
+        
+        
     }
 }
 /*

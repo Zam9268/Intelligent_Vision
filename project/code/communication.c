@@ -24,11 +24,11 @@ void My_Communication_Init(void)
 {
     fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//初始化缓冲区
     uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1通信模块
-    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通信模块
+    // uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通信模块
     uart_rx_interrupt(UART_1,1);//串口1接收中断使能
-    uart_rx_interrupt(UART_4,1);//串口2接收中断使能
+    // uart_rx_interrupt(UART_4,1);//串口2接收中断使能
     NVIC_SetPriority(LPUART1_IRQn,0);//设置串口1中断优先级
-    NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
+    // NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
 }
 
 /**

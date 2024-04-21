@@ -84,37 +84,35 @@ int main(void)
     //         break;
     //     }
     // }
-    
-//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);//vofa上位机初始化
 //    PidInit();//PID初始化
-//    
-//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
-//	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    
+	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1，用于第一个art模块
+	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
 //    PidInit();//速度环初始化
 //    Pos_PidInit();//位置式pid初始化
-    // My_Communication_Init();//通信初始化
-     ips114_init();//屏幕初始化
-     ips114_set_dir(IPS114_PORTAIT);
-     ips114_set_font(IPS114_6X8_FONT);
-     ips114_set_color(RGB565_RED, RGB565_BLACK);
+//    My_Communication_Init();//通信初始化
+    ips114_init();//屏幕初始化
+    ips114_set_dir(IPS114_PORTAIT);
+    ips114_set_font(IPS114_6X8_FONT);
+    ips114_set_color(RGB565_RED, RGB565_BLACK);
    
-//    interrupt_global_enable(0);    //全局中断使能
-//	  ips114_clear();                //显示屏清屏
+    interrupt_global_enable(0);    //全局中断使能
+	ips114_clear();                //显示屏清屏
 //    Motor_Init();                  //电机初始化
-//    Encoder_Init();                //编码器初始化
-  Camera_Init();                 //摄像头初始化
-    
-//    pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
-//    pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
-//    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
-    
+    Encoder_Init();                //编码器初始化
+//    Camera_Init();                 //摄像头初始化
+//    
+    pit_ms_init(PIT_CH0,15);    // 通道0初始化，15ms
+    pit_ms_init(PIT_CH1,10);    // 通道1初始化，10ms
+    pit_ms_init(PIT_CH2,15);    // 通道2初始化，15ms
+//    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
-//    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-//    Last_Longest_White_Column_Left[1]=94;
-//	  Longest_White_Column_Left[1]=94;
-//	  Speed[3].target_speed=40.0;
+    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
+    Last_Longest_White_Column_Left[1]=94;
+	Longest_White_Column_Left[1]=94;
+//	Speed[3].target_speed=40.0;
 //    Speed[2].target_speed=40.0;
 //    Speed[1].target_speed=40.0;
 //    Speed[0].target_speed=40.0;
@@ -123,10 +121,10 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-         ips114_show_uint(188,20,right_data[0],2);
-         ips114_show_uint(188,40,right_data[1],3);
-         ips114_show_uint(188,60,right_data[2],2);
-         ips114_show_uint(188,80,right_data[3],3);
+         ips114_show_int(188,20,right_data[0],2);
+         ips114_show_int(188,40,right_data[1],3);
+         ips114_show_int(188,60,right_data[2],2);
+         ips114_show_int(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -144,8 +142,8 @@ int main(void)
 		// 	motor_close_control();
         // }
 //        Move_Transfrom(1000,1000,0);
-//        text_arm();
-		       test();	
+////        text_arm();
+//		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
@@ -173,21 +171,21 @@ int main(void)
  * @brief 串口1中断函数
  * @param 无
  * @return 无
-
+ */
 void UART1_handler(void)
 {
     uart1_rx_interrupt_handler();//串口1接收中断处理函数
     get_uartdata();//取串口数据
 }
- */
+
 /**
  * @brief 串口4中断函数
  * @param 无
  * @return 无
-
+ */
 void UART4_handler(void)
 {
    uart4_rx_interrupt_handler();//串口1接收中断处理函数
    get_uartdata();//取串口数据
 }
- */
+
