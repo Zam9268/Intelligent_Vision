@@ -41,5 +41,6 @@ void My_Communication_Init(void);
 void uart1_rx_interrupt_handler(void);
 void uart4_rx_interrupt_handler(void);
 void get_uartdata(void);
+void uart_data_handle(void);
 
 #endif

@@ -1,6 +1,8 @@
 #include "communication.h"
 #include "zf_driver_uart.h"
 #include "zf_common_fifo.h"
+#include "mymath.h"
+#include "math.h"
 
 uint8 uart_get_data[64];
 uint8 fifo_get_data[64];//定义缓冲区信息存储数组
@@ -107,7 +109,7 @@ void get_uartdata(void)
                         right_data[j]=0;//清空数组
                     }
                     uart_write_string(UART_1,str);//发送字符串get，注意如果main.c里面用了vofa的话，就要注释掉(while1的printf函数)，否则也会发送给art，这样发送就会有问题
-                    
+                    uart_data_handle();//数据处理函数
                 }
                 else
                 {
@@ -133,9 +135,13 @@ void get_uartdata(void)
     }
 }
 
-unsigned int last_distance_x;//目标检测算法中得到的目标x坐标
+int last_distance_x;//目标检测算法中得到的目标x坐标
 unsigned int last_distance_y;//得到的y坐标
+int now_distance_x;
+unsigned int now_distance_y;
 unsigned int card_count;//目标检测算法中得到的卡片目标总数量
+float center_distance;//目标检测算法中得到的目标中心距离
+float last_center_distance;//目标检测算法中得到的上一次目标中心距离
 uint8 find_card_flag=0;//寻找卡片标志位
 /**
  * @brief 串口1和串口4接收的数据总处理函数
@@ -147,10 +153,23 @@ uint8 find_card_flag=0;//寻找卡片标志位
  */
 void uart_data_handle(void)
 {
-    if(data_length==2)//如果是目标检测接收到的数据
+    if(data_length==5)//如果是目标检测接收到的数据
     {
-        
-        
+        /*第一位：x轴正负 第二位:x坐标溢出系数  第三位：x坐标取余值
+        第四位： y坐标溢出系数  第五位：y坐标取余值*/
+        if(right_data[0]==1)
+        {
+            now_distance_x=(right_data[1]*256+right_data[2]);
+        }
+        else if(right_data[0]==0)//取负值
+        {
+            now_distance_x=-(right_data[1]*256+right_data[2]);
+        }
+        now_distance_y=(right_data[3]*255+right_data[4]);
+        center_distance=sqrt(now_distance_x*now_distance_x+now_distance_y*now_distance_y);//求出中心距离
+        if((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0) 
+            card_count++;//坐标距离相差较大，就默认为检测到了新的卡片
+        /*当卡片与字数距离非常接近时，就不再更新坐标，直接记录当前坐标*/
     }
 }
 /*

@@ -4,10 +4,10 @@
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
 /*???????????????*/
-uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//×ó±ßÏßÊı×é£¬ÓÒ±ßÏßÊı×é
-int center[IMAGE_HEIGHT];//ÖĞÏßÊı×é£¨²»¹ıÓÃ²»ÉÏ£©
-uint8 the_maxlen_position;//ÈüµÀ×î³¤¿í
-uint8 num;//ÈüµÀ×î³¤¿íµÄÎ»ÖÃ
+uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//????????ï¿½?????????
+int center[IMAGE_HEIGHT];//???????ï¿½ï¿½?????ï¿½ï¿½????
+uint8 the_maxlen_position;//????????
+uint8 num;//??????????ï¿½ï¿½??
 uint8 Longest_White_Column_Left[2]; // Record the longest white column in this iteration
 uint8 Last_Longest_White_Column_Left[2]; // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
 uint8 Left_Line_Start, Right_Line_Start; // Starting point of the left and right lines
@@ -25,20 +25,21 @@ uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0; // Finding the left top turning point
 uint8 Last_Left_Up_Find=0;
-uint8 Last_Right_Up_Find=0;//¼ÇÂ¼ÉÏ´ÎµÄÎ»ÖÃ
+uint8 Last_Right_Up_Find=0;//the last time the right up point is found
 uint8 Right_Up_Find = 0; // Finding the right top turning point
 uint8 flag_test=0;
+uint8 pick_up_mode=0;//when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
 float last_err=0.00;
 
-/*ÒÔÏÂÊÇÆäËûº¯ÊıÖĞÍâ²¿ÉùÃ÷µÄ±äÁ¿*/
-extern uint8 right_data[64];//´æ´¢×îÖÕµÄÊı¾İ    
-extern uint32 fifo_data_count;//µ¥´Î½ÓÊÕµÄÊı×é¸öÊı
-extern uint8 data_length;//Êı¾İ³¤¶È
-extern uint8 i;//ÏÂ±êÖ¸Õë
-extern int count;//Íâ²¿ÉùÃ÷
+/*the following is the information for receiving data through the serial port*/
+extern uint8 right_data[64];//store the data received from the serial port,it only store 64 bytes  
+extern uint32 fifo_data_count;//the number of data lied in the buffer
+extern uint8 data_length;//the length of the data received
+extern uint8 i;//the state of get data,this is unuseful
+extern int count;//this is unuseful
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -51,6 +52,7 @@ const uint8 Weight[IMAGE_HEIGHT]=
     19, 17, 15, 13, 11, 9, 7, 5, 3, 1, // Weight of rows 60 to 69
 };
 
+/*Zebra*/
 const uint8 Zebra[60]={
     30,30,30,30,30,30,30,30,30,30,
     35,35,35,35,35,35,35,35,35,35,
@@ -61,7 +63,7 @@ const uint8 Zebra[60]={
 };
 uint8 OSTU_GetThreshold(uint8 *image, uint16 Width, uint16 Height)
 {
-    uint8 HistGram[257] = {0}; // ???????§³??? 257
+    uint8 HistGram[257] = {0}; // ???????????? 257
     uint16 x, y;
     int16 Y;
     uint32 Amount = 0;
@@ -127,7 +129,7 @@ uint8 OSTU_GetThreshold(uint8 *image, uint16 Width, uint16 Height)
     return Threshold;
 }
 /**
- * @brief ???Ô§?
+ * @brief ?????
  * @param ??
  * @return ??
  */
@@ -141,11 +143,11 @@ void Image_Change(void)
         }
     }
 }
-volatile int White_Column[IMAGE_WIDTH];//??§Ñ??§Ô???
+volatile int White_Column[IMAGE_WIDTH];//???????????
 /**
- * @brief ????????????????????????§Ù?????sobel,canny???????§Ù??????????
- * @param H???????????
- * @return ??
+ * @brief This longest white line patrol can only be used to process images of Otsu method,it is not applicable to images after edge detection
+ * @param start_column, end_column: The starting and ending columns for finding the longest white column
+ * @return None (actually returns the edge line array)
  */
 void Center_line_deal(uint8 start_column,uint8 end_column)
 {
@@ -161,9 +163,9 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
         White_Column[i]=0;
     }
     int x=0,y=0;//??x???,y???
-    uint8 middle=the_maxlen_position;//??????????¦Ë??
+    uint8 middle=the_maxlen_position;//??????????????
     uint8 x_num;
-    /*????????§µ???????? */
+    /*?????????????????? */
     for(uint8 j=start_column;j<=end_column;j++)
     {
         for(uint8 i=IMAGE_HEIGHT-1;i>=0;i--)
@@ -180,7 +182,7 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
         }
     }
     /*???????????????*/
-    Longest_White_Column_Left[0]=0;//???§Ô???????
+    Longest_White_Column_Left[0]=0;//????????????
     for(uint8 i=start_column;i<=end_column;i++)
     {
         if(White_Column[i]>Longest_White_Column_Left[0])//????????
@@ -190,18 +192,18 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
         }
     }
     /*????????????????*/
-    Longest_White_Column_Right[0]=0;//???§Ô???????
+    Longest_White_Column_Right[0]=0;//????????????
     for(uint8 i=end_column;i>start_column;i--)
     {
         if(White_Column[i]>Longest_White_Column_Right[0])//??????????
         {
             Longest_White_Column_Right[0]=White_Column[i];
-            Longest_White_Column_Right[1]=i;//???§Ö?????????????????
+            Longest_White_Column_Right[1]=i;//??????????????????????
         }
     }
-    /*????§Ú???*/
-    Search_Stop_Line=Longest_White_Column_Left[0];//????????§Ö????
-    int right_border,left_border;//???????§Ş????
+    /*?????????*/
+    Search_Stop_Line=Longest_White_Column_Left[0];//??????????????
+    int right_border,left_border;//?????????????
     for(int i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
     {
         /*????????*/
@@ -210,10 +212,10 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
             if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT)
             {
                 right_border=j;//???????????
-                Right_Lost_Flag[i]=0;//??§Ø????????0
+                Right_Lost_Flag[i]=0;//????????????0
                 break;
             }
-            else if(j>=IMAGE_WIDTH-1-2)//?????????????????????¿x??????????????¦Ë??1
+            else if(j>=IMAGE_WIDTH-1-2)//??????????????????????x??????????????????1
             {
                 right_border=j;
                 Right_Lost_Flag[i]=1;
@@ -225,10 +227,10 @@ void Center_line_deal(uint8 start_column,uint8 end_column)
             if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j-1]==BLACK_POINT&&Image_Use[i][j-2]==BLACK_POINT)
             {
                 left_border=j;//???????????
-                Left_Lost_Flag[i]=0;//??§Ø????????0
+                Left_Lost_Flag[i]=0;//????????????0
                 break;
             }
-            else if(j<=2)//?????????????????????¿x??????????????¦Ë??1
+            else if(j<=2)//??????????????????????x??????????????????1
             {
                 left_border=j;
                 Left_Lost_Flag[i]=1;
@@ -256,11 +258,11 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
         Right_Lost_Flag[i]=0; // Clear the right line lost flag to 0
         Left_Lost_Flag[i]=0; // Clear the left line lost flag to 0
     }
-    Left_Lost_Time=0;//×ó¶ªÏß¼ÆÊıÖµÇåÁã
-    Right_Lost_Time=0;//ÓÒ¶ªÏß¼ÆÊıÖµÇåÁã
-    Both_Lost_Time=0;//×óÓÒÍ¬Ê±¶ªÏß¼ÆÊıÖµÇåÁã
+    Left_Lost_Time=0;//????????????
+    Right_Lost_Time=0;//?????????????
+    Both_Lost_Time=0;//??????????????????
     Boundry_Start_Left=0;
-    Boundry_Start_Right=0;//±ß½çÆğÊ¼µãÇåÁã
+    Boundry_Start_Right=0;//????????????
     /* Reset white column count */
     for(uint8 i=0;i<=IMAGE_WIDTH-1;i++)
     {
@@ -269,7 +271,7 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
     /*Counting white columns*/
     for(uint8 j=start_column;j<=end_column;j++)
     {
-        for(uint8 i=IMAGE_HEIGHT-3;i>=0;i--)//ÓÉÓÚ×îµ×ÏÂÊÇ°×±ß£¬ËùÒÔ¾ÍÌø¹ı×îµ×ÏÂµÄ°×±ß
+        for(uint8 i=IMAGE_HEIGHT-3;i>=0;i--)//???????????????????????????????
         {
             if(Image_Use[i][j]==BLACK_POINT)// Stop counting when encountering a white boundary point, otherwise increment
             {
@@ -281,9 +283,9 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
                 break;
             }
         }
-        if(Image_Use[119][j]==BLACK_POINT&&Image_Use[118][j]==BLACK_POINT)//Èç¹ûÊÇÓĞĞ§ÁĞ£¬ÔòÏÂÃæÁ½ĞĞ²»ÄÜÈ«Îª°×É«
+        if(Image_Use[119][j]==BLACK_POINT&&Image_Use[118][j]==BLACK_POINT)//???????ï¿½ï¿½?ï¿½ï¿½??????????ï¿½ï¿½????????
         {
-            White_Column[j]=0;//¶ÔÓ¦°×ÁĞÇåÁã
+            White_Column[j]=0;//???????????
         }
     }
     /* Find the longest white column */
@@ -335,7 +337,7 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
                 Right_Lost_Flag[i]=0;// Set the boundary flag to 0
                 if(right_start_flag==0)
                 {
-                    if(Right_Lost_Flag[i-1]==1)      //Èç¹ûÉÏ´Î¶ªÏßÁË£¬Õâ´ÎÃ»¶ªÏß£¬ËµÃ÷¸ÃµãÎªÆğÊ¼ĞĞ
+                    if(Right_Lost_Flag[i-1]==1)      //?????ï¿½ï¿½???????????????????????????
                     {
                         Right_Line_Start=i;
                         right_start_flag=1;
@@ -353,39 +355,39 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
         left_line[i]=left_border;// Store the corresponding boundary information
         right_line[i]=right_border;
     }
-    /*½ÃÕıÅĞ¶Ï£¨ÔÚÍäµÀ»»³ÉÖ±µÀµÄÊ±ºò¿ÉÄÜ»áÖĞÏßÍ»±äµ½Á½ÅÔ£©*/
+    /*?????ï¿½ï¿½???????????????????????????????????*/
     Outer_Analyse();
     if(Longest_White_Column_Left[1]<=60&&Left_Lost_Time>=60&&Right_Lost_Time<=5)
     {
-        if(right_line[Boundry_Start_Right]<=(IMAGE_WIDTH/2))//´ËÊ±ÖĞÏß³öÈüµÀ
+        if(right_line[Boundry_Start_Right]<=(IMAGE_WIDTH/2))//????????????
         {
             Last_Longest_White_Column_Left[1]=94;
 	        Longest_White_Column_Left[1]=94;
             flag_test++;
-            goto begin;//ÕâÀï¿ÉÒÔÓÃµü´ú°É£¬ÎÒ¸öÈË¾õµÃ
+            goto begin;//???????????????????????
         }
     }
     else if(Longest_White_Column_Left[1]>=128&&Right_Lost_Time>=60&&Left_Lost_Time<=5)
     {
-        if(left_line[Boundry_Start_Left]>=(IMAGE_WIDTH/2))//´ËÊ±ÖĞÏß³öÈüµÀ
+        if(left_line[Boundry_Start_Left]>=(IMAGE_WIDTH/2))//????????????
         {
             Last_Longest_White_Column_Left[1]=94;
 	        Longest_White_Column_Left[1]=94;
             flag_test++;
-            goto begin;//ÕâÀï¿ÉÒÔÓÃµü´ú°É£¬ÎÒ¸öÈË¾õµÃ
+            goto begin;//???????????????????????
         }
     }
 }
 
 /**
- * @brief ¶ÔÄ³¸öµãµÄ×ø±êÇó³öÏàÁÚÇøÓòµÄ°×µã¸öÊı
- * @param ÎŞ
- * @return ·µ»ØÏàÁÚ8¸öµãµÄ°×É«ÔªËØµÄ¸öÊı£¬Èç¹ûÒªÇóºÚÉ«¸öÊıµÄÔªËØ£¬ÄÇ¾Í8-·µ»ØÖµ
- * @attention ÎŞ
+ * @brief ?????????????????????????????
+ * @param ??
+ * @return ????????8?????????????????????????????????????8-?????
+ * @attention ??
  */
 uint8 Get_White_Point(uint8 x,uint8 y)
 {
-    if(x<=1|| x>=IMAGE_WIDTH-2|| y<=1|| y>=IMAGE_HEIGHT-2)    return 0;//±ß½çÌõ¼ş
+    if(x<=1|| x>=IMAGE_WIDTH-2|| y<=1|| y>=IMAGE_HEIGHT-2)    return 0;//???????
     uint8 white_point=0;
     for(uint8 i=x-1;i<=x+1;i++)
     {
@@ -394,47 +396,48 @@ uint8 Get_White_Point(uint8 x,uint8 y)
             if(Image_Use[j][i]==WHITE_POINT)    white_point++;
         }
     }
-    return white_point;//·µ»Ø¶ÔÓ¦ÔªËØµÄ°×É«ÏñËØµãµÄÖµ
+    return white_point;//???????????????????
 }
 
 /**
- * @brief ¶Ô±ßÏßµÄ¿¨Æ¬½øĞĞÑ°ÕÒ
- * @param ÎŞ
- * @return ÎŞ
- * @attention ÎŞ
+ * @brief ???????????????
+ * @param ??
+ * @return ??
+ * @attention ??
  */
 void Border_Car_Detect(void)
 {
     
 }
 
-int deviation[8][2]={{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};//µÚÒ»¸öÎªx×ø±ê£¬µÚ¶ş¸öÎªy×ø±ê
-int devitation_right[8][2]={{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};//ÓÒ±ßÏßµÄÆ«ÒÆÁ¿
+int deviation[8][2]={{0,-1},{-1,-1},{-1,0},{-1,1},{0,1},{1,1},{1,0},{1,-1}};//??????x??????????y????
+int devitation_right[8][2]={{0,-1},{1,-1},{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1}};//???????????
 struct Line_Edge
 {
-    uint8 row;//ĞĞ
-    uint8 column;//ÁĞ
-    uint8 flag;//ÕÒµ½µÄ±êÖ¾Î»
-    uint8 grow;//Éú³¤·½Ïò
+    uint8 row;//??
+    uint8 column;//??
+    uint8 flag;//???????ï¿½ï¿½
+    uint8 grow;//????????
 };
 struct Line_Edge left_edge[80];
 struct Line_Edge right_edge[80];
 /**
- * @brief ¶Ô¿¨Æ¬ÖĞĞÄ½øĞĞ½ÃÕı£¨Ö»ÄÜÔÚ×Ü×ê·çÕı¶Ô¿¨Æ¬Ê±Ê¹ÓÃ£©
- * @param ÎŞ
- * @return ÎŞ
- * @attention ·½·¨£º1ÇĞ»»µ½´ó½ò·¨£¬È»ºó¼ì²âÖĞĞÄµã£¬È»ºó¸ù¾İÖĞĞÄµã½øĞĞ½ÃÕı£¨ÖĞĞÄµã½ÃÕıÇó³öÀ´µÄÖĞĞÄ×ø±ê»áÂÔÓĞÆ«ÒÆ£©
- *              2.°ËÁÚÓòÅÀÏß£¬°ÑÏßÅÀ³öÒ»¸ö´óÔ¼Õı·½ĞÎ·½¿ò£¬È»ºóÇó³öÖĞĞÄµã
+ * @brief Function for searching the center
+ * @param None
+ * @return None
+ * @attention Please note the following:
+ *              1. The function assumes certain conditions for the image to be detected.
+ *              2. The function performs specific operations based on the detection mode.
  */
 void Search_Center(void)
 {
-    uint8 my_detect_mode=0;
-    if(my_detect_mode==0)//ÉÏÒ»½ìÊ¦ĞÖµÄ
+    uint8 my_detect_mode=1;
+    if(my_detect_mode==0)//If detection mode is 0
     {
-        uint8 Top_h=0,Top_w=0,Bottom_h=0,Botton_w=0;//¶¨ÒåÍ¼ÏñµÄ¿í¸ß
+        uint8 Top_h=0,Top_w=0,Bottom_h=0,Botton_w=0;//Variables for storing coordinates
         uint8 ter_h =100,ter_w=60,Mid_h=0,Mid_w=0;
         float cam_dis_h=0,cam_dis_w=0;
-        for(uint8 i=60;i<IMAGE_HEIGHT-2;i++)//´ÓÉÏµ½ÏÂ£¬ÓÉ×óÏòÓÒÉ¨Ïß
+        for(uint8 i=30;i<IMAGE_HEIGHT-2;i++)//Loop through the image
         {
             for(uint8 j=2;j<IMAGE_WIDTH-2;j++)
             {
@@ -451,16 +454,107 @@ void Search_Center(void)
 
         }
     }
-    else if(my_detect_mode==1)//²ÉÓÃ°ËÁÚÓòÑ²ÏßÕÒ³ö¶ÔÓ¦µÄÖĞĞÄµã£¨×Ô¼ºĞÂĞ´µÄ£©
+    else if(my_detect_mode==1)//If detection mode is 1,this detection is wrote by me
     {
-        uint8 start_x=94,start_y=60;//ÆğÊ¼µã
+        uint8 lower_black_row=0;//count the number of black points in a row
+        for(uint8 i=IMAGE_HEIGHT-20;i>=30;i--)
+        {
+            uint8 count_for_black_point=0;
+            for(uint8 j=0;j<=IMAGE_WIDTH-1;j++)
+            {
+                if(Image_Use[i][j]==BLACK_POINT)
+                {
+                    count_for_black_point++;
+                }
+            }
+            if(count_for_black_point==188)//è‡ªä¸‹è€Œä¸Šå¯»æ‰¾æœ€è¿‘é»‘åˆ—
+            {
+                lower_black_row=i;
+                break;
+            }
+        }
+        /*é’ˆå¯¹æ–œè¾¹å½¢çŠ¶å¡ç‰‡ï¼Œå½“ä»å·¦è¾¹å’Œä»å³è¾¹æ‰«åˆ°çš„é¡¶ç‚¹ä¸€æ ·çš„è¯ï¼Œå°±è¯´æ˜å¯ä»¥*/
+        /*æ‰«ææ–¹æ³•ï¼šä»èµ·å§‹è¡Œçš„å·¦åˆ—ï¼Œå³åˆ—å‘ä¸­é—´æ‰«ï¼Œå½“æ‰«åˆ°ç™½ç‚¹çš„æ—¶å€™å°±è®°å½•è¯¥ç‚¹ä½ç½®ï¼Œè®°å½•æ¯è¡Œçš„ç‚¹å¯¹åº”çš„åˆ—åæ ‡
+        ç„¶åä»ä¸Šåˆ°ä¸‹ä¼˜å…ˆå–åæ ‡é ä¸Šçš„ï¼Œå½“è¯¥åæ ‡æ»¡è¶³æ¡ä»¶ï¼š1.å’Œä¸‹5è¡Œçš„åˆ—åæ ‡ç›¸è¿‘ 2.ä¸”å’Œä¸‹2ä¸ªåæ ‡ç›¸è¿ï¼ˆï¼‰*/
+        uint8 left_count[IMAGE_HEIGHT/2]={0};
+        uint8 right_count[IMAGE_HEIGHT/2]={0};
+        uint8 end_row;
+        if(abs(IMAGE_HEIGHT-20-lower_black_row)>=60)    end_row=lower_black_row+60;
+        else  end_row=IMAGE_HEIGHT-20;//é™å¹…å¤„ç†
+        for(uint8 i=lower_black_row;i<=end_row;i++)
+        {
+            /*å…ˆä»å·¦è¾¹ç•Œæ‰«åˆ°å³è¾¹*/
+            for(uint8 j=20;j<IMAGE_WIDTH-1-20;j++)
+            {
+                if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j-1]==BLACK_POINT&&Image_Use[i][j-2]==BLACK_POINT)
+				{
+                    left_count[i-lower_black_row]=j;//è®°å½•å¯¹åº”çš„åˆ—åæ ‡
+                    break;//æ‰¾åˆ°å°±ç›´æ¥é€€å‡º
+				}
+                else
+                {
+                    left_count[i-lower_black_row]=0;//æ‰¾ä¸åˆ°å°±è®°å½•ä¸º0
+                }
+            }
+            /*å†ä»å³è¾¹ç•Œæ‰«åˆ°å·¦è¾¹*/
+            for(uint8 j=IMAGE_WIDTH-1-20;j>=20;j--)
+            {
+                if(Image_Use[i][j]==WHITE_POINT&&Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT)
+                {
+                    right_count[i-lower_black_row]=j;//è®°å½•å¯¹åº”çš„åˆ—åæ ‡
+                    break;//æ‰¾åˆ°å°±ç›´æ¥é€€å‡º
+                }
+                else
+                {
+                    right_count[i-lower_black_row]=IMAGE_WIDTH-1-20;//æ‰¾ä¸åˆ°å°±è®°å½•ä¸º0
+                }
+            }
+        }
+        // for(uint8 i=0;i<=end_row-lower_black_row;i++)
+        // {
+        //     ips114_draw_point(left_count[i],i+lower_black_row,RGB565_RED);
+        //     ips114_draw_point(right_count[i],i+lower_black_row,RGB565_BLUE);
+        // }
+        /*å¼€å§‹å¯»æ‰¾è¾¹ç•Œç‚¹*/
+        uint8 left_up_point[2]={0};//å·¦ä¸Šè§’æ‹ç‚¹åæ ‡
+        uint8 right_up_point[2]={0};//å³ä¸‹è§’æ‹ç‚¹åæ ‡
+        for(uint8 i=0;i<=end_row-lower_black_row;i++)
+        {
+            if(abs(left_count[i]-left_count[i+1])<=1&&abs(left_count[i]-left_count[i+2])<=2&&abs(left_count[i]-left_count[i+3])<=3&&
+            abs(left_count[i]-left_count[i+4])<=4&&abs(left_count[i]-left_count[i+5])<=5)
+            {
+                left_up_point[0]=left_count[i];//è®°å½•åˆ—åæ ‡
+                left_up_point[1]=i+lower_black_row;//è®°å½•è¡Œåæ ‡
+                break;
+            }
+        }
+        for(uint8 i=0;i<=end_row-lower_black_row;i++)
+        {
+            if(abs(right_count[i]-right_count[i+1])<=1&&abs(right_count[i]-right_count[i+2])<=2&&abs(right_count[i]-right_count[i+3])<=3&&
+            abs(right_count[i]-right_count[i+4])<=4&&abs(right_count[i]-right_count[i+5])<=5)
+            {
+                right_up_point[0]=right_count[i];//è®°å½•åˆ—åæ ‡
+                right_up_point[1]=i+lower_black_row;//è®°å½•è¡Œåæ ‡
+                break;
+            }
+        }
+        ips114_show_uint(188,20,right_up_point[0],3);
+        ips114_show_uint(188,40,right_up_point[1],3);
+        ips114_show_uint(188,60,left_up_point[0],3);
+        ips114_show_uint(188,80,left_up_point[1],3);
+        ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
+        ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
+        // ips114_draw_line(0,0,,RGB565_RED);
+        // ips114_draw_line(0,0,right_count[0],right_count[1],RGB565_BLUE);
+        /*
+        uint8 start_x=94,start_y=60;//Starting coordinates
         for(uint8 i=start_y;i<=IMAGE_HEIGHT-1;i++)
         {
             if(Image_Use[i][start_x]==WHITE_POINT&&Image_Use[i-1][start_x]==BLACK_POINT&&Image_Use[i-2][start_x]==BLACK_POINT
             &&Image_Use[i-5][start_x]==BLACK_POINT&&Image_Use[i-3][start_x-3]==BLACK_POINT&&Image_Use[i-3][start_x+3]==BLACK_POINT
-            &&Get_White_Point(start_x,i)>=5)//Í¬Ê±ÒªÂú×ãÖÜÎ§°×µãÊı½Ï¶à£¬·ÀÖ¹ÔëÉù
+            &&Get_White_Point(start_x,i)>=5)//Check if the pixel meets certain conditions
             {
-                start_y=i;//´æ´¢ÆğÊ¼µãµÄĞĞÊı
+                start_y=i;//Update the starting y-coordinate
                 break;
             }
         }
@@ -469,7 +563,7 @@ void Search_Center(void)
         uint8 my_count_left=0,my_count_right=0;
         while(search_cout--)
         {
-            for(uint8 i=0;i<=7;i++)//°ËÁÚÓòÉ¨Ïß
+            for(uint8 i=0;i<=7;i++)//Loop through the directions
             {
                 if(Image_Use[start_x+deviation[i][0]][start_y+deviation[i][1]]==WHITE_POINT)
                 {
@@ -482,7 +576,7 @@ void Search_Center(void)
                     my_count_left++;
                     break;
                 }
-                if(i==7)/*Èç¹ûÖ´ĞĞµ½ÕâµÄ»°¾ÍËµÃ÷´æÔÚÄ³¸öµã¶Ï¿ªÁË£¬ÄÇ¾ÍÒªÍË³öÑ­»·*/
+                if(i==7)//If no white pixel is found in any direction
                 {
                     goto end;
                 }
@@ -513,8 +607,7 @@ void Search_Center(void)
 			finnal_end: break;
         }
         
-        /*Çó³öÖĞĞÄµã£ºÇ°¼¸¸öµãÁĞ×ø±êÏà²î½Ï´ó£¬ºá×ø±êÏà²î½ÏĞ¡£¬ºó¼¸¸öµãºá×ø±êÏà²î½Ï´ó£¬ºá×ø±êÏà²î½ÏĞ¡
-                    ·½·¨2£º¿´ÆäÓë×óÉÏ½ÇµÄ¾àÀë£¬¾àÀë×îĞ¡ÕßÎª×óÉÏ¶¥µã*/
+        //Calculate the center coordinates of the left and right edges
         int left_center_x=0;
 		int left_center_y=0;
 		int right_center_x=0;
@@ -539,39 +632,43 @@ void Search_Center(void)
                 break;
             }
         }
-        /*½«Á½¸ö±ß½çµã½øĞĞÄæÍ¸ÊÓ±ä»»£¬ÔÚÏÖÊµ×ø±êÖĞÇó³öÖĞĞÄµãµÄÎ»ÖÃ*/
+        */
+        
+        /*Perform further operations based on the calculated center coordinates*/
     }
 }
 
 /**
- * @brief ¼òµ¥µÄÅòÕÍ²Ù×÷
- * @param uint8 start_row£ºÆğÊ¼ĞĞ£»uint8 end_row£ºÖÕÖ¹ĞĞ£»uint8 start_column£ºÆğÊ¼ÁĞ£»uint8 end_column ÖÕÖ¹ÁĞ   uint8 threshold£ºãĞÖµ
- * @return ÎŞ
- * @attention Ò»°ãstart_row>end_row,start_column<end_column
+ * @brief Easy filtering function
+ * @param uint8 start_row: starting row index, uint8 end_row: ending row index, 
+ *        uint8 start_column: starting column index, uint8 end_column: ending column index, 
+ *        uint8 threshold: threshold value
+ * @return None
+ * @attention Make sure start_row > end_row and start_column < end_column
  */
-void Easy_Filtering(uint8 start_row,uint8 end_row,uint8 start_column,uint8 end_column,uint8 threshold)
+void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 end_column, uint8 threshold)
 {
-    for(uint8 i=start_row-1;i>=end_row+1;i--)//´ÓÏÂÍùÉÏÉ¨£¬±ß½çÌõ¼ş
+    for(uint8 i = start_row - 1; i >= end_row + 1; i--) // Iterate through the rows
     {
-        for(uint8 j=start_column+1;j<=end_column-1;j++)//´Ó×óÍùÓÒÉ¨
+        for(uint8 j = start_column + 1; j <= end_column - 1; j++) // Iterate through the columns
         {
-            if(Image_Use[i-1][j-1]+Image_Use[i-1][j]+Image_Use[i-1][j+1]+Image_Use[i][j-1]
-                +Image_Use[i][j+1]+Image_Use[i+1][j-1]+Image_Use[i+1][j]+Image_Use[i+1][j+1]>=threshold*WHITE_POINT)//Èç¹ûÖÜÎ§ÓĞ5¸ö°×µã
-                {
-                    Image_Use[i][j]=WHITE_POINT;//Ôò½«¸ÃµãÉèÖÃÎª°×µã
-                }
+            if(Image_Use[i-1][j-1] + Image_Use[i-1][j] + Image_Use[i-1][j+1] + Image_Use[i][j-1]
+                + Image_Use[i][j+1] + Image_Use[i+1][j-1] + Image_Use[i+1][j] + Image_Use[i+1][j+1] >= threshold * WHITE_POINT)
+            {
+                Image_Use[i][j] = WHITE_POINT; // Set the pixel to white
+            }
         }
     }
 }
 /**
- * @brief ±ßÏßÊı×é·ÖÎö
- * @param ÎŞ
- * @return ÎŞ
+ * @brief the function Edge array analysis
+ * @param none
+ * @return none
  */
 void Outer_Analyse(void)
 {
-    static uint8 my_init_flag=0;//³õÊ¼»¯±êÖ¾Î»£¬Ö»»áÖ´ĞĞÒ»´Î
-    /*ÆäËûÓĞÓÃµÄ±êÖ¾Î»µÄ·ÖÎö*/
+    static uint8 my_init_flag=0;//????????ï¿½ï¿½???????????
+    /*???????????ï¿½ï¿½?????*/
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
         if(Left_Lost_Flag[i]==1)    Left_Lost_Time++;
@@ -581,7 +678,7 @@ void Outer_Analyse(void)
         if(Boundry_Start_Right==0&&Right_Lost_Flag[i]==0) Boundry_Start_Right=i;// Record the starting point of the right boundary
         Road_Wide[i]=right_line[i]-left_line[i];// Record the road width
     }
-    if(my_init_flag==0)//ÔªËØÅĞ¶ÏÀàĞÍÖ»ÄÜÔÚÆÂµÀºÍÖ±µÀÖ®¼ä½øĞĞÇĞ»»
+    if(my_init_flag==0)//????ï¿½ï¿½?????????????????????????ï¿½ï¿½?
     {
         /* Preliminary analysis of different flags for track elements */
         if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
@@ -603,63 +700,55 @@ void Outer_Analyse(void)
     }
     if(Road_Type==STRAIGHT_ROAD)    Ramp_Detect();
     if(Road_Type==STRAIGHT_ROAD)    Zebra_Stripes_Detect();
-    if(Road_Type==RAMP)   Ramp_Detect();//»ØËİ¼ì²â
+    if(Road_Type==RAMP)   Ramp_Detect();//??????
 }
 
 /**
- * @brief ×ó±ßÏßÁ¬ĞøĞÔ¼ì²â£¨ÓĞ¸Ä½øµÄ¿Õ¼ä£¬±ÈÈçÔö¼ÓÒ»¸öãĞÖµµÄ²ÎÊı£©
- * @param start:ÆğÊ¼ĞĞ end:ÖÕÖ¹ĞĞ
- * @return ·µ»Ø²»Á¬ĞøµÄĞĞÊı
+ * @brief Function for continuity change detection on the left side
+ * @param start: starting index, end: ending index, mode: detection mode
+ * @return Continuity change flag
  */
-int Continuity_Change_Left(int start, int end,int mode)
+int Continuity_Change_Left(int start, int end, int mode)
 {
-    int i,t,continuity_change_flag=0;
-    if(Left_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//¶ªÏßÊı¹ı¶à¾Í·µ»Ø1£¨Õâ¾ä»°Ã»±ØÒª£¬ÔÚÖ±µÀÉÏ¼ì²â¿Ï¶¨²»»á³öÏÖÕâÖÖÇé¿ö£©
-    if(Search_Stop_Line <=5) return 1; //Èç¹û½ØÖ¹ĞĞ¹ıĞ¡£¨×î³¤°×ÁĞµÄ°×ÁĞµãÊıĞ¡ÓÚµÈÓÚ5ĞĞ£©£¬¸üÃ»±ØÒªÕÒÁË£¨ÕâÖÖÇé¿ö³öÏÖµÄ±È½ÏÉÙ£©
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//ÆğÊ¼ĞĞÏŞ·ù£¨·ÀÖ¹ºóĞøÅĞ¶Ï³öÏÖÊı×éÔ½½ç£©
-    if(end<=5)  end=5;//ÖÕÖ¹ĞĞÏŞ·ù£¨·ÀÖ¹ºóĞøÅĞ¶Ï³öÏÖÊı×éÔ½½ç£©
-    if(start<end)//Ô­ÔòÉÏstartÒª´óÓÚend
-    {
-        t=start;
-        start=end;
-        end=t;
+    int i, t, continuity_change_flag = 0;
+    if (Left_Lost_Time >= 0.9 * IMAGE_HEIGHT) return 1; // Return 1 if left line is lost for more than 90% of the image height
+    if (Search_Stop_Line <= 5) return 1; // Return 1 if search stop line is less than or equal to 5
+    if (start >= IMAGE_HEIGHT - 1 - 5) start = IMAGE_HEIGHT - 1 - 5; // Adjust start index if it exceeds the image height
+    if (end <= 5) end = 5; // Adjust end index if it is less than or equal to 5
+    if (start < end) {
+        t = start;
+        start = end;
+        end = t;
     }
-    if(mode==0)
-    {
-        for(i=start;i>=end;i--)//ÔÚÍ¼ÏñÉÏ´ÓÏÂµ½ÉÏ¿ªÊ¼É¨Ãè
-        {
-            if(abs(left_line[i]-left_line[i-1])>=5&&left_line[i-1]>=20&&left_line[i-3]>=20)//Èç¹ûÁ½ĞĞÖ®¼äµÄ²îÖµ´óÓÚ5£¨Õâ¸öãĞÖµ¿ÉÒÔµ÷Õû£©£¬·ÀÖ¹¹ıÓÚ¿¿½ü±ß½ç
-            {
-                continuity_change_flag=i;
-                break;//ÕÒµ½²»Á¬ĞøµÄĞĞ¾ÍÌø³öÑ­»·
+    if (mode == 0) {
+        for (i = start; i >= end; i--) {
+            if (abs(left_line[i] - left_line[i - 1]) >= 5 && left_line[i - 1] >= 20 && left_line[i - 3] >= 20) {
+                continuity_change_flag = i;
+                break;
+            }
+        }
+    } else if (mode == 1) {
+        for (i = end; i <= start; i++) {
+            if (abs(left_line[i] - left_line[i - 1]) >= 5 && left_line[i - 1] >= 20 && left_line[i - 3] >= 20) {
+                continuity_change_flag = i;
+                break;
             }
         }
     }
-    else if(mode==1)
-    {
-        for(i=end;i<=start;i++)//ÔÚÍ¼ÏñÉÏ´ÓÏÂµ½ÉÏ¿ªÊ¼É¨Ãè
-        {
-            if(abs(left_line[i]-left_line[i-1])>=5&&left_line[i-1]>=20&&left_line[i-3]>=20)//Èç¹ûÁ½ĞĞÖ®¼äµÄ²îÖµ´óÓÚ5£¨Õâ¸öãĞÖµ¿ÉÒÔµ÷Õû£©£¬·ÀÖ¹¹ıÓÚ¿¿½ü±ß½ç
-            {
-                continuity_change_flag=i;
-                break;//ÕÒµ½²»Á¬ĞøµÄĞĞ¾ÍÌø³öÑ­»·
-            }
-        }
-    }
-    return continuity_change_flag;//·µ»Ø0ËµÃ÷Ã»ÓĞ²»Á¬ĞøµÄĞĞ£¬·µ»ØÆäËûÖµËµÃ÷ÓĞ²»Á¬ĞøµÄĞĞ
+    return continuity_change_flag;
 }
 
 /**
- * @brief ÓÒ±ßÏßÁ¬ĞøĞÔ¼ì²â
- * @param start:ÆğÊ¼ĞĞ end:ÖÕÖ¹ĞĞ
- * @return ·µ»Ø²»Á¬ĞøµÄĞĞÊı
+ * @brief ?????????????
+ * @param start:????? end:?????
+ * @return ???????????????
  */
 int Continuity_Change_Right(int start, int end,int mode)
 {
     int i,t,continuity_change_flag=0;
-    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//¶ªÏßÊı¹ı¶à¾Í·µ»Ø1
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//ÆğÊ¼ĞĞÏŞ·ù
-    if(end <=5) end=5;//ÖÕÖ¹ĞĞÏŞ·ù
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//??????????????1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????????
+    if(end <=5) end=5;//????????
     if(start<end)
     {
         t=start;
@@ -670,10 +759,10 @@ int Continuity_Change_Right(int start, int end,int mode)
     {
         for(i=start;i>=end;i--)
         {
-            if(abs(right_line[i]-right_line[i-1])>=5)//Èç¹ûÁ½ĞĞÖ®¼äµÄ²îÖµ´óÓÚ5
+            if(abs(right_line[i]-right_line[i-1])>=5)//?????????????????5
             {
                 continuity_change_flag=i;
-                break;//ÕÒµ½²»Á¬ĞøµÄĞĞ¾ÍÌø³öÑ­»·
+                break;//????????????ï¿½ï¿½????????
             }
         }
     }
@@ -681,24 +770,24 @@ int Continuity_Change_Right(int start, int end,int mode)
     {
         for(i=end;i>=start;i++)
         {
-            if(abs(right_line[i]-right_line[i-1])>=5)//Èç¹ûÁ½ĞĞÖ®¼äµÄ²îÖµ´óÓÚ5
+            if(abs(right_line[i]-right_line[i-1])>=5)//?????????????????5
             {
                 continuity_change_flag=i;
-                break;//ÕÒµ½²»Á¬ĞøµÄĞĞ¾ÍÌø³öÑ­»·
+                break;//????????????ï¿½ï¿½????????
             }
         }
     }
-    return continuity_change_flag;//·µ»Ø0ËµÃ÷Ã»ÓĞ²»Á¬ĞøµÄĞĞ£¬·µ»ØÆäËûÖµËµÃ÷ÓĞ²»Á¬ĞøµÄĞĞ
+    return continuity_change_flag;//????0?????ï¿½ï¿½????????ï¿½ï¿½??????????????ï¿½ï¿½?????????
 }
 
 /**
- * @brief Á¬ĞøĞÔ¼ì²â
- * @param line:´ı¼ì²âµÄÊı×é
- * @return ·µ»Ø×î´óµÄ²»Á¬ĞøÖµ
+ * @brief ????????
+ * @param line:??????????
+ * @return ??????????????
  */
 uint8 Continuity_detect(uint8 *line)
 {
-    uint8 max_uncontinuity=0;//×î´ó²»Á¬ĞøÖµ
+    uint8 max_uncontinuity=0;//????????
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
         if(line[i]-line[i-1]>max_uncontinuity)
@@ -706,26 +795,26 @@ uint8 Continuity_detect(uint8 *line)
             max_uncontinuity=line[i]-line[i-1];
         }
     }
-    return max_uncontinuity;//·µ»Ø×î´ó²»Á¬ĞøÖµ
+    return max_uncontinuity;//????????????
 }
 
 /**
- * @brief Çó³ö¶ÔÓ¦Êı×éµÄ±ä»¯Öµ£¨±ä»¯Öµ¿ÉÒÔµ÷Õû£©
- * @param ÎŞ
- * @return ÎŞ
- * @attention ÎŞ
+ * @brief ???????????ï¿½ï¿½????ï¿½ï¿½??????????
+ * @param ??
+ * @return ??
+ * @attention ??
  */
 void Derivative_Change(void)
 {
     for(uint8 i=IMAGE_HEIGHT-1;i>=1;i--)
     {
         Left_derivative[i]=(left_line[i]-left_line[i-1])/2;
-        Right_derivative[i]=(right_line[i]-right_line[i-1])/2;//Çó³ö¶ÔÓ¦Êı×éµÄ±ä»¯Öµ
+        Right_derivative[i]=(right_line[i]-right_line[i-1])/2;//???????????ï¿½ï¿½?
     }
 }
 
 /**
- * @brief ??????????£????????§³????
+ * @brief ??????????????????????????
  * @param uint8 *line ????????
  * @return ??
  * @attention ??
@@ -744,7 +833,7 @@ float Derivative_detect_max(uint8 *line)
 }
 
 /**
- * @brief ?????????§³?£????????§³????
+ * @brief ????????????????????????????
  * @param uint8 *line ????????
  * @return ??
  * @attention ??
@@ -763,21 +852,21 @@ float Derivative_detect_min(uint8 *line)
 }
 
 /**
- * @brief ×ó±ß½çµ¥µ÷ĞÔ¼ì²â
- * @param int start ÆğÊ¼ĞĞ, int end ÖÕÖ¹ĞĞ
- * @return ·µ»Øµ¥µ÷ĞÔ±ä»¯µÄĞĞÊı
- * @attention ÎŞ
+ * @brief ???ï¿½n??????
+ * @param int start ?????, int end ?????
+ * @return ?????????ï¿½ï¿½??????
+ * @attention ??
  */
 int Monotonicity_Change_Left(int start, int end)
 {
     int i,monotonicity_change_line=0;
-    if(Left_Lost_Time>=0.9*IMAGE_HEIGHT)   return 1;//¶ªÏßÊı¹ı¶à¾Í·µ»Ø1
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//ÆğÊ¼ĞĞÏŞ·ù
-    if(end<=5) end=5;//ÖÕÖ¹ĞĞÏŞ·ù
-    if(start<=end)  return 1; //Èç¹ûÆğÊ¼ĞĞĞ¡ÓÚµÈÓÚÖÕÖ¹ĞĞ£¬ËµÃ÷Ã»ÓĞ¼ì²âµÄ±ØÒª
+    if(Left_Lost_Time>=0.9*IMAGE_HEIGHT)   return 1;//??????????????1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????????
+    if(end<=5) end=5;//????????
+    if(start<=end)  return 1; //????????ï¿½ï¿½?????????ï¿½ï¿½??????ï¿½ï¿½?????
     for(i=start;i>=end;i--)
     {
-        /*Èç¹û×ó±ßÏßÄ³Ò»µãÔÚÏàÁÚÉÏÏÂ5ĞĞµÄµãÖĞµÄÁĞ×ø±ê×î´ó£¨×î¿¿ÓÒ£©£¬ÄÇÃ´¾ÍÄ¬ÈÏ¸ÃµãÎªµ¥µ÷µã*/
+        /*??????????????????????5?ï¿½ï¿½???ï¿½ï¿½??????????????????????????????????*/
         if(left_line[i] >= left_line[i + 5] && left_line[i] >= left_line[i - 5] &&
                  left_line[i] >= left_line[i + 4] && left_line[i] >= left_line[i - 4] &&
                  left_line[i] >= left_line[i + 3] && left_line[i] >= left_line[i - 3] &&
@@ -788,25 +877,25 @@ int Monotonicity_Change_Left(int start, int end)
             break;
         }
     }
-    return monotonicity_change_line;//·µ»Øµ¥µ÷µãËùÔÚµÄĞĞÊı
+    return monotonicity_change_line;//??????????????????
 }
 
 /**
- * @brief ÓÒ±ß½çµ¥µ÷ĞÔ¼ì²â
- * @param int start ÆğÊ¼ĞĞ, int end ÖÕÖ¹ĞĞ
- * @return ·µ»Øµ¥µ÷ĞÔ±ä»¯µÄĞĞÊı
- * @attention ÎŞ
+ * @brief ???ï¿½n??????
+ * @param int start ?????, int end ?????
+ * @return ?????????ï¿½ï¿½??????
+ * @attention ??
  */
 int Monotonicity_Change_Right(int start,int end)
 {
     int i,monotonicity_change_line=0;
-    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//¶ªÏßÊı¹ı¶à¾Í·µ»Ø1
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//ÆğÊ¼ĞĞÏŞ·ù
-    if(end <=5) end=5;//ÖÕÖ¹ĞĞÏŞ·ù
-    if(start<=end)  return monotonicity_change_line;//Èç¹ûÆğÊ¼ĞĞĞ¡ÓÚµÈÓÚÖÕÖ¹ĞĞ£¬ËµÃ÷Ã»ÓĞ¼ì²âµÄ±ØÒª
-    for(i=start;i>=end;i--)//´ÓÏÂÍùÉÏÉ¨
+    if(Right_Lost_Time >=0.9*IMAGE_HEIGHT)   return 1;//??????????????1
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????????
+    if(end <=5) end=5;//????????
+    if(start<=end)  return monotonicity_change_line;//????????ï¿½ï¿½?????????ï¿½ï¿½??????ï¿½ï¿½?????
+    for(i=start;i>=end;i--)//?????????
     {
-        /*Èç¹ûÓÒ±ßÏßÄ³Ò»µãÔÚÏàÁÚÉÏÏÂ5ĞĞµÄµãÖĞµÄÁĞ×ø±ê×îĞ¡£¨×î¿¿×ó£©£¬ÄÇÃ´¾ÍÄ¬ÈÏ¸ÃµãÎªµ¥µ÷µã*/
+        /*??????????????????????5?ï¿½ï¿½???ï¿½ï¿½?????????ï¿½ï¿½????????????????????????*/
         if(right_line[i] <= right_line[i + 5] && right_line[i] <= right_line[i - 5] &&
             right_line[i] <= right_line[i + 4] && right_line[i] <= right_line[i - 4] &&
             right_line[i] <= right_line[i + 3] && right_line[i] <= right_line[i - 3] &&
@@ -817,16 +906,16 @@ int Monotonicity_Change_Right(int start,int end)
             break;
         }
     }
-    return monotonicity_change_line;//·µ»Øµ¥µ÷µãËùÔÚµÄĞĞÊı
+    return monotonicity_change_line;//??????????????????
 }
 /**
- * @brief Îó²î´¦Àíº¯Êı
- * @param ÎŞ
- * @return ¶ÔÓ¦µÄÎó²î£¬×óÕıÓÒ¸º
+ * @brief ?????????
+ * @param ??
+ * @return ???????????????
  */
 float Err_Handle(void)
 {
-    /*????§Õ??????????????????????
+    /*????????????????????????????
     float err=0.00;//????????????????????????
     int sum_err[IMAGE_HEIGHT]={0};
     int sum_hight=0;
@@ -840,31 +929,31 @@ float Err_Handle(void)
         err+=sum_err[i]/sum_hight;//???????
     }
     */
-   /*Îó²îÏû³ı·½·¨£ºÅĞ¶Ï°×ÁĞµÄÎ»ÖÃ£¬ÅĞ¶ÏÎó²îµÄÕı¸º£»»òÕßÍ¨¹ıÈ¡Æ½¾ùÀ´¼õĞ¡Îó²î*/
-    last_err=err;//ÉÏ´ÎµÄÎó²î´«µİ
+   /*??????????????ï¿½ï¿½???ï¿½ï¿½?ï¿½ï¿½????ï¿½ï¿½??????????????????????????ï¿½ï¿½???*/
+    last_err=err;//??ï¿½ï¿½??????
     
-    int weight_count=0;//È¨ÖØ¼ÆËã
-    for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)//Ô­±¾ÊÇint i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--£¬ÏÖÔÚ½«ÖĞÏßÊ¶±ğÌáÇ°
+    int weight_count=0;//??????
+    for(int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--)//?????int i=IMAGE_HEIGHT-1;i>IMAGE_HEIGHT/2;i--?????????????????
     {
         err+=(IMAGE_WIDTH/2-((left_line[i]+right_line[i])>>1))*Weight[i];
-        weight_count+=Weight[i];//¼ÆËãÈ¨ÖØ×ÜºÍ
+        weight_count+=Weight[i];//??????????
     }
-    err=err/weight_count;//¼ÆËãÎó²î
+    err=err/weight_count;//???????
 //    if(last_err==0&&err==0)
 //    {
 //        return err;
 //    }
 //    else   
 //    {
-//        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//Èç¹û±¾´ÎÎó²îÌ«´ó£¬¾Í·µ»ØÉÏ´ÎÎó²î£¨·ÀÖ¹²¿·ÖÔªËØÎó²îÍ»±ä£©)
+//        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//???????????????????????????????????????)
 //    } 
     return err;
 }
 
 /**
- * @brief ×ó±ß½ç²¹Ïßº¯Êı
- * @param int x1, int y1, int x2,int y2 ÆğÊ¼µãÖÕÖ¹µãµÄ×ø±ê
- * @return ÔÚÍ¼ÏñÉÏ¶ÔÔ­À´µÄ×ó±ßÏßÊı×é½øĞĞĞŞ¸Ä
+ * @brief ???ï¿½ï¿½?????
+ * @param int x1, int y1, int x2,int y2 ???????????????
+ * @return ????????????????????????????
  */
 void Left_Add_Line(int x1, int y1, int x2,int y2)
 {
@@ -879,19 +968,19 @@ void Left_Add_Line(int x1, int y1, int x2,int y2)
     if(y2>=IMAGE_HEIGHT) y2=IMAGE_HEIGHT-1;//???????
     else if(y2<=0)  y2=0;
     a1=y1;
-    a2=y2;//????§Ş???
-    if(a1>a2)//????????a1?§³??a2
+    a2=y2;//?????????
+    if(a1>a2)//????????a1?????a2
     {
         max=a1;
         a1=a2;
         a2=max;
     }
-    for(i=a1;i<=a2;i++)//???????????????§Ó???
+    for(i=a1;i<=a2;i++)//????????????????????
     {
-        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//?????????§Ø??????????
+        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//?????????????????????
         if(hx >= IMAGE_WIDTH) hx = IMAGE_WIDTH-1;//???????
         else if(hx <= 0) hx = 0;
-        left_line[i]=hx;//?????????????÷Ï?????????????????????????????????????????¦Å?????????ï…??????????§¹???????
+        left_line[i]=hx;//???????????????????????????????????????????????????????????????????????????????????????
     }
 }
 
@@ -912,42 +1001,42 @@ void Right_Add_Line(int x1, int y1, int x2, int y2)
     if(y2>=IMAGE_HEIGHT) y2=IMAGE_HEIGHT-1;//???????
     else if(y2<=0)  y2=0;
     a1=y1;
-    a2=y2;//????§Ş???
-    if(a1>a2)//????????a1?§³??a2
+    a2=y2;//?????????
+    if(a1>a2)//????????a1?????a2
     {
         max=a1;
         a1=a2;
         a2=max;
     }
-    for(i=a1;i<=a2;i++)//???????????????§Ó???
+    for(i=a1;i<=a2;i++)//????????????????????
     {
-        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//?????????§Ø??????????
+        hx=(i-y1)*(x2-x1)/(y2-y1)+x1;//?????????????????????
         if(hx >= IMAGE_WIDTH) hx = IMAGE_WIDTH-1;//???????
         else if(hx <= 0) hx = 0;
-        right_line[i]=hx;//?????????????÷Ï?????????????????????????????????????????¦Å?????????ï…??????????§¹???????
+        right_line[i]=hx;//???????????????????????????????????????????????????????????????????????????????????????
     }
 }
 
 /**
  * @brief ????????????????????
- * @param int start, int end ?????????¦¶???????
+ * @param int start, int end ??????????????????
  * @return ????????????? Right_Down_Find=0;Left_Down_Find=0;
  */
 void Find_Down_Point(int start, int end)
 {
     int i,t;
     Right_Down_Find=0;
-    Left_Down_Find=0;//?????????¦Ë????
+    Left_Down_Find=0;//???????????????
     if(start<end)//?????start?????end
     {
         t=start;
         start=end;
         end=t;
     }
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????5?§Ö?????????????????????????§Ø?
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????5???????????????????????????????
     if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//?????????
     if(end<=5)  end=5;
-    /*????§Ø?????????????????????????????????????§Ø?£???*/
+    /*???????????????????????????????????????????????????*/
     for(i=start;i>=end;i--)
     {
         if(Left_Down_Find == 0 && abs(left_line[i]-left_line[i+1])<=5 && abs(left_line[i+1]-left_line[i+2])<=5 &&
@@ -958,7 +1047,7 @@ void Find_Down_Point(int start, int end)
         }
         if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
         abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15
-        &&abs(left_line[i]-left_line[i-4])>=15)//ÕâÀï¸Ä¹ı£¬Ìí¼ÓÁË×îºóÒ»¸öÅĞ¶ÏÌõ¼ş
+        &&abs(left_line[i]-left_line[i-4])>=15)//?????????????????????ï¿½ï¿½?????
         {
             Right_Down_Find=i;//????????????
         }
@@ -967,17 +1056,17 @@ void Find_Down_Point(int start, int end)
 }
 
 /**
- * @brief ???????????????????????
- * @param start:??????¦¶?????end:??????¦¶?????
- * @return ????????????????????Left_Up_Find??Right_Up_Find??
+ * @brief the function to find the upper point
+ * @param start: the starting index, end: the ending index
+ * @return null
  */
 void Find_Up_Point(int start, int end)
 {
-    int i,t;//?§Ş????
-    if(Left_Down_Find!=0)   Last_Left_Up_Find=Left_Down_Find;//¼ÇÂ¼ÉÏÒ»´ÎµÄ×óÏÂµã
-    if(Right_Down_Find!=0)  Last_Right_Up_Find=Right_Down_Find;//¼ÇÂ¼ÉÏÒ»´ÎµÄÓÒÏÂµã
-    Left_Up_Find=0;//?????????¦Ë????
-    Right_Up_Find=0;//?????????¦Ë????
+    int i,t;//???????
+    if(Left_Down_Find!=0)   Last_Left_Up_Find=Left_Down_Find;//initialize the last left up find
+    if(Right_Down_Find!=0)  Last_Right_Up_Find=Right_Down_Find;//initialize the last right up find
+    Left_Up_Find=0;//
+    Right_Up_Find=0;//???????????????
 
     if(start<end)//?????start?????end
     {
@@ -987,9 +1076,9 @@ void Find_Up_Point(int start, int end)
     }
     if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//?????????
     if(end<=5)  end=5;
-    if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5?§Ö?????????????????????????§Ø?
+    if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5???????????????????????????????
     /*????????????????????????????????????????*/
-    for(i=end;i<=start;i++)//???????????????? ÕâÀïÒÉËÆÓĞÎÊÌâ£¬i++ÊÇ·ñ»áµ¼ÖÂÊı×éÔ½½ç£¿
+    for(i=end;i<=start;i++)//???????????????? ??????????????i++????????????ï¿½ï¿½
     {
         if(Left_Up_Find == 0 && 
         abs(left_line[i]-left_line[i-1])<=5 &&
@@ -1025,78 +1114,79 @@ void Find_Up_Point(int start, int end)
 }
 
 /**
- * @brief ???????
- * @param ????????????????????
+ * @brief lengthen the left boundary
+ * @param start The starting index of the boundary
  * @return null
  */
 void Lengthen_Left_Boundry(int start, int end)
 {
     int i,t;
     float k=0.0;
-    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; //?????¦Ë?????
-    else if(start <=0)  start=0;//???
-    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1;//???
-    else if(end<=0)  end=0;//???
-    if(end < start) //?????end?????start
+    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; //limitaion
+    else if(start <=0)  start=0;//limitation
+    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1;//the limitation
+    else if(end<=0)  end=0;//end limitation
+    if(end < start) //start must be less than end
     {
         t=start;
         start=end;
         end=t;
     }
-    if(start <=5)   Left_Add_Line(left_line[start],start,left_line[end],end);//??????????????????????????????????
+    if(start <=5)   Left_Add_Line(left_line[start],start,left_line[end],end);//if the start is less than or equal to 5, add a line to the left boundary
     else
     {
-        k=(float)(left_line[start]-left_line[start-4])/5.0; //?????k??1/§Ò??
+        k=(float)(left_line[start]-left_line[start-4])/5.0; //calculate the slope of the line
         for(i=start;i<=end;i++)
         {
-            left_line[i]=(int)(i-start)*k+left_line[start];//???????
-            if(left_line[i]>=IMAGE_WIDTH-1) left_line[i]=IMAGE_WIDTH-1;//???????
-            else if(left_line[i]<=0) left_line[i]=0;//???????
+            left_line[i]=(int)(i-start)*k+left_line[start];//lengthen the left boundary
+            if(left_line[i]>=IMAGE_WIDTH-1) left_line[i]=IMAGE_WIDTH-1;//if the value exceeds the maximum width
+            else if(left_line[i]<=0) left_line[i]=0;//if the value is less than or equal to 0
         }
     }
 }
 
 /**
- * @brief ????????
- * @param ????????????????????
+ * @brief Lengthen the right boundary
+ * @param start The starting index of the boundary
+ * @param end The ending index of the boundary
  * @return null
  */
 void Lengthen_Right_Boundry(int start, int end)
 {
     int i,t;
     float k=0.0;
-    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; //?????¦Ë?????
-    else if(start <=0)  start=0;//???
-    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1;//???
-    else if(end<=0)  end=0;//???
-    if(end < start) //?????end?????start
+    if(start >=IMAGE_HEIGHT -1) start=IMAGE_HEIGHT-1; // Check if start is greater than or equal to IMAGE_HEIGHT - 1
+    else if(start <=0)  start=0; // Check if start is less than or equal to 0
+    if(end>=IMAGE_HEIGHT-1) end=IMAGE_HEIGHT-1; // Check if end is greater than or equal to IMAGE_HEIGHT - 1
+    else if(end<=0)  end=0; // Check if end is less than or equal to 0
+    if(end < start) // Swap start and end if end is less than start
     {
         t=start;
         start=end;
         end=t;
     }
-    if(start <=5)   Right_Add_Line(right_line[start],start,right_line[end],end);//??????????????????????????????????
+    if(start <=5)   Right_Add_Line(right_line[start],start,right_line[end],end); // Add a line to the right boundary if start is less than or equal to 5
     else
     {
-        k=(float)(right_line[start]-right_line[start-4])/5.0; //?????k??1/§Ò??
+        k=(float)(right_line[start]-right_line[start-4])/5.0; // Calculate the slope of the line
         for(i=start;i<=end;i++)
         {
-            right_line[i]=(int)(i-start)*k+right_line[start];//???????
-            if(right_line[i]>=IMAGE_WIDTH-1) right_line[i]=IMAGE_WIDTH-1;//???????
-            else if(right_line[i]<=0) right_line[i]=0;//???????
+            right_line[i]=(int)(i-start)*k+right_line[start]; // Lengthen the right boundary
+            if(right_line[i]>=IMAGE_WIDTH-1) right_line[i]=IMAGE_WIDTH-1; // Check if the value exceeds the maximum width
+            else if(right_line[i]<=0) right_line[i]=0; // Check if the value is less than or equal to 0
         }
     }
 }
 
 /**
- * @brief ?????
+ * @brief the function to detect the crossing
  * @param null
  * @return null
  */
 void Cross_Detect(void)
 {
-    int down_search_start = 0;//???????D?????????
-    if(Road_Type == CROSSING)//?????????¡¤??
+    int down_search_start = 0;//the down point of finding the crossing
+    if(Road_Type == CROSSING)//?????????????
     {
         Left_Up_Find=0;
         Right_Up_Find=0;
@@ -1106,27 +1196,27 @@ void Cross_Detect(void)
             if(Left_Up_Find ==0 && Right_Up_Find ==0) 
             return ;//?????????????
         }
-        else    return;//Èç¹û×óÓÒ¶ªÏßÊı¹ıÉÙ£¬¾Í²»ÅĞ¶ÏÁË
+        else    return;//?????????????????????ï¿½ï¿½???
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
         {
             down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//??????????????????
-            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//µÚ¶ş¸ö²ÎÊıÒª¾¡Á¿´óÒ»µã£¬·ñÔòÊ®×ÖÔÚÏÂ¹Õµã¶ªÊ§µÄÊ±ºò»á²¹²»ÁËÏß
-            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//?????????????????—¨?????????
-            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//?????????????????—¨?????????
+            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//?????????????????????????????????????????????
+            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//????????????????????????????
+            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//????????????????????????????
             if(Left_Down_Find!=0 && Right_Down_Find!=0)//???????????????
             {
                 Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//??????
                 Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//??????
             }
-            else if(Left_Down_Find == 0 && Right_Down_Find !=0)//§Ò?????
+            else if(Left_Down_Find == 0 && Right_Down_Find !=0)//???????
             {
                 Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???´â??
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???????
             }
-            else if (Left_Down_Find !=0 && Right_Down_Find ==0)//§Ò?????
+            else if (Left_Down_Find !=0 && Right_Down_Find ==0)//???????
             {
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???´â??
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???????
             }
             else if(Left_Down_Find == 0 && Right_Down_Find == 0)//??????
             {
@@ -1138,47 +1228,59 @@ void Cross_Detect(void)
     }
 }
 
-unsigned int Road_Min_Width[2]={188,0};//¼ÇÂ¼ÈüµÀ×îÕ­´¦µÄ¸ß¶ÈºÍ¿í¶È
+unsigned int Road_Min_Width[2]={188,0};//Record the number of rows and width corresponding to the minimum road width
+/**
+ * @brief the function to detect the ramp
+ * @param null
+ * @return null
+ * @attention 1.The principle of this function is to determine the difference between the standard track width and the measured track width
+ * 2. The difference is that this function does not require recording the standard track width, as the minimum track width has already been recorded in the straight track
+ * 3.The area that needs improvement in this function is to record the width of the top 5 rows of the straight track. It is not very good to only record 1 row
+ */
 void Ramp_Detect(void)
 {
-    if(Road_Type!=STRAIGHT_ROAD)    return;//Èç¹û²»ÊÇÖ±µÀ£¬¾Í²»¼ì²â
+    if(Road_Type!=STRAIGHT_ROAD)    return;//misjudgment detection
+    /*Update minimum road width*/
     for(uint8 i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-Search_Stop_Line;i--)
     {
         if(Road_Wide[i]<Road_Min_Width[0])
         {
-            Road_Min_Width[0]=(right_line[i]-left_line[i]);//¼ÇÂ¼ÈüµÀ×îÕ­´¦µÄ¿í¶È
-            Road_Min_Width[1]=i;//¼ÇÂ¼ÈüµÀ×îÕ­´¦µÄ¿í¶ÈµÄ¶ÔÓ¦ĞĞÊı
+            Road_Min_Width[0]=(right_line[i]-left_line[i]);//Obtain the corresponding road width by subtracting
+            Road_Min_Width[1]=i;//Record the number of rows corresponding to the minimum road width
         }
     }
-    /*ÅĞ¶Ï¶ÔÓ¦µÄ¿í¶ÈÊÇ·ñÔ½½ç*/
+    
     uint8 my_count=0;
-    /*´Ó×î¸ßĞĞÍùÏÂµÄ6ĞĞ½øĞĞÅĞ¶Ï*/
+    /*Judging whether it is a ramp based on standard road width*/
     for(uint8 i=IMAGE_HEIGHT-Search_Stop_Line;i<=IMAGE_HEIGHT-Search_Stop_Line+5;i++)
     {
-        if((Road_Wide[i]-Road_Min_Width[0])>=20)//Õâ¸ö²îÖµ¿ÉÒÔĞŞ¸Ä
+        //Starting from the five lines down from the cut-off line, determine if there will be any exceeding the standard line width
+        if((Road_Wide[i]-Road_Min_Width[0])>=20)
         {
             my_count++;
         }
     }
-    if(my_count>=5) Road_Type=RAMP;//Èç¹ûÁ¬Ğø6ĞĞµÄ¿í¶È¶¼´óÓÚ×îÕ­´¦µÄ¿í¶È£¬¾ÍÅĞ¶ÏÎªÆÂµÀ
-    else Road_Type=STRAIGHT_ROAD;//·ñÔò¾ÍÎªÖ±µÀ
+    if(my_count>=5) Road_Type=RAMP;//If the abnormal width of the row exceeds a certain value, it is judged as a ramp
+    else Road_Type=STRAIGHT_ROAD;//Otherwise, the element will remain straight (without any changes)
 }
 /**
- * @brief ¼ì²âºÚ°×Ìø±äµãµÄ¸öÊı
- * @param uint8 row ¼ì²âĞĞÊı uint8 start_column ¼ì²âĞĞÊıµÄÆğÊ¼ÁĞ uint8 end_column ¼ì²âĞĞÊıµÄÖÕÖ¹ÁĞ
- * @return ·µ»ØÊÇ·ñÅĞ¶ÏÎª°ßÂíÏß
+ * @brief Black and white detection function
+ * @param uint8 row : the row that was fixed and counts for pixle 
+ *              uint8 start_colum the beginning column of start count
+ *              uint8 end_column the end coulumn of end count
+ * @return the number of white pixle
  */
 uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 {
-    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//ĞĞÊıÏŞ·ù
-    else if(row<=0) row=0;//ÁĞÊıÏŞ·ù
-    if(row<=5)  return 0;//Èç¹ûĞĞÊıĞ¡ÓÚµÈÓÚ5£¬Ö±½Ó·µ»Ø0
-    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//ÆğÊ¼ÁĞÏŞ·ù
-    else if(start_column<=0) start_column=0;//ÆğÊ¼ÁĞÏŞ·ù
-    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//ÖÕÖ¹ÁĞÏŞ·ù
-    else if(end_column<=0) end_column=0;//ÖÕÖ¹ÁĞÏŞ·ù
-    if(row<=30) row=30;//·ÀÖ¹ºóĞøÊı×éÔ½½ç
-    else if(row>=89)  row=89;//·ÀÖ¹ºóĞøÊı×éÔ½½ç
+    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//???????
+    else if(row<=0) row=0;//???????
+    if(row<=5)  return 0;//???????ï¿½ï¿½?????5????????0
+    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//????????
+    else if(start_column<=0) start_column=0;//????????
+    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//????????
+    else if(end_column<=0) end_column=0;//????????
+    if(row<=30) row=30;//??????????????
+    else if(row>=89)  row=89;//??????????????
     uint8 count=0;
     uint8 count_for_temp=0;
     uint8 first_white_column=0;
@@ -1189,31 +1291,31 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
     {
         // if(mode==1)
         // {
-        //     if(Image_Use[row][i]==WHITE_POINT&&first_white_column==0)//Ö»ÓĞÖØÖÃºó·½¿ÉÖØĞÂ¼ÇÂ¼
+        //     if(Image_Use[row][i]==WHITE_POINT&&first_white_column==0)//??????ï¿½ï¿½????????
         //     {
-        //         first_white_column=i;//¼ÇÂ¼µÚÒ»¸ö°×µãµÄÁĞ×ø±ê
+        //         first_white_column=i;//??????????????????
         //     }
         //     else if(Image_Use[row][i]==BLACK_POINT&&first_black_column==0)
         //     {
-        //         first_black_column=i;//¼ÇÂ¼µÚÒ»¸öºÚµãµÄÁĞ×ø±ê
-        //         if(abs(first_black_column-first_white_column)<=10)//Õâ¸öãĞÖµ¿ÉÒÔµ÷Õû£¬¿ÉÒÔÍ¨¹ıÊäÈërowµÄËùÔÚĞĞ×ª»¯µ½¶ÔÓ¦ÁĞµÄ¾àÀë
+        //         first_black_column=i;//??????????????????
+        //         if(abs(first_black_column-first_white_column)<=10)//??????????????????????????row?????????????????ï¿½ï¿½????
         //         {
-        //             first_white_column=0;//ÔÚ³É¹¦¼ÇÂ¼ºóÖØÖÃ×ø±ê
+        //             first_white_column=0;//?????????????????
         //             first_black_column=0;
         //             count++;
-        //             if(count>=5)   return count;//Èç¹ûºÚ°×Ìø±äµãµÄ¸öÊı´óÓÚµÈÓÚ5£¬Ö±½Ó·µ»Ø
+        //             if(count>=5)   return count;//??????????????????????5????????
         //         }
         //     }
         // }
         // else if(mode==0)
         // {
-        //     if(Image_Use[row][i]==WHITE_POINT)  white_point_count++;//¼ÆËã°×É«µãµÄÖµ
+        //     if(Image_Use[row][i]==WHITE_POINT)  white_point_count++;//??????????
         // }
         
         if(Image_Use[row][i]==WHITE_POINT)  
         {
             // ips114_draw_point(i,row,RGB565_BLUE);
-            white_point_count++;//¼ÆËã°×É«µãµÄÖµ
+            white_point_count++;//??????????
         }
         
     }
@@ -1224,7 +1326,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
     // ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
     if(mode==0)
     {
-        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//Èç¹û°×É«µãµÄ¸öÊıºÍÁĞÊıµÄ²îÖµĞ¡ÓÚµÈÓÚ£¨Õâ¸öãĞÖµÒªĞŞ¸Ä³É¿É×Ô¶¯»¯µ÷ÕûµÄ£©
+        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//??????????????????????ï¿½ï¿½??????????????????????????????
         {
             return 1;
         }
@@ -1233,9 +1335,9 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 }
 
 /**
- * @brief ???????
- * @param ??
- * @return ??
+ * @brief Island detection function
+ * @param none
+ * @return none
  */
 uint8 Island_State=0;
 void Island_Detect(void)
@@ -1249,25 +1351,25 @@ void Island_Detect(void)
 
 }
 /**
- * @brief °ßÂíÏß¼ì²â£¨´ı¸Ä½ø£¬¿ÉÒÔ¼ÆËã³ö¾àÀë°ßÂíÏßµÄ´ó¸ÅµÄ¾àÀë£©
- * @param ÎŞ
- * @return ÎŞ
- * @attention Ò»°ãÔÚÖ±µÀÉÏ½øĞĞ¼ì²â
+ * @brief Zebra crossing detection function
+ * @param none
+ * @return none
+ * @attention none
  */
 void Zebra_Stripes_Detect(void)
 {
-    int continuity_change_right_flag =0;//ÓÒ±ßÏßÁ¬ĞøĞÔ±êÖ¾Î»
-    int continuity_change_left_flag =0;//×ó±ßÏßÁ¬ĞøĞÔ±êÖ¾Î»
-    int monotonicity_change_right_flag =0;//ÓÒ±ßÏßµ¥µ÷ĞÔ±êÖ¾Î»
-    int monotonicity_change_left_flag =0;//×ó±ßÏßµ¥µ÷ĞÔ±êÖ¾Î»
+    int continuity_change_right_flag =0;//Find the position of the left boundary continuity row
+    int continuity_change_left_flag =0;//Find the position of the right boundary continuity row
+    int monotonicity_change_right_flag =0;//Find the position of the left boundary monotonicity row
+    int monotonicity_change_left_flag =0;//Find the position of the right boundary monotonicity row
     
-    continuity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,0);//Çó³ö×ó±ßÏß²»Á¬ĞøĞÔµãµÄĞĞ×ø±ê
-    continuity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,0);//Çó³öÓÒ±ßÏß²»Á¬ĞøµãµÄĞĞ×ø±ê
-    monotonicity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,1);//Çó³ö×ó±ßµ¥µ÷ĞÔ±ä»¯µÄĞĞ×ø±ê
-    monotonicity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,1);//Çó³öÓÒ±ßµ¥µ÷ĞÔ±ä»¯µÄĞĞ×ø±ê
+    continuity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,0);//
+    continuity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,0);//
+    monotonicity_change_left_flag = Continuity_Change_Left(IMAGE_HEIGHT-1,5,1);//
+    monotonicity_change_right_flag = Continuity_Change_Right(IMAGE_HEIGHT-1,5,1);//
     if(continuity_change_left_flag<=30||continuity_change_right_flag<=30)   
     {
-        if(Road_Type==BANMAXIAN) Road_Type=STRAIGHT_ROAD;//´Ó°ßÂíÏßÇĞ»Øµ½Ö±µÀ
+        if(Road_Type==BANMAXIAN) Road_Type=STRAIGHT_ROAD;//If the number of lost wires on both sides is too small, stop judging
         return ;
     }
     // ips114_draw_line(94,60,left_line[continuity_change_left_flag],continuity_change_left_flag,RGB565_RED);
@@ -1280,12 +1382,12 @@ void Zebra_Stripes_Detect(void)
     abs(continuity_change_left_flag-continuity_change_right_flag)<=30 &&continuity_change_left_flag!=0 &&continuity_change_right_flag!=0)
     {
         uint8 count=Black_White_Dump(continuity_change_left_flag-3,left_line[continuity_change_left_flag-3],right_line[continuity_change_left_flag-3]);
-        uint8 higher_flag= (continuity_change_left_flag < continuity_change_right_flag) ? continuity_change_left_flag : continuity_change_right_flag; // Èç¹ûAĞ¡ÓÚB£¬ÄÇÃ´CµÄÖµÎªA£¬·ñÔòCµÄÖµÎªB
-        uint8 lower_flag= (monotonicity_change_left_flag > monotonicity_change_right_flag) ? monotonicity_change_left_flag : monotonicity_change_right_flag; // Èç¹ûA´óÓÚB£¬ÄÇÃ´CµÄÖµÎªA£¬·ñÔòCµÄÖµÎªB
+        uint8 higher_flag= (continuity_change_left_flag < continuity_change_right_flag) ? continuity_change_left_flag : continuity_change_right_flag; // ???Aï¿½ï¿½??B?????C????A??????C????B
+        uint8 lower_flag= (monotonicity_change_left_flag > monotonicity_change_right_flag) ? monotonicity_change_left_flag : monotonicity_change_right_flag; // ???A????B?????C????A??????C????B
         // if(Black_White_Dump((higher_flag+lower_flag)/2,left_line[higher_flag]-5,right_line[higher_flag]-5))
         // {
             //            Road_Type=BANMAXIAN;
-             // if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//°ßÂíÏßÊÇÔÚÖ±µÀµÄ»ù´¡ÉÏ½øĞĞÅĞ¶ÏµÄ£¨µ«ÊÇÒ»¶¨Òª¹éÀà»ØÖ±µÀ£¬µ«ÊÇÖ»ÓÃÅÜÒ»È¦ËÆºõÒ²Ã»±ØÒª£©
+             // if(Road_Type==STRAIGHT_ROAD)    Road_Type=BANMAXIAN;//????????????????????????ï¿½ï¿½??????????????????????????????????????????
         // }
     }
 }
@@ -1296,9 +1398,9 @@ void test2(void)
     if(Road_Type==STRAIGHT_ROAD)    type=1;
     else if(Road_Type==RIGHT_TURN)  type=2;
     else if(Road_Type==LEFT_TURN)   type=3;
-//    else if(Road_Type==CROSSING)    type=4;
-//    else if(Road_Type==BANMAXIAN)   type=5;
-//    if(Road_Type==CROSSING) Cross_Detect();
+    else if(Road_Type==CROSSING)    type=4;
+    else if(Road_Type==BANMAXIAN)   type=5;
+    if(Road_Type==CROSSING) Cross_Detect();
     // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
     // {
     //     ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
@@ -1317,16 +1419,17 @@ void test2(void)
     ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
     ips114_show_uint(188,100,Left_Lost_Time,3);   
     ips114_show_uint(188,120,Right_Lost_Time,3);
+    
 }
 
 /**
- * @brief ??????????????????????
- * @param ??
- * @return ??
+ * @brief the main function of the program
+ * @param none
+ * @return none
  */
 void test(void)
 {
-    uint8 mode=0;//Ä£Ê½Îª1±íÊ¾Îª´ó½ò·¨£¬Ä£Ê½Îª2±íÊ¾Îª±ßÔµ¼ì²âËã×Ó
+    uint8 mode=0;//choose the find line mode
     
     if(mode==1)
     {
@@ -1337,12 +1440,20 @@ void test(void)
     }
     else if(mode==0)
     {
-        uint8 *output_address;//?????????
-        output_address=Scharr_Edge(*mt9v03x_image);//ÕâÒ»ĞĞ³öÁËÎÊÌâ
+        uint8 *output_address;//the address that located in the first pixel of the image
+        output_address=Scharr_Edge(*mt9v03x_image);//use the way of sccan edge to get the image
 		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
         memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-		Simple_Binaryzation(*Image_Use,threshold);/*Íê³ÉÕâÒ»Ì×Í¼Ïñ´¦ÀíÒª9200us£¬Í¦ÂıµÄ£¬µ«ÊÇÎÈÒ»µã£¬ÊÜ¹âÕÕÓ°Ïì¼«Ğ¡*/
-        Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+		Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
+        if(pick_up_mode==0)
+        {
+            Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+        }
+        else//if the state is picking the card
+        {
+            Easy_Filtering(110,60,30,130,5);
+            Search_Center();
+        }
     }	
     test2();
 }

@@ -30,5 +30,6 @@ void Image_denoising(uint8 *bin_image);
 void test(void);
 void Zebra_Stripes_Detect(void);
 void Ramp_Detect(void);
+void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 end_column, uint8 threshold);
 
 #endif

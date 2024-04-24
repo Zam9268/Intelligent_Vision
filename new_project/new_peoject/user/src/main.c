@@ -51,8 +51,14 @@ extern int test_count;
 extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
-extern char str[];//·¢ËÍµÄ×Ö·û´®£¬Îªwhy
-
+extern char str[];//ï¿½ï¿½ï¿½Íµï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½Îªwhy
+extern int last_distance_x;//ç›®æ ‡æ£€æµ‹ç®—æ³•ä¸­å¾—åˆ°çš„ç›®æ ‡xåæ ‡
+extern unsigned int last_distance_y;//å¾—åˆ°çš„yåæ ‡
+extern int now_distance_x;
+extern unsigned int now_distance_y;
+extern unsigned int card_count;//ç›®æ ‡æ£€æµ‹ç®—æ³•ä¸­å¾—åˆ°çš„å¡ç‰‡ç›®æ ‡æ€»æ•°é‡
+extern float center_distance;//ç›®æ ‡æ£€æµ‹ç®—æ³•ä¸­å¾—åˆ°çš„ç›®æ ‡ä¸­å¿ƒè·ç¦»
+extern float last_center_distance;//ç›®æ ‡æ£€æµ‹ç®—æ³•ä¸­å¾—åˆ°çš„ä¸Šä¸€æ¬¡ç›®æ ‡ä¸­å¿ƒè·ç¦»
 
 // ????????????????????????????????????
 // ????? ?????????????????
@@ -65,16 +71,16 @@ extern char str[];//·¢ËÍµÄ×Ö·û´®£¬Îªwhy
 
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_600M); //ÏµÍ³Ê±ÖÓ³õÊ¼»¯
-    CLOCK_EnableClock(kCLOCK_Pit);//pitÊ±ÖÓ³õÊ¼»¯
-    debug_init();                  //debug³õÊ¼»¯
-    system_delay_ms(300);           //ÏµÍ³ÑÓÊ±£¬±£Ö¤³õÊ¼»¯Íê³É
-    // key_init(10);//°´¼ü³õÊ¼»¯
-	// pit_ms_init(PIT_CH3,10);    // Í¨µÀ3³õÊ¼»¯, 10ms£¬ÓÃÓÚ°´¼üÉ¨Ãè
-    // while(1)//³¤°´³¬¹ı1s²Å»áÆô¶¯
+    clock_init(SYSTEM_CLOCK_600M); //ÏµÍ³Ê±ï¿½Ó³ï¿½Ê¼ï¿½ï¿½
+    CLOCK_EnableClock(kCLOCK_Pit);//pitÊ±ï¿½Ó³ï¿½Ê¼ï¿½ï¿½
+    debug_init();                  //debugï¿½ï¿½Ê¼ï¿½ï¿½
+    system_delay_ms(300);           //ÏµÍ³ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½
+    // key_init(10);//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+	// pit_ms_init(PIT_CH3,10);    // Í¨ï¿½ï¿½3ï¿½ï¿½Ê¼ï¿½ï¿½, 10msï¿½ï¿½ï¿½ï¿½ï¿½Ú°ï¿½ï¿½ï¿½É¨ï¿½ï¿½
+    // while(1)//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1sï¿½Å»ï¿½ï¿½ï¿½ï¿½ï¿½
     // {
     //     static unsigned int key_count=0;
-    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //°´¼ü1³¤°´
+    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½
     //     {
     //         key_count++;
     //         key_clear_state(KEY_1);
@@ -84,27 +90,27 @@ int main(void)
     //         break;
     //     }
     // }
-//    PidInit();//PID³õÊ¼»¯
+//    PidInit();//PIDï¿½ï¿½Ê¼ï¿½ï¿½
     
-	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//³õÊ¼»¯´®¿Ú1£¬ÓÃÓÚµÚÒ»¸öartÄ£¿é
-	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-//    PidInit();//ËÙ¶È»·³õÊ¼»¯
-//    Pos_PidInit();//Î»ÖÃÊ½pid³õÊ¼»¯
-//    My_Communication_Init();//Í¨ĞÅ³õÊ¼»¯
-    ips114_init();//ÆÁÄ»³õÊ¼»¯
+//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½Ò»ï¿½ï¿½artÄ£ï¿½ï¿½
+//	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    PidInit();//ï¿½Ù¶È»ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+    Pos_PidInit();//Î»ï¿½ï¿½Ê½pidï¿½ï¿½Ê¼ï¿½ï¿½
+    My_Communication_Init();//Í¨ï¿½Å³ï¿½Ê¼ï¿½ï¿½
+    ips114_init();//ï¿½ï¿½Ä»ï¿½ï¿½Ê¼ï¿½ï¿½
     ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
    
-    interrupt_global_enable(0);    //È«¾ÖÖĞ¶ÏÊ¹ÄÜ
-	ips114_clear();                //ÏÔÊ¾ÆÁÇåÆÁ
-//    Motor_Init();                  //µç»ú³õÊ¼»¯
-    Encoder_Init();                //±àÂëÆ÷³õÊ¼»¯
-//    Camera_Init();                 //ÉãÏñÍ·³õÊ¼»¯
+    interrupt_global_enable(0);    //È«ï¿½ï¿½ï¿½Ğ¶ï¿½Ê¹ï¿½ï¿½
+	ips114_clear();                //ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//    Motor_Init();                  //ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+    Encoder_Init();                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+   Camera_Init();                 //ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½Ê¼ï¿½ï¿½
 //    
-    pit_ms_init(PIT_CH0,15);    // Í¨µÀ0³õÊ¼»¯£¬15ms
-    pit_ms_init(PIT_CH1,10);    // Í¨µÀ1³õÊ¼»¯£¬10ms
-    pit_ms_init(PIT_CH2,15);    // Í¨µÀ2³õÊ¼»¯£¬15ms
+    pit_ms_init(PIT_CH0,15);    // Í¨ï¿½ï¿½0ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½15ms
+    pit_ms_init(PIT_CH1,10);    // Í¨ï¿½ï¿½1ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½10ms
+    pit_ms_init(PIT_CH2,15);    // Í¨ï¿½ï¿½2ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½15ms
 //    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -121,10 +127,11 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-         ips114_show_int(188,20,right_data[0],2);
-         ips114_show_int(188,40,right_data[1],3);
-         ips114_show_int(188,60,right_data[2],2);
-         ips114_show_int(188,80,right_data[3],3);
+		// ips114_show_uint(0,0,1,1);
+        //  ips114_show_int(188,20,now_distance_x,3);
+        //  ips114_show_int(188,40,now_distance_y,3);
+        //  ips114_show_float(0,60,center_distance,3,2);
+        //  ips114_show_int(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
         //     target_motor[i]=1000;
@@ -143,7 +150,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-//		       test();	
+		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
@@ -153,7 +160,7 @@ int main(void)
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-       printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+//       printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
@@ -168,24 +175,24 @@ int main(void)
 }
 
 /**
- * @brief ´®¿Ú1ÖĞ¶Ïº¯Êı
- * @param ÎŞ
- * @return ÎŞ
+ * @brief ï¿½ï¿½ï¿½ï¿½1ï¿½Ğ¶Ïºï¿½ï¿½ï¿½
+ * @param ï¿½ï¿½
+ * @return ï¿½ï¿½
  */
 void UART1_handler(void)
 {
-    uart1_rx_interrupt_handler();//´®¿Ú1½ÓÊÕÖĞ¶Ï´¦Àíº¯Êı
-    get_uartdata();//È¡´®¿ÚÊı¾İ
+    uart1_rx_interrupt_handler();//ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    get_uartdata();//È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
 /**
- * @brief ´®¿Ú4ÖĞ¶Ïº¯Êı
- * @param ÎŞ
- * @return ÎŞ
+ * @brief ï¿½ï¿½ï¿½ï¿½4ï¿½Ğ¶Ïºï¿½ï¿½ï¿½
+ * @param ï¿½ï¿½
+ * @return ï¿½ï¿½
  */
 void UART4_handler(void)
 {
-   uart4_rx_interrupt_handler();//´®¿Ú1½ÓÊÕÖĞ¶Ï´¦Àíº¯Êı
-   get_uartdata();//È¡´®¿ÚÊı¾İ
+   uart4_rx_interrupt_handler();//ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Ğ¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+   get_uartdata();//È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
