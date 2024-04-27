@@ -92,11 +92,11 @@ int main(void)
     // }
 //    PidInit();//PID��ʼ��
     
-//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//��ʼ������1�����ڵ�һ��artģ��
-//	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//��ʼ������1�����ڵ�һ��artģ��
+	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//�ٶȻ���ʼ��
     Pos_PidInit();//λ��ʽpid��ʼ��
-    My_Communication_Init();//ͨ�ų�ʼ��
+   My_Communication_Init();//ͨ�ų�ʼ��
     ips114_init();//��Ļ��ʼ��
     ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
@@ -106,7 +106,7 @@ int main(void)
 	ips114_clear();                //��ʾ������
 //    Motor_Init();                  //�����ʼ��
     Encoder_Init();                //��������ʼ��
-   Camera_Init();                 //����ͷ��ʼ��
+//  Camera_Init();                 //����ͷ��ʼ��
 //    
     pit_ms_init(PIT_CH0,15);    // ͨ��0��ʼ����15ms
     pit_ms_init(PIT_CH1,10);    // ͨ��1��ʼ����10ms
@@ -127,7 +127,7 @@ int main(void)
 	// Speed[1].target_pwm=1500;
     while(1)
     {   
-		// ips114_show_uint(0,0,1,1);
+		ips114_show_uint(0,0,1,1);
         //  ips114_show_int(188,20,now_distance_x,3);
         //  ips114_show_int(188,40,now_distance_y,3);
         //  ips114_show_float(0,60,center_distance,3,2);
@@ -150,7 +150,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		       test();	
+//		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
@@ -160,7 +160,7 @@ int main(void)
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
 		// Read_Encoder();
-//       printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
+//      printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);

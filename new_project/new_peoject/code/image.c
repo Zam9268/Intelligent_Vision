@@ -1,6 +1,7 @@
 #include "image.h"
 #include "stdbool.h"
 
+
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
 /*???????????????*/
@@ -687,7 +688,7 @@ void Outer_Analyse(void)
         if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
         if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
         if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-        my_init_flag++;
+        // my_init_flag++;
     }
     if(Road_Type!=RAMP)
     {
@@ -1186,29 +1187,29 @@ void Lengthen_Right_Boundry(int start, int end)
 void Cross_Detect(void)
 {
     int down_search_start = 0;//the down point of finding the crossing
-    if(Road_Type == CROSSING)//?????????????
+    if(Road_Type == CROSSING)//start to analyze the crossing if the state is corssing
     {
         Left_Up_Find=0;
         Right_Up_Find=0;
-        if(Both_Lost_Time >=15)//???????????????
+        if(Both_Lost_Time >=15)//only find the left and the right point if the both lost time is greater than 15
         {
-            Find_Up_Point(110,6);//??????????????
+            Find_Up_Point(110,6);//find the up point between the row 110 and 6
             if(Left_Up_Find ==0 && Right_Up_Find ==0) 
-            return ;//?????????????
+                return ;//return 0 if the left and the right point are not found
         }
-        else    return;//?????????????????????��???
+        else    return;//return 0 if the both lost time is less than 15(this isn't crossing
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
         {
-            down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//??????????????????
-            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//?????????????????????????????????????????????
-            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//????????????????????????????
-            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//????????????????????????????
-            if(Left_Down_Find!=0 && Right_Down_Find!=0)//???????????????
+            down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//find the max value of the left and the right point
+            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//find the down point between the row IMAGE_HEIGHT -5 and down_search_start+10
+            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//if the left down point is less than the left up point, set the left down point to 0
+            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//if the right down point is less than the right up point, set the right down point to 0
+            if(Left_Down_Find!=0 && Right_Down_Find!=0)//if left down point and the right down point are not found, set the left down point and the right down point to fixed point
             {
-                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//??????
-                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//??????
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//left add line
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//right add line
             }
-            else if(Left_Down_Find == 0 && Right_Down_Find !=0)//???????
+            else if(Left_Down_Find == 0 && Right_Down_Find !=0)
             {
                 Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
                 Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???????
@@ -1272,15 +1273,16 @@ void Ramp_Detect(void)
  */
 uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 {
-    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//???????
-    else if(row<=0) row=0;//???????
-    if(row<=5)  return 0;//???????��?????5????????0
-    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//????????
-    else if(start_column<=0) start_column=0;//????????
-    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//????????
-    else if(end_column<=0) end_column=0;//????????
-    if(row<=30) row=30;//??????????????
-    else if(row>=89)  row=89;//??????????????
+    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//limitation
+    else if(row<=0) row=0;//limitation
+    if(row<=5)  return 0;//if row is too small,stop detecting
+    else if(row>=IMAGE_HEIGHT-1) return 0;//if row is too big,stop detecting
+    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//limitation
+    else if(start_column<=0) start_column=0;//limitation
+    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//limitation
+    else if(end_column<=0) end_column=0;//limitation
+    if(row<=30) row=30;//limitation
+    else if(row>=89)  row=89;//limitation
     uint8 count=0;
     uint8 count_for_temp=0;
     uint8 first_white_column=0;
@@ -1315,7 +1317,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
         if(Image_Use[row][i]==WHITE_POINT)  
         {
             // ips114_draw_point(i,row,RGB565_BLUE);
-            white_point_count++;//??????????
+            white_point_count++;//count the white pixle
         }
         
     }
@@ -1326,7 +1328,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
     // ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
     if(mode==0)
     {
-        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//??????????????????????��??????????????????????????????
+        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//judge by compare the number of white pixle and the width of the road
         {
             return 1;
         }
@@ -1342,13 +1344,12 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 uint8 Island_State=0;
 void Island_Detect(void)
 {
-    static int state1_down_guai[2]={0};//??1????
-    static int state1_up_guai[2]={0};//??1????
+    static int state1_down_guai[2]={0};//record the position of the the down point of the state1
+    static int state1_up_guai[2]={0};//record the position of the the up point of the state1
     int monotonicity_change_left_flag=0;
-    int monotonicity_change_right_flag=0;//??????????
-    int continuity_change_left_flag=0;//????????????
-    int continuity_change_right_flag=0;//????????????
-
+    int monotonicity_change_right_flag=0;//record the position of the left and right boundary monotonicity row
+    int continuity_change_left_flag=0;//record the position of the left boundary continuity row
+    int continuity_change_right_flag=0;//record the position of the right boundary continuity row
 }
 /**
  * @brief Zebra crossing detection function
@@ -1407,18 +1408,26 @@ void test2(void)
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
     // }
-//    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
-//    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+   ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+   ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+   ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+   ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
-	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
+	ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
-    ips114_show_uint(188,20,flag_test,2);
-    ips114_show_uint(188,40,type,3);
-    ips114_show_uint(188,60,right_line[Boundry_Start_Right],3);
-    ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
-    ips114_show_uint(188,100,Left_Lost_Time,3);   
-    ips114_show_uint(188,120,Right_Lost_Time,3);
+    ips114_show_uint(188,15,Left_Up_Find,3);
+    ips114_show_uint(188,30,right_line[Right_Up_Find],3);
+    ips114_show_uint(188,45,Right_Up_Find,3);
+    ips114_show_uint(188,60,left_line[Left_Down_Find],3);
+    ips114_show_uint(188,75,Left_Down_Find,3);
+    ips114_show_uint(188,90,right_line[Right_Down_Find],3);
+    ips114_show_uint(188,105,Right_Down_Find,3);
+    // ips114_show_uint(188,30,type,3);
+    // ips114_show_uint(188,45,right_line[Boundry_Start_Right],3);
+    // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
+    // ips114_show_uint(188,100,Left_Lost_Time,3);   
+    // ips114_show_uint(188,120,Right_Lost_Time,3);
     
 }
 
