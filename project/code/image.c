@@ -1326,14 +1326,14 @@ void test2(void)
  */
 void test(void)
 {
-    uint8 mode=0;//模式为1表示为大津法，模式为2表示为边缘检测算子
+    uint8 mode=1;//模式为1表示为大津法，模式为2表示为边缘检测算子
     
     if(mode==1)
     {
         Image_Change();
         uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
         Simple_Binaryzation(*Image_Use,threshold);
-        Center_line_deal(5,183);//?????????
+        // Center_line_deal(5,183);//?????????
     }
     else if(mode==0)
     {
