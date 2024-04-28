@@ -15,18 +15,22 @@ uint32 servo3_pwm = 0;//三个舵机的pwm值
 
 uint8 step = 1;
 uint8 side_step = 1;
-uint8 arm_flag = 0;//计数完成标志
 uint8 arm_pick_flag = ARM_PICK_DONE; //
 uint8 arm_state_flag = ARM_STATE_OFF;
 
 uint8 one_pick = 0;
 uint8 arm_put_down = 0;//机械臂放下标志位
 
+int finish_count = 0;//中断结束计数位
+int once = 1;
+extern int count;
+extern int arm_flag;
+
 
 void PIT_CH2_Int_Init(uint32 ldval)
 {
-    pit_ms_init(PIT_CH2, ldval);//初始化周期为 ldval ms
-    interrupt_global_enable(0);
+  interrupt_global_enable(0);
+  pit_ms_init(PIT_CH2, ldval);//初始化周期为 ldval ms
 }
 
 void my_pwm_gpio(void)
@@ -57,33 +61,34 @@ void my_pwm_gpio(void)
 // 返回参数     _step_count                 舵机连续控制间隔次数
 // 使用示例     servo_slow_ctrl(90, 90, 100);
 // 备注信息     
-//-------------------------------------------------------------------------------------------------------------------
-void servo_slow_ctrl(uint16 _servo3_angle, uint16 _servo2_angle, float _step_count)
+//------------------------------------------------------------------------------------------------------------------
+void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_count)
 {
-  float servo3_start = (float)servo3_duty, servo2_start = (float)servo2_duty;//设置初始角度值
-  float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count, servo2_step = (float)(_servo2_angle - servo2_duty) / _step_count;//每一步需要执行的步数
+  float servo1_start = (float)servo1_duty, servo2_start = (float)servo2_duty;//设置初始角度值
+  float servo1_step = (float)(_servo1_angle - servo1_duty) / _step_count, servo2_step = (float)(_servo2_angle - servo2_duty) / _step_count;//每一步需要执行的步数
+  finish_count = _step_count;//作为中断结束的条件
   while (1)
   {
     system_delay_ms(5);
 		//fabsf()函数求浮点数绝对值
-    if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//执行角度比设定的单步角度要大
-      servo3_start += servo3_step;
+    if (fabsf(servo1_start - (float)_servo1_angle) >= servo1_step)//执行角度比设定的单步角度要大
+      servo1_start += servo1_step;//更新servo1_start的值
     else//角度比设定的单步角度要小
-      servo3_start = _servo3_angle;//直接更新为目标角度
-		
-    servo1_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//方便debug查看pwm值
-    pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTY将角度转化成对应的pwm
+      servo1_start = _servo1_angle;//直接将servo1_start更新为目标角度
+
+    servo1_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo1_start);//方便debug查看pwm值,并且能输出至isc.c中
+    pwm_set_duty(SERVO_MOTOR_PWM1, servo1_pwm);//SERVO_MOTOR_DUTY将角度转化成对应的pwm
 
     if (fabsf(servo2_start - (float)_servo2_angle) >= servo2_step)
-      servo2_start += servo2_step;
+      servo2_start += servo2_step;//更新servo2_start的值
     else
-      servo2_start = _servo2_angle;
-    servo2_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start);
-    pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start));
+      servo2_start = _servo2_angle;//直接将servo1_start更新为目标角度
+    servo2_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo2_start);//方便debug查看pwm值,并且能输出至isc.c中
+    pwm_set_duty(SERVO_MOTOR_PWM2, servo2_pwm);
 
-    if (fabsf(servo3_start - (float)_servo3_angle) <= 1 && fabsf(servo2_start - (float)_servo2_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
+    if (fabsf(servo1_start - (float)_servo1_angle) <= 1 && fabsf(servo2_start - (float)_servo2_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
     {
-      servo3_duty = (uint16)_servo3_angle;
+      servo1_duty = (uint16)_servo1_angle;
       servo2_duty = (uint16)_servo2_angle;//更新角度
       return;
     }
@@ -135,7 +140,7 @@ void arm_control(uint8 mode)
   case 1:                  //模式1拾取模式
     gpio_set_level(C9, 1); //电磁铁给电
 //	  ips114_show_string( 0 , 40,   "SUCCESS");                          //测试用
-    servo_slow_ctrl(148, 141, 5);
+    servo_slow_ctrl(148, 141, 50);
 	  ips114_show_string( 0 , 40,   "SUCCESS");                          //测试用
     break;
 
@@ -144,29 +149,24 @@ void arm_control(uint8 mode)
     switch (step)
   {
     case 1:
-        servo_slow_ctrl(148, 141, 10);
-        PIT_CH2_Int_Init(10);
-    if(arm_flag==1)//延时计数完成
+        servo_slow_ctrl(148, 141, 50);
+    if(arm_flag == 1)//延时计数完成
     {
+       pit_disable(PIT_CH2);//中断禁止函数
        mode = 2;
        step = 2;
-       arm_flag = 0;//清零计数标志位
     }
     case 2:
     servo_slow_ctrl(22, 141, 50); // 58 110   58  34//动前臂
-    PIT_CH2_Int_Init(10);
     if(arm_flag==1)//延时计数完成
     {
        mode = 2;
        step = 3;
-       arm_flag = 0;
     }
     case 3:
     servo_slow_ctrl(22, 38, 100); //收后臂
-    PIT_CH2_Int_Init(10);
       if(arm_flag==1)//延时计数完成
     {
-       arm_flag = 0;
        step = 0;//清空step
        mode = 3;//跳至默认模式3
     }
@@ -251,7 +251,7 @@ void arm_control(uint8 mode)
     gpio_set_level(C9, 0);//电磁铁断电
     side_servo_slow_ctrl(50, 100); //回归初始状态
     PIT_CH2_Int_Init(100);
-    if(arm_flag==1)//计数延时完成标志
+    if(arm_flag == 1)//计数延时完成标志
     {
        arm_flag = 0;
        side_step = 0;//全部完成，步骤置0
@@ -264,9 +264,19 @@ void arm_control(uint8 mode)
   }
 }
 //*******************************舵机测试函数******************************//
-void text_arm(void)
+void test_arm(void)
 {
 	my_pwm_gpio();//初始化
 	arm_control(2);//测试舵机模式2
-//	ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过
+//  if(once)
+//	{		
+//	   PIT_CH2_Int_Init(10);//开中断
+//	   if(arm_flag == 1)//延时测试成功
+//	 {  
+////		 arm_flag = 0;//重置标志位
+//		 ips114_show_string( 0 , 40,   "SUCCESS");
+//     pit_disable(PIT_CH2);//中断禁止函数
+//     once = 0;//只执行一次		 
+//	 }
+//  }
 }

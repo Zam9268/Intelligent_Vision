@@ -67,10 +67,20 @@ extern float abs_loc_err;
 extern float bili_act_turn;
 extern float loc_kp;
 extern float loc_kd;
+extern float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
+extern float Vx_world, Vy_world;//世界坐标上的x，y
+extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
+extern float Car_dis_x2, Car_dis_y2;
+extern float Turn_Bias;
 
 extern int pid_motor[4];
 
-extern pid_info Pos_turn_pid[4];//
+extern pid_info Pos_turn_pid[4];
+
+extern pid_info Angle_turn_pid;
+
+extern pid_info distance_pid[4];
+
 
 
 void Motor_Init(void);
@@ -89,6 +99,8 @@ void turnloc_pid(void);
 void motor_close_control(void);
 void motor_control(void);
 void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
+void Turn_Angle_PD(float Tar_angle_Z);
+void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 
 #endif
