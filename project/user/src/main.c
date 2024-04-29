@@ -91,8 +91,8 @@ int main(void)
 //    
 //	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//?????????1??????????art???
 //	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-   PidInit();//?????????
-   Pos_PidInit();//?????pid?????
+    PidInit();//?????????
+    Pos_PidInit();//?????pid?????
     My_Communication_Init();//???????
      ips114_init();//????????
      ips114_set_dir(IPS114_PORTAIT);
@@ -126,13 +126,13 @@ int main(void)
     {       
 	// ips114_show_string( 0 , 10,   "SUCCESS");                          // 
     // text_arm();
-	// test();
+	     test();
 
 
 //     Turn_Angle_PD(90.0);//测试成功
 
 
-     Encoder_odometer();//还要转换一下坐标轴
+    //Encoder_odometer();//还要转换一下坐标轴
     //   ips114_show_float(0,20,Speed[1].output,2,2);
     //        Vofa_JustFloat(&vofa1,other_data,5);
     //        uart_write_buffer(UART_1,other_data,5);
@@ -143,6 +143,7 @@ int main(void)
     // printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
     // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].target_speed,-Speed[1].now_speed,Speed[1].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
+       
         printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
        //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);

@@ -36,9 +36,16 @@
 #include "zf_common_headfile.h"
 #include "zf_common_debug.h"
 #include "isr.h"
+#include "control.h"
+#include "take.h"
+#include "imu660ra.h"
 
 
-
+extern pid_info Speed[4]; //串级pid处理结果pid
+extern float loc_target[4]; //串级pid处理结果pid
+extern uint8 step;
+int count = 0;
+int arm_flag = 0;
 
 void CSI_IRQHandler(void)
 {
@@ -50,21 +57,36 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))
     {
-        pit_flag_clear(PIT_CH0);
+		    turnloc_pid();//串级pid
+//	      increment_pid();
+        motor_close_control();
+        pit_flag_clear(PIT_CH0);      
     }
     
     if(pit_flag_get(PIT_CH1))
     {
-        pit_flag_clear(PIT_CH1);
+		//读取编码器
+		Read_Encoder();
+//		Get_angle();
+//		Encoder_odometer();
+    pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        pit_flag_clear(PIT_CH2);
+
+        pit_flag_clear(PIT_CH2);//清除标志位
+        count++;
+        if(count > 1000)//小于设置步数
+        {
+            arm_flag = 1;
+			      count = 0;
+        }
     }
     
     if(pit_flag_get(PIT_CH3))
     {
+		    Drive_Motor();//外环，位置环
         pit_flag_clear(PIT_CH3);
     }
 
@@ -116,8 +138,8 @@ void LPUART4_IRQHandler(void)
 //        flexio_camera_uart_handler();
 //        
 //        gnss_uart_callback();
-		extern void UART4_handler(void);//?????????
-		UART4_handler();
+//		extern void UART4_handler(void);//?????????
+//		UART4_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // 不允许删除
