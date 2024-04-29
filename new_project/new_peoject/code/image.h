@@ -23,6 +23,34 @@ typedef enum{
     BANMAXIAN
 }RoadType;//定义赛道元素类型枚举
 
+//W矩阵（相机坐标转换为现实坐标）[[2.640546, 0.1814492, 11.44669], [6.690424e-07, 1.279371, 226.8421], [1.002053e-09, -0.005289702, 1]]
+#define a11 2.640546
+#define a12 0.1814492
+#define a13 11.44669
+#define a21 6.690424e-07
+#define a22 1.279371
+#define a23 226.8421
+#define a31 1.002053e-09
+#define a32 -0.005289702
+#define a33 1
+#define getx(u,v) (a11*(u)+a12*(v)+a13)
+#define gety(u,v) (a21*(u)+a22*(v)+a23)
+#define getw(u,v) (a31*(u)+a32*(v)+a33)
+//V矩阵（现实坐标转换为相机坐标）
+#define b11 1
+#define b12 0
+#define b13 0
+#define b21 0
+#define b22 1
+#define b23 0
+#define b31 0
+#define b32 0
+#define b33 1
+#define getx_b(u,v) (b11*(u)+b12*(v)+b13)
+#define gety_b(u,v) (b21*(u)+b22*(v)+b23)
+#define getw_b(u,v) (b31*(u)+b32*(v)+b33)
+
+
 float Err_Handle(void);
 void Outer_Analyse(void);
 void Center_line_deal(uint8 start_column,uint8 end_column);
