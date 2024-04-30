@@ -1,5 +1,5 @@
 #include "camera.h"
-
+#include "mymath.h"
 /**
  * @brief 摄像头初始化
  *
@@ -132,7 +132,6 @@ uint8 *Gaussian_Blur(uint8 *image2)
  * @param image4
  * @return uint8*，注意返回的图像仍然为灰度图像，要和Canny算法相结合（也可以和大津法相结合，和大津法相结合效果还挺好？）
  */
-
 uint8 *Sobel_Edge(uint8 *image4)
 {
     static uint8 sobel_image[IMAGE_HEIGHT][IMAGE_WIDTH];//Sobel边缘检测图像数组
@@ -181,8 +180,12 @@ uint8 *Sobel_Edge(uint8 *image4)
  * @param image5
  * @return uint8*
  */
-uint8 *Scharr_Edge(uint8 *image5)
+unsigned int the_max_G=0;//最大梯度值
+unsigned int the_last_max_G=0;//上一次的最大梯度值
+uint8 *Scharr_Edge(uint8 *image5,int threshold)
 {
+    static uint8 begin_flag=0;//开始标志位
+    the_max_G=0;
     static uint8 scharr_image[IMAGE_HEIGHT][IMAGE_WIDTH];//Scharr边缘检测图像数组
     int Gx,Gy,G;//定义梯度的值
     uint8 scharr_fix[9];//3*3卷积核
@@ -209,6 +212,8 @@ uint8 *Scharr_Edge(uint8 *image5)
             Gx=(3*scharr_fix[2]+10*scharr_fix[5]+3*scharr_fix[8])-(3*scharr_fix[0]+10*scharr_fix[3]+3*scharr_fix[6]);//x方向梯度
             Gy=(3*scharr_fix[0]+10*scharr_fix[1]+3*scharr_fix[2])-(3*scharr_fix[6]+10*scharr_fix[7]+3*scharr_fix[8]);//y方向梯度
             G=InvSqrt(Gx*Gx+Gy*Gy);//梯度
+            if(G>the_max_G) the_max_G=G;//最大梯度值
+            if(abs(the_last_max_G-G)>=threshold) G=0;//梯度值小于阈值的置为0
             G=G>255?255:G;//限幅
             scharr_image[i][j]=G;
             image5++;//地址自增
@@ -221,6 +226,7 @@ uint8 *Scharr_Edge(uint8 *image5)
         scharr_image[IMAGE_HEIGHT-1][j]=*(image5);
         image5++;//地址自增
     }
+    the_last_max_G=the_max_G;//更新最大梯度值
     return *scharr_image;
 }
 

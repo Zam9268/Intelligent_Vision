@@ -31,6 +31,7 @@ sensor.set_auto_exposure(True)
 #第七个矩阵[[2.521138, 0.009609879, -6.695834], [0.0188674, 2.169749, -7.622424], [-0.0003950868, -0.006640441, 1]]
 #A4纸参数
 #可以换成其它尺寸
+#总钻风距离车中心底部坐标为225mm
 a4_w = 297
 a4_h = 210
 
@@ -82,10 +83,10 @@ while(True):
         new_img_coordinate.append([53,51])
         new_img_coordinate.append([-59,51])
         new_world_coordinates=[]
-        new_world_coordinates.append([-185,800])
-        new_world_coordinates.append([220,800])
-        new_world_coordinates.append([220,400])
-        new_world_coordinates.append([-185,400])
+        new_world_coordinates.append([-185,575])
+        new_world_coordinates.append([220,575])
+        new_world_coordinates.append([220,175])
+        new_world_coordinates.append([-185,175])
         H= cal_mtx(new_img_coordinate,new_world_coordinates)
         pyb.mdelay(1000)
         print(H)

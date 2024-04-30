@@ -105,9 +105,9 @@ int main(void)
    
     interrupt_global_enable(0);    //????��????
 	ips114_clear();                //?????????
-//    Motor_Init();                  //????????
+    Motor_Init();                  //????????
     Encoder_Init();                //???????????
-   Camera_Init();                 //??????????
+    Camera_Init();                 //??????????
 //    
     pit_ms_init(PIT_CH0,15);    // ???0???????15ms
     pit_ms_init(PIT_CH1,10);    // ???1???????10ms
@@ -130,7 +130,7 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-		ips114_show_uint(0,0,1,1);
+		// ips114_show_uint(0,0,1,1);
         //  ips114_show_int(188,20,now_distance_x,3);
         //  ips114_show_int(188,40,now_distance_y,3);
         //  ips114_show_float(0,60,center_distance,3,2);
@@ -153,7 +153,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-//		       test();	
+		       test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);

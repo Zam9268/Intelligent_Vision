@@ -32,6 +32,8 @@ uint8 flag_test=0;
 uint8 pick_up_mode=0;//when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
 uint8 card_left_up_find_flag=0;//the lef up corner of the card lying on the side of the road is found
 uint8 card_right_up_find_flag=0;//the right up corner of the card lying on the side of the road is found
+uint8 left_up_point[2]={0};//左上角拐点坐标
+uint8 right_up_point[2]={0};//右下角拐点坐标
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
@@ -43,6 +45,7 @@ extern uint32 fifo_data_count;//the number of data lied in the buffer
 extern uint8 data_length;//the length of the data received
 extern uint8 i;//the state of get data,this is unuseful
 extern int count;//this is unuseful
+extern unsigned int the_max_G;
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -402,6 +405,7 @@ uint8 Get_White_Point(uint8 x, uint8 y)
     return white_point; // Return the number of white points
 }
 
+
 /**
  * @brief the function of transforming the camera coordinate to the world coordinate
  * @param camera_x,camera_y: The camera coordinate int *real_x,int *real_y: The real world coordinate
@@ -410,12 +414,12 @@ uint8 Get_White_Point(uint8 x, uint8 y)
  */
 void Pespective_point(int camera_x,int camera_y,int *real_x,int *real_y)
 {
-    float x,y,w;//定义现实3坐标系的坐标
+    float x,y1,w;//定义现实3坐标系的坐标
     x=getx(camera_x,camera_y);
-    y=gety(camera_x,camera_y);
+    y1=gety(camera_x,camera_y);
     w=getw(camera_x,camera_y);
     *real_x=(int)(x/w);
-    *real_y=(int)(y/w);//对坐标进行齐次坐标变换
+    *real_y=(int)(y1/w)+225;//对坐标进行齐次坐标变换，加上y的平移
 }
 
 /**
@@ -551,8 +555,10 @@ void Search_Center(void)
         //     ips114_draw_point(right_count[i],i+lower_black_row,RGB565_BLUE);
         // }
         /*开始寻找边界点*/
-        uint8 left_up_point[2]={0};//左上角拐点坐标
-        uint8 right_up_point[2]={0};//右下角拐点坐标
+        left_up_point[0]=0;
+        left_up_point[1]=0;
+        right_up_point[0]=0;
+        right_up_point[1]=0;//清零计数
         card_left_up_find_flag=0;
         card_right_up_find_flag=0;//初始化角点寻找标志位
         for(uint8 i=0;i<=end_row-lower_black_row;i++)
@@ -577,102 +583,23 @@ void Search_Center(void)
                 break;
             }
         }
-        // ips114_show_uint(188,20,right_up_point[0],3);
-        // ips114_show_uint(188,40,right_up_point[1],3);
-        // ips114_show_uint(188,60,left_up_point[0],3);
-        // ips114_show_uint(188,80,left_up_point[1],3);
-        // ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
-        // ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
-        // ips114_draw_line(0,0,,RGB565_RED);
-        // ips114_draw_line(0,0,right_count[0],right_count[1],RGB565_BLUE);
-        /*
-        uint8 start_x=94,start_y=60;//Starting coordinates
-        for(uint8 i=start_y;i<=IMAGE_HEIGHT-1;i++)
-        {
-            if(Image_Use[i][start_x]==WHITE_POINT&&Image_Use[i-1][start_x]==BLACK_POINT&&Image_Use[i-2][start_x]==BLACK_POINT
-            &&Image_Use[i-5][start_x]==BLACK_POINT&&Image_Use[i-3][start_x-3]==BLACK_POINT&&Image_Use[i-3][start_x+3]==BLACK_POINT
-            &&Get_White_Point(start_x,i)>=5)//Check if the pixel meets certain conditions
-            {
-                start_y=i;//Update the starting y-coordinate
-                break;
-            }
-        }
-        uint8 temp_x=start_x,temp_y=start_y;
-        uint8 search_cout=80;
-        uint8 my_count_left=0,my_count_right=0;
-        while(search_cout--)
-        {
-            for(uint8 i=0;i<=7;i++)//Loop through the directions
-            {
-                if(Image_Use[start_x+deviation[i][0]][start_y+deviation[i][1]]==WHITE_POINT)
-                {
-                    start_x=start_x+deviation[i][0];
-                    start_y=start_y+deviation[i][1];
-                    left_edge[my_count_left].row=start_y;
-                    left_edge[my_count_left].column=start_x;
-                    left_edge[my_count_left].flag=1;
-                    left_edge[my_count_left].grow=i;
-                    my_count_left++;
-                    break;
-                }
-                if(i==7)//If no white pixel is found in any direction
-                {
-                    goto end;
-                }
-            }
-        }
-        end:
-        search_cout=80;
-        while(search_cout--)
-        {
-            for(uint8 i=0;i<=7;i++)
-            {
-                if(Image_Use[temp_x+devitation_right[i][0]][temp_y+devitation_right[i][1]]==WHITE_POINT)
-                {
-                    temp_x=temp_x+devitation_right[i][0];
-                    temp_y=temp_y+devitation_right[i][1];
-                    right_edge[my_count_right].row=temp_y;
-                    right_edge[my_count_right].column=temp_x;
-                    right_edge[my_count_right].flag=1;
-                    right_edge[my_count_right].grow=i;
-                    my_count_right++;
-                    break;
-                }
-                if(i==7)
-                {
-                    goto finnal_end;
-                }
-            }
-			finnal_end: break;
-        }
-        //Calculate the center coordinates of the left and right edges
-        int left_center_x=0;
-		int left_center_y=0;
-		int right_center_x=0;
-		int right_center_y=0;
-        for(uint8 i=5;i<=my_count_left-6;i++)
-        {
-            if(abs(left_edge[i].row-left_edge[i-5].row)<=2&&abs(left_edge[i].column-left_edge[i-5].column)>=4
-            &&abs(left_edge[i].row-left_edge[i+5].row)>=4&&abs(left_edge[i].column-left_edge[i+5].column)<=2)
-            {
-                left_center_x=left_edge[i].column;
-                left_center_y=left_edge[i].row;
-                break;
-            }
-        }
-        for(uint8 i=5;i<=my_count_right-6;i++)
-        {
-            if(abs(right_edge[i].row-right_edge[i-5].row)<=2&&abs(right_edge[i].column-right_edge[i-5].column)>=4
-            &&abs(right_edge[i].row-right_edge[i+5].row)>=4&&abs(right_edge[i].column-right_edge[i+5].column)<=2)
-            {
-                right_center_x=right_edge[i].column;
-                right_center_y=right_edge[i].row;
-                break;
-            }
-        }
-        */
-        /*Perform further operations based on the calculated center coordinates*/
+        ips114_show_uint(188,20,right_up_point[0],3);
+        ips114_show_uint(188,40,right_up_point[1],3);
+        ips114_show_uint(188,60,left_up_point[0],3);
+        ips114_show_uint(188,80,left_up_point[1],3);
+        ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
+        ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
     }
+    if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
+    {
+        int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
+        Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
+        Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
+        ips114_show_uint(188,100,real_left_up_x,3);
+        ips114_show_uint(188,120,real_left_up_y,3);
+        ips114_show_uint(188,140,real_right_up_x,3);
+        ips114_show_uint(188,160,real_right_up_y,3);
+    }  
 }
 
 /**
@@ -688,10 +615,10 @@ void Get_Card_Center_coordinate(int left_up_camera_x,int left_up_camera_y,int ri
     Pespective_point(left_up_camera_x,left_up_camera_y,&left_up_x,&left_up_y);//将相机坐标转换为现实坐标
     Pespective_point(right_up_camera_x,right_up_camera_y,&right_up_x,&right_up_y);//将相机坐标转换为现实坐标
     //注意：卡片为正方形，求中心坐标就需要求出对角线的中心坐标
-    double dx=x2-x1;//计算对应的x坐标差值
-    double dy=y2-y1;//计算对应的y坐标差值
-    *real_x=x1+dx/2.0-dy/2.0;//计算中心坐标的x坐标
-    *real_y=y1+dy/2.0+dx/2.0;//计算中心坐标的y坐标
+    double dx=right_up_x-left_up_x;//计算对应的x坐标差值
+    double dy=right_up_y-left_up_y;//计算对应的y坐标差值
+    *real_x=left_up_x+dx/2.0-dy/2.0;//计算中心坐标的x坐标
+    *real_y=left_up_y+dy/2.0+dx/2.0;//计算中心坐标的y坐标
 }
 
 /**
@@ -1493,21 +1420,22 @@ void test2(void)
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
     // }
-   ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
-   ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
-   ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
-   ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+//    ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+//    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+//    ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+//    ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
-	ips114_show_uint(188,0,left_line[Left_Up_Find],3);
+	// ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
-    ips114_show_uint(188,15,Left_Up_Find,3);
-    ips114_show_uint(188,30,right_line[Right_Up_Find],3);
-    ips114_show_uint(188,45,Right_Up_Find,3);
-    ips114_show_uint(188,60,left_line[Left_Down_Find],3);
-    ips114_show_uint(188,75,Left_Down_Find,3);
-    ips114_show_uint(188,90,right_line[Right_Down_Find],3);
-    ips114_show_uint(188,105,Right_Down_Find,3);
+    // ips114_show_float(188,0,my_err,2,2);
+    // ips114_show_uint(188,15,Left_Up_Find,3);
+    // ips114_show_uint(188,30,right_line[Right_Up_Find],3);
+    // ips114_show_uint(188,45,Right_Up_Find,3);
+    // ips114_show_uint(188,60,left_line[Left_Down_Find],3);
+    // ips114_show_uint(188,75,Left_Down_Find,3);
+    // ips114_show_uint(188,90,right_line[Right_Down_Find],3);
+    // ips114_show_uint(188,105,Right_Down_Find,3);
     // ips114_show_uint(188,30,type,3);
     // ips114_show_uint(188,45,right_line[Boundry_Start_Right],3);
     // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
@@ -1535,10 +1463,11 @@ void test(void)
     else if(mode==0)
     {
         uint8 *output_address;//the address that located in the first pixel of the image
-        output_address=Scharr_Edge(*mt9v03x_image);//use the way of sccan edge to get the image
+        output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
 		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+        ips114_show_uint(188,15,the_max_G,4);
         memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-		Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
+		// Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
         if(pick_up_mode==0)
         {
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
@@ -1547,7 +1476,7 @@ void test(void)
         {
             Easy_Filtering(110,60,30,130,5);
             Search_Center();
-
+            
         }
     }	
     test2();
