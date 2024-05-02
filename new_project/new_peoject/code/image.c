@@ -1,13 +1,15 @@
 #include "image.h"
 #include "stdbool.h"
+#include "stdio.h"
+#include "math.h"
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
-/*???????????????*/
-uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//????????�?????????
-int center[IMAGE_HEIGHT];//???????��?????��????
-uint8 the_maxlen_position;//????????
-uint8 num;//??????????��??
+/*The following are the global variables used, but there may be some that are not used*/
+uint8 left_line[IMAGE_HEIGHT],right_line[IMAGE_HEIGHT];//record the left line's column and the right line's column
+int center[IMAGE_HEIGHT];//record the center line's column
+uint8 the_maxlen_position;//record  the max length of the white column
+uint8 num;//
 uint8 Longest_White_Column_Left[2]; // Record the longest white column in this iteration
 uint8 Last_Longest_White_Column_Left[2]; // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
 uint8 Left_Line_Start, Right_Line_Start; // Starting point of the left and right lines
@@ -29,6 +31,10 @@ uint8 Last_Right_Up_Find=0;//the last time the right up point is found
 uint8 Right_Up_Find = 0; // Finding the right top turning point
 uint8 flag_test=0;
 uint8 pick_up_mode=0;//when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
+uint8 card_left_up_find_flag=0;//the lef up corner of the card lying on the side of the road is found
+uint8 card_right_up_find_flag=0;//the right up corner of the card lying on the side of the road is found
+int left_up_point[2]={0};//左上角拐点坐标
+int right_up_point[2]={0};//右下角拐点坐标
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
@@ -40,6 +46,9 @@ extern uint32 fifo_data_count;//the number of data lied in the buffer
 extern uint8 data_length;//the length of the data received
 extern uint8 i;//the state of get data,this is unuseful
 extern int count;//this is unuseful
+extern unsigned int the_max_G;//the scchar's threshold
+extern int now_distance_x;//the distance made by the target detection algorithm,left is negative,right is positive
+extern unsigned int now_distance_y;//the distance made by the target detection algorithm,up is always positive
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -380,32 +389,68 @@ void Center_line_deal_plus(uint8 start_column,uint8 end_column)
 }
 
 /**
- * @brief ?????????????????????????????
- * @param ??
- * @return ????????8?????????????????????????????????????8-?????
- * @attention ??
+ * @brief Function to get the number of white points in the neighborhood of a given point
+ * @param x, y: The coordinates of the point
+ * @return The number of white points in the 8-neighborhood of the given point
+ * @attention None
  */
-uint8 Get_White_Point(uint8 x,uint8 y)
+uint8 Get_White_Point(uint8 x, uint8 y)
 {
-    if(x<=1|| x>=IMAGE_WIDTH-2|| y<=1|| y>=IMAGE_HEIGHT-2)    return 0;//???????
-    uint8 white_point=0;
-    for(uint8 i=x-1;i<=x+1;i++)
+    if (x <= 1 || x >= IMAGE_WIDTH - 2 || y <= 1 || y >= IMAGE_HEIGHT - 2) return 0; // Check if the point is within the image boundaries
+    uint8 white_point = 0;
+    for (uint8 i = x - 1; i <= x + 1; i++)
     {
-        for(uint8 j=y-1;j<=y+1;j++)
+        for (uint8 j = y - 1; j <= y + 1; j++)
         {
-            if(Image_Use[j][i]==WHITE_POINT)    white_point++;
+            if (Image_Use[j][i] == WHITE_POINT) white_point++;
         }
     }
-    return white_point;//???????????????????
+    return white_point; // Return the number of white points
+}
+
+
+/**
+ * @brief the function of transforming the camera coordinate to the world coordinate
+ * @param camera_x,camera_y: The camera coordinate int *real_x,int *real_y: The real world coordinate
+ * @return no,but in fact the point is stored in the real world coordinate
+ * @attention no
+ */
+void Pespective_point(int camera_x,int camera_y,int *real_x,int *real_y)
+{
+    float x,y1,w;//定义现实3坐标系的坐标
+    /*先进行坐标系的转换*/
+    camera_x-=94;
+    camera_y=120-camera_y;
+    x=getx(camera_x,camera_y);
+    y1=gety(camera_x,camera_y);
+    w=getw(camera_x,camera_y);
+    *real_x=(int)(x/w);
+    *real_y=(int)(y1/w)+215;//对坐标进行齐次坐标变换，加上y的平移
 }
 
 /**
- * @brief ???????????????
- * @param ??
- * @return ??
- * @attention ??
+ * @brief the function of transforming the world coordinate to the camera coordinate
+ * @param real_x,real_y: The real world coordinate  int *camera_x,int *camera_y: The camera coordinate
+ * @return no,but in fact the point is stored in the camera coordinate
+ * @attention the martix is the inverse matrix of the matrix in the function Pespective_point
  */
-void Border_Car_Detect(void)
+void Pespective_point_b(int real_x,int real_y,int *camera_x,int *camera_y)
+{
+    float x,y,w;//定义相机3坐标系的坐标
+    x=getx_b(real_x,real_y);
+    y=gety_b(real_x,real_y);
+    w=getw_b(real_x,real_y);
+    *camera_x=(int)(x/w);
+    *camera_y=(int)(y/w);//对坐标进行齐次坐标变换
+}
+
+/**
+ * @brief the function of detecting the card lying near the road
+ * @param no
+ * @return no
+ * @attention no
+ */
+void Border_Card_Detect(void)
 {
     
 }
@@ -516,8 +561,12 @@ void Search_Center(void)
         //     ips114_draw_point(right_count[i],i+lower_black_row,RGB565_BLUE);
         // }
         /*开始寻找边界点*/
-        uint8 left_up_point[2]={0};//左上角拐点坐标
-        uint8 right_up_point[2]={0};//右下角拐点坐标
+        left_up_point[0]=0;
+        left_up_point[1]=0;
+        right_up_point[0]=0;
+        right_up_point[1]=0;//清零计数
+        card_left_up_find_flag=0;
+        card_right_up_find_flag=0;//初始化角点寻找标志位
         for(uint8 i=0;i<=end_row-lower_black_row;i++)
         {
             if(abs(left_count[i]-left_count[i+1])<=1&&abs(left_count[i]-left_count[i+2])<=2&&abs(left_count[i]-left_count[i+3])<=3&&
@@ -525,6 +574,7 @@ void Search_Center(void)
             {
                 left_up_point[0]=left_count[i];//记录列坐标
                 left_up_point[1]=i+lower_black_row;//记录行坐标
+                card_left_up_find_flag=1;//找到对应的拐点
                 break;
             }
         }
@@ -535,107 +585,96 @@ void Search_Center(void)
             {
                 right_up_point[0]=right_count[i];//记录列坐标
                 right_up_point[1]=i+lower_black_row;//记录行坐标
+                card_right_up_find_flag=1;//找到对应的拐点
                 break;
             }
         }
-        ips114_show_uint(188,20,right_up_point[0],3);
-        ips114_show_uint(188,40,right_up_point[1],3);
-        ips114_show_uint(188,60,left_up_point[0],3);
-        ips114_show_uint(188,80,left_up_point[1],3);
+        // ips114_show_uint(188,75,right_up_point[0],3);
+        // ips114_show_uint(188,90,right_up_point[1],3);
+        // ips114_show_uint(188,105,left_up_point[0],3);
+        // ips114_show_uint(188,120,left_up_point[1],3);
         ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
         ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
-        // ips114_draw_line(0,0,,RGB565_RED);
-        // ips114_draw_line(0,0,right_count[0],right_count[1],RGB565_BLUE);
-        /*
-        uint8 start_x=94,start_y=60;//Starting coordinates
-        for(uint8 i=start_y;i<=IMAGE_HEIGHT-1;i++)
-        {
-            if(Image_Use[i][start_x]==WHITE_POINT&&Image_Use[i-1][start_x]==BLACK_POINT&&Image_Use[i-2][start_x]==BLACK_POINT
-            &&Image_Use[i-5][start_x]==BLACK_POINT&&Image_Use[i-3][start_x-3]==BLACK_POINT&&Image_Use[i-3][start_x+3]==BLACK_POINT
-            &&Get_White_Point(start_x,i)>=5)//Check if the pixel meets certain conditions
-            {
-                start_y=i;//Update the starting y-coordinate
-                break;
-            }
-        }
-        uint8 temp_x=start_x,temp_y=start_y;
-        uint8 search_cout=80;
-        uint8 my_count_left=0,my_count_right=0;
-        while(search_cout--)
-        {
-            for(uint8 i=0;i<=7;i++)//Loop through the directions
-            {
-                if(Image_Use[start_x+deviation[i][0]][start_y+deviation[i][1]]==WHITE_POINT)
-                {
-                    start_x=start_x+deviation[i][0];
-                    start_y=start_y+deviation[i][1];
-                    left_edge[my_count_left].row=start_y;
-                    left_edge[my_count_left].column=start_x;
-                    left_edge[my_count_left].flag=1;
-                    left_edge[my_count_left].grow=i;
-                    my_count_left++;
-                    break;
-                }
-                if(i==7)//If no white pixel is found in any direction
-                {
-                    goto end;
-                }
-            }
-        }
-        end:
-        search_cout=80;
-        while(search_cout--)
-        {
-            for(uint8 i=0;i<=7;i++)
-            {
-                if(Image_Use[temp_x+devitation_right[i][0]][temp_y+devitation_right[i][1]]==WHITE_POINT)
-                {
-                    temp_x=temp_x+devitation_right[i][0];
-                    temp_y=temp_y+devitation_right[i][1];
-                    right_edge[my_count_right].row=temp_y;
-                    right_edge[my_count_right].column=temp_x;
-                    right_edge[my_count_right].flag=1;
-                    right_edge[my_count_right].grow=i;
-                    my_count_right++;
-                    break;
-                }
-                if(i==7)
-                {
-                    goto finnal_end;
-                }
-            }
-			finnal_end: break;
-        }
-        
-        //Calculate the center coordinates of the left and right edges
-        int left_center_x=0;
-		int left_center_y=0;
-		int right_center_x=0;
-		int right_center_y=0;
-        for(uint8 i=5;i<=my_count_left-6;i++)
-        {
-            if(abs(left_edge[i].row-left_edge[i-5].row)<=2&&abs(left_edge[i].column-left_edge[i-5].column)>=4
-            &&abs(left_edge[i].row-left_edge[i+5].row)>=4&&abs(left_edge[i].column-left_edge[i+5].column)<=2)
-            {
-                left_center_x=left_edge[i].column;
-                left_center_y=left_edge[i].row;
-                break;
-            }
-        }
-        for(uint8 i=5;i<=my_count_right-6;i++)
-        {
-            if(abs(right_edge[i].row-right_edge[i-5].row)<=2&&abs(right_edge[i].column-right_edge[i-5].column)>=4
-            &&abs(right_edge[i].row-right_edge[i+5].row)>=4&&abs(right_edge[i].column-right_edge[i+5].column)<=2)
-            {
-                right_center_x=right_edge[i].column;
-                right_center_y=right_edge[i].row;
-                break;
-            }
-        }
-        */
-        
-        /*Perform further operations based on the calculated center coordinates*/
     }
+    if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
+    {
+        int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
+        int center_x,center_y;
+        Get_Card_Center_coordinate(left_up_point[0],left_up_point[1],right_up_point[0],right_up_point[1],&center_x,&center_y);
+        Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
+        Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
+        // ips114_show_int(188,75,real_left_up_x,3);
+        // ips114_show_int(188,90,real_left_up_y,3);
+        // ips114_show_int(188,105,real_right_up_x,3);
+        // ips114_show_int(188,120,real_right_up_y,3);
+    }  
+}
+
+/**
+ * @brief the function of get card center coordinate
+ * @param int left_up_camera: the coordinate of left up point,
+ *        int right_up_camera: the coordinate of right up point,
+ *        int *real_x: the real x coordinate, int *real_y: the real y coordinate
+ * @return None,in fact the canshu is transform by pointer
+ */
+void Get_Card_Center_coordinate(int left_up_camera_x,int left_up_camera_y,int right_up_camera_x,int right_up_camera_y,int *real_x,int *real_y)
+{
+    int x1=0,y1=0,x2=0,y2=0;//定义左上和右上角的现实坐标
+    Pespective_point(left_up_camera_x,left_up_camera_y,&x1,&y1);//将相机坐标转换为现实坐标
+    Pespective_point(right_up_camera_x,right_up_camera_y,&x2,&y2);//将相机坐标转换为现实坐标
+    //注意：卡片为正方形，求中心坐标就需要求出对角线的中心坐标
+    
+    /*用数学坐标系求解*/
+    // int x0=(x1+x2)/2;
+    // int y0=(y1+y2)/2;//计算中点坐标
+    // double a = pow((x2 - x1), 2) / pow((y2 - y1), 2) + 1;
+    // double b = -2 * x0 * pow((x2 - x1), 2) / pow((y2 - y1), 2) + 2 * x0;
+    // double c = pow(x0, 2) * pow((x2 - x1), 2) / pow((y2 - y1), 2) - pow(x0, 2) - 3600;
+    // double delta = pow(b, 2) - 4 * a * c;//计算判别式
+    // double my_x1,my_x2,my_y1,my_y2;
+    // if(delta < 0)   return;//如果判别式小于0，说明无解
+    // else
+    // {
+    //      my_x1 = (-b + sqrt(delta)) / (2 * a);
+    //      my_x2 = (-b - sqrt(delta)) / (2 * a);
+
+    //      my_y1 = (-(x1 - x0) * (x2 - x1) / (y2 - y1)) + y0;
+    //      my_y2 = (-(x2 - x0) * (x2 - x1) / (y2 - y1)) + y0;
+    // }
+    // if(abs(my_y1<=100)||abs(my_y2)<=100) return;
+    // if((pow(my_x1,2)+pow(my_y1,2))>(pow(my_x2,2)+pow(my_y2,2)))//取坐标相近的点
+    // {
+    //     *real_x=my_x1;
+    //     *real_y=my_y1;
+    // }
+    // else
+    // {
+    //     *real_x=my_x2;
+    //     *real_y=my_y2;
+    // }
+    // 计算右下顶点的坐标
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double len = sqrt(dx*dx + dy*dy);
+    double ratio = 120.0 / len;
+    double x3 = x2 - dy * ratio;
+    double y3 = y2 - dx * ratio;
+
+    // 计算中心点的坐标
+    // // 计算中心点的坐标
+    *real_x = (x1 + x3) / 2.0;
+    *real_y = (y1 + y3) / 2.0;
+    /*display*/
+    // ips114_show_int(188,0,left_up_x,3);
+    // ips114_show_int(188,15,left_up_y,3);
+    // ips114_show_int(188,30,right_up_x,3);
+    // ips114_show_int(188,45,right_up_y,3);
+    ips114_show_int(188,0,*real_x,3);
+    ips114_show_int(188,15,*real_y,3);
+    ips114_show_int(188,60,x1,3);
+    ips114_show_int(188,75,y1,3);
+    ips114_show_int(188,90,x2,3);
+    ips114_show_int(188,105,y2,3);
 }
 
 /**
@@ -687,7 +726,7 @@ void Outer_Analyse(void)
         if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
         if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
         if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
-        my_init_flag++;
+        // my_init_flag++;
     }
     if(Road_Type!=RAMP)
     {
@@ -1018,41 +1057,71 @@ void Right_Add_Line(int x1, int y1, int x2, int y2)
 }
 
 /**
- * @brief ????????????????????
- * @param int start, int end ??????????????????
- * @return ????????????? Right_Down_Find=0;Left_Down_Find=0;
+ * @brief the function of find the down point
+ * @param int start, int end start row and the end row
+ * @return the row index of Right_Down_Find, Left_Down_Find=0;
  */
 void Find_Down_Point(int start, int end)
 {
     int i,t;
     Right_Down_Find=0;
-    Left_Down_Find=0;//???????????????
-    if(start<end)//?????start?????end
+    Left_Down_Find=0;//initialize the left down find
+    if(start<end)//start must bigger than end
     {
         t=start;
         start=end;
         end=t;
     }
-    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//????5???????????????????????????????
-    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//?????????
+    if(start >=IMAGE_HEIGHT-1-5)    start=IMAGE_HEIGHT-1-5;//limitation
+    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//limitation
     if(end<=5)  end=5;
     /*???????????????????????????????????????????????????*/
     for(i=start;i>=end;i--)
     {
         if(Left_Down_Find == 0 && abs(left_line[i]-left_line[i+1])<=5 && abs(left_line[i+1]-left_line[i+2])<=5 &&
         abs(left_line[i+2]-left_line[i+3])<=5 && abs(left_line[i]-left_line[i-2])>=8 && abs(left_line[i]-left_line[i-2])>=15 &&
-        abs(left_line[i]-left_line[i-4])>=15)//????????
+        abs(left_line[i]-left_line[i-4])>=15)//the column must have big change
         {
-            Left_Down_Find=i;//????????????
+            Left_Down_Find=i;//record the left down find
         }
         if(Right_Down_Find == 0 &&abs(right_line[i]-right_line[i+1])<=5 && abs(right_line[i+1]-right_line[i+2])<=5 &&
         abs(right_line[i+2]-right_line[i+3])<=5 && abs(right_line[i]-right_line[i-2])>=8 && abs(right_line[i]-right_line[i-2])>=15
-        &&abs(left_line[i]-left_line[i-4])>=15)//?????????????????????��?????
+        &&abs(left_line[i]-left_line[i-4])>=15)//the column must have big change
         {
-            Right_Down_Find=i;//????????????
+            Right_Down_Find=i;//record the right down find
         }
-        if(Left_Down_Find!=0 && Right_Down_Find!=0)    break;//????????????
+        if(Left_Down_Find!=0 && Right_Down_Find!=0)    break;//if both find, then break to lessen the comsume time
     }
+}
+
+/**
+ * @brief the function of caculate the inverse of a matrix
+ * @param start: the starting index, end: the ending index
+ * @return null
+ */
+void inverse(double a[3][3], double inv[3][3]) 
+{
+    double det = a[0][0] * (a[1][1] * a[2][2] - a[2][1] * a[1][2]) -
+                 a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
+                 a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+
+    if (det == 0) 
+    {
+        printf("The matrix is not invertible.\n");
+        return;
+    }
+
+    double invdet = 1 / det;
+
+    inv[0][0] =  (a[1][1] * a[2][2] - a[2][1] * a[1][2]) * invdet;
+    inv[0][1] = -(a[0][1] * a[2][2] - a[0][2] * a[2][1]) * invdet;
+    inv[0][2] =  (a[0][1] * a[1][2] - a[0][2] * a[1][1]) * invdet;
+    inv[1][0] = -(a[1][0] * a[2][2] - a[1][2] * a[2][0]) * invdet;
+    inv[1][1] =  (a[0][0] * a[2][2] - a[0][2] * a[2][0]) * invdet;
+    inv[1][2] = -(a[0][0] * a[1][2] - a[1][0] * a[0][2]) * invdet;
+    inv[2][0] =  (a[1][0] * a[2][1] - a[2][0] * a[1][1]) * invdet;
+    inv[2][1] = -(a[0][0] * a[2][1] - a[2][0] * a[0][1]) * invdet;
+    inv[2][2] =  (a[0][0] * a[1][1] - a[1][0] * a[0][1]) * invdet;
 }
 
 /**
@@ -1062,23 +1131,23 @@ void Find_Down_Point(int start, int end)
  */
 void Find_Up_Point(int start, int end)
 {
-    int i,t;//???????
+    int i,t;//temp variable
     if(Left_Down_Find!=0)   Last_Left_Up_Find=Left_Down_Find;//initialize the last left up find
     if(Right_Down_Find!=0)  Last_Right_Up_Find=Right_Down_Find;//initialize the last right up find
     Left_Up_Find=0;//
-    Right_Up_Find=0;//???????????????
+    Right_Up_Find=0;//initialize the left up find and right up find
 
-    if(start<end)//?????start?????end
+    if(start<end)//start must bigger than end
     {
         t=start;
         start=end;
         end=t;
     }
-    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//?????????
+    if(end<=IMAGE_HEIGHT-Search_Stop_Line)  end=IMAGE_HEIGHT-Search_Stop_Line;//limitation
     if(end<=5)  end=5;
-    if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//????5???????????????????????????????
-    /*????????????????????????????????????????*/
-    for(i=end;i<=start;i++)//???????????????? ??????????????i++????????????��
+    if(start >=IMAGE_HEIGHT -1-5)   start=IMAGE_HEIGHT-1-5;//limitation
+    /*begin to find*/
+    for(i=end;i<=start;i++)//find the point by continuity
     {
         if(Left_Up_Find == 0 && 
         abs(left_line[i]-left_line[i-1])<=5 &&
@@ -1086,9 +1155,9 @@ void Find_Up_Point(int start, int end)
         abs(left_line[i-2] -  left_line[i-3])<=5 &&
         abs(left_line[i] - left_line[i+2])>=8 &&
         abs(left_line[i] - left_line[i+3])>=15 &&
-        abs(left_line[i] - left_line[i+4])>=15)//????????
+        abs(left_line[i] - left_line[i+4])>=15)//the threshold of the continuity
         {
-            Left_Up_Find=i;//????????????
+            Left_Up_Find=i;//record it
         }
         if(Right_Up_Find == 0 &&
         abs(right_line[i]-right_line[i-1]) <=5 &&
@@ -1096,13 +1165,13 @@ void Find_Up_Point(int start, int end)
         abs(right_line[i-2]-right_line[i-3]) <=5 &&
         abs(right_line[i]-right_line[i+2]) >=8 &&
         abs(right_line[i]-right_line[i+3]) >=15 &&
-        abs(right_line[i]-right_line[i+4]) >=15)//????????
+        abs(right_line[i]-right_line[i+4]) >=15)//the threshold of the continuity
         {
-            Right_Up_Find=i;//????????????
+            Right_Up_Find=i;//record it
         }
-        if(Left_Up_Find!=0 && Right_Up_Find!=0)    break;//????????????
+        if(Left_Up_Find!=0 && Right_Up_Find!=0)    break;//if both find, then break to lessen the comsume time
     }
-    if(abs(Right_Up_Find-Left_Up_Find)>=30&&left_line[Left_Up_Find]>=right_line[Right_Up_Find])//?????????????????????????
+    if(abs(Right_Up_Find-Left_Up_Find)>=30&&left_line[Left_Up_Find]>=right_line[Right_Up_Find])//if the difference between the left and the right point is greater than 30
     {
         Right_Up_Find=0;
         Left_Up_Find=0;
@@ -1186,45 +1255,44 @@ void Lengthen_Right_Boundry(int start, int end)
 void Cross_Detect(void)
 {
     int down_search_start = 0;//the down point of finding the crossing
-    if(Road_Type == CROSSING)//?????????????
+    if(Road_Type == CROSSING)//start to analyze the crossing if the state is corssing
     {
         Left_Up_Find=0;
         Right_Up_Find=0;
-        if(Both_Lost_Time >=15)//???????????????
+        if(Both_Lost_Time >=15)//only find the left and the right point if the both lost time is greater than 15
         {
-            Find_Up_Point(110,6);//??????????????
+            Find_Up_Point(110,6);//find the up point between the row 110 and 6
             if(Left_Up_Find ==0 && Right_Up_Find ==0) 
-            return ;//?????????????
+                return ;//return 0 if the left and the right point are not found
         }
-        else    return;//?????????????????????��???
+        else    return;//return 0 if the both lost time is less than 15(this isn't crossing
         if(Left_Up_Find !=0 &&Right_Up_Find !=0)
         {
-            down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//??????????????????
-            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//?????????????????????????????????????????????
-            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//????????????????????????????
-            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//????????????????????????????
-            if(Left_Down_Find!=0 && Right_Down_Find!=0)//???????????????
+            down_search_start=Left_Up_Find>Right_Up_Find? Left_Up_Find:Right_Up_Find;//find the max value of the left and the right point
+            Find_Down_Point(IMAGE_HEIGHT -5,down_search_start+10);//find the down point between the row IMAGE_HEIGHT -5 and down_search_start+10
+            if(Left_Down_Find<=Left_Up_Find)    Left_Down_Find=0;//if the left down point is less than the left up point, set the left down point to 0
+            if(Right_Down_Find<=Right_Up_Find)  Right_Down_Find=0;//if the right down point is less than the right up point, set the right down point to 0
+            if(Left_Down_Find!=0 && Right_Down_Find!=0)//if left down point and the right down point are not found, set the left down point and the right down point to fixed point
             {
-                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//??????
-                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//??????
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//left add line
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//right add line
             }
-            else if(Left_Down_Find == 0 && Right_Down_Find !=0)//???????
+            else if(Left_Down_Find == 0 && Right_Down_Find !=0)
             {
-                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//???????
+                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//lengthen the left boundary
+                Right_Add_Line(right_line[Right_Up_Find],Right_Up_Find,right_line[Right_Down_Find],Right_Down_Find);//right add line
             }
-            else if (Left_Down_Find !=0 && Right_Down_Find ==0)//???????
+            else if (Left_Down_Find !=0 && Right_Down_Find ==0)//if the left down point if found and the right down point if not find
             {
-                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//???????
+                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//lengthen the right boundary
+                Left_Add_Line(left_line[Left_Up_Find],Left_Up_Find,left_line[Left_Down_Find],Left_Down_Find);//left add line
             }
-            else if(Left_Down_Find == 0 && Right_Down_Find == 0)//??????
+            else if(Left_Down_Find == 0 && Right_Down_Find == 0)//if the left down point and the right down point are not found
             {
-                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//???????
-                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//???????
+                Lengthen_Left_Boundry(Left_Up_Find-1,IMAGE_HEIGHT-1);//lengthen the left boundary
+                Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//lengthen the right boundary
             }
         }
-    // }
     }
 }
 
@@ -1272,15 +1340,16 @@ void Ramp_Detect(void)
  */
 uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 {
-    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//???????
-    else if(row<=0) row=0;//???????
-    if(row<=5)  return 0;//???????��?????5????????0
-    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//????????
-    else if(start_column<=0) start_column=0;//????????
-    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//????????
-    else if(end_column<=0) end_column=0;//????????
-    if(row<=30) row=30;//??????????????
-    else if(row>=89)  row=89;//??????????????
+    if(row>=IMAGE_HEIGHT-1) row=IMAGE_HEIGHT-1;//limitation
+    else if(row<=0) row=0;//limitation
+    if(row<=5)  return 0;//if row is too small,stop detecting
+    else if(row>=IMAGE_HEIGHT-1) return 0;//if row is too big,stop detecting
+    if(start_column>=IMAGE_WIDTH-1) start_column=IMAGE_WIDTH-1;//limitation
+    else if(start_column<=0) start_column=0;//limitation
+    if(end_column>=IMAGE_WIDTH-1) end_column=IMAGE_WIDTH-1;//limitation
+    else if(end_column<=0) end_column=0;//limitation
+    if(row<=30) row=30;//limitation
+    else if(row>=89)  row=89;//limitation
     uint8 count=0;
     uint8 count_for_temp=0;
     uint8 first_white_column=0;
@@ -1315,7 +1384,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
         if(Image_Use[row][i]==WHITE_POINT)  
         {
             // ips114_draw_point(i,row,RGB565_BLUE);
-            white_point_count++;//??????????
+            white_point_count++;//count the white pixle
         }
         
     }
@@ -1326,7 +1395,7 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
     // ips114_show_uint(188,120,abs(white_point_count-(end_column-start_column)),3);
     if(mode==0)
     {
-        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//??????????????????????��??????????????????????????????
+        if(abs(white_point_count-(end_column-start_column))<=Zebra[row])//judge by compare the number of white pixle and the width of the road
         {
             return 1;
         }
@@ -1342,13 +1411,12 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
 uint8 Island_State=0;
 void Island_Detect(void)
 {
-    static int state1_down_guai[2]={0};//??1????
-    static int state1_up_guai[2]={0};//??1????
+    static int state1_down_guai[2]={0};//record the position of the the down point of the state1
+    static int state1_up_guai[2]={0};//record the position of the the up point of the state1
     int monotonicity_change_left_flag=0;
-    int monotonicity_change_right_flag=0;//??????????
-    int continuity_change_left_flag=0;//????????????
-    int continuity_change_right_flag=0;//????????????
-
+    int monotonicity_change_right_flag=0;//record the position of the left and right boundary monotonicity row
+    int continuity_change_left_flag=0;//record the position of the left boundary continuity row
+    int continuity_change_right_flag=0;//record the position of the right boundary continuity row
 }
 /**
  * @brief Zebra crossing detection function
@@ -1406,20 +1474,50 @@ void test2(void)
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
+    // }
+    if(type==4)
+    {
+        ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+        ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+        ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+        ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+        int real_left_down_x,real_left_down_y;
+        Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
+        ips114_show_int(188,0,real_left_down_x,3);
+        ips114_show_int(188,15,real_left_down_y,3);
+        int real_right_down_x,real_right_down_y;
+        Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
+        ips114_show_int(188,30,real_right_down_x,4);
+        ips114_show_int(188,45,real_right_down_y,4);
     }
-//    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
-//    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+   
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
-	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
+	// ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
-    ips114_show_float(188, 20, my_err, 2, 3);
-    // ips114_show_uint(188,20,flag_test,2);
-    ips114_show_uint(188,40,type,3);
-    ips114_show_uint(188,60,right_line[Boundry_Start_Right],3);
-    ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
-    ips114_show_uint(188,100,Left_Lost_Time,3);   
-    ips114_show_uint(188,120,Right_Lost_Time,3);
+    /*
+    
+    */
+    // ips114_show_float(188,0,my_err,2,2);
+    // ips114_show_uint(188,75,Longest_White_Column_Left[1],3);
+    // ips114_show_uint(188,30,type,3);
+    // ips114_show_uint(188,45,Left_Lost_Time,3);
+    // ips114_show_uint(188,60,Right_Lost_Time,3);
+    // ips114_show_int(188,75,now_distance_x,3);
+    // ips114_show_int(188,90,now_distance_y,3);
+    // ips114_show_uint(188,15,Left_Up_Find,3);
+    // ips114_show_uint(188,30,right_line[Right_Up_Find],3);
+    // ips114_show_uint(188,45,Right_Up_Find,3);
+    // ips114_show_uint(188,60,left_line[Left_Down_Find],3);
+    // ips114_show_uint(188,75,Left_Down_Find,3);
+    // ips114_show_uint(188,90,right_line[Right_Down_Find],3);
+    // ips114_show_uint(188,105,Right_Down_Find,3);
+    // ips114_show_uint(188,30,type,3);
+    // ips114_show_uint(188,45,right_line[Boundry_Start_Right],3);
+    // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
+    // ips114_show_uint(188,100,Left_Lost_Time,3);   
+    // ips114_show_uint(188,120,Right_Lost_Time,3);
+    
 }
 
 /**
@@ -1441,18 +1539,24 @@ void test(void)
     else if(mode==0)
     {
         uint8 *output_address;//the address that located in the first pixel of the image
-        output_address=Scharr_Edge(*mt9v03x_image);//use the way of sccan edge to get the image
-		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
-        memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-		Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
-        if(pick_up_mode==0)
+        /*attention:if the threshold in the*/
+        if(pick_up_mode==1)
         {
+            output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
+		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+            // ips114_show_uint(188,15,the_max_G,4);
+            memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
             Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {
-            Easy_Filtering(110,60,30,130,4);
+            output_address=Scharr_Edge_Simple(*mt9v03x_image);//use the way of sccan edge to get the image
+		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+            // ips114_show_uint(188,15,the_max_G,4);
+            memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
+            Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
+            Easy_Filtering(110,60,30,130,5);
             Search_Center();
         }
     }	

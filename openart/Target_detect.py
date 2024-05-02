@@ -33,7 +33,7 @@ net = tf.load(face_detect)
 uart = UART(2, baudrate=115200)#初始化UART2，波特率设置为115200
 Inverse_Perspective=[[2.470379, -0.07614613, 2.842548], [0.1327659, 2.200122, -9.900547], [-0.0001568885, -0.007409661, 1]]
 #上面这个是最新的逆透视矩阵，效果非常好
-fixed_deta_y=220  #y坐标上的偏差
+fixed_deta_y=410  #y坐标上的偏差
 while(True):
     clock.tick()
     img = sensor.snapshot()

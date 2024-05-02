@@ -31,11 +31,11 @@ sensor.set_auto_exposure(True)
 #第七个矩阵[[2.521138, 0.009609879, -6.695834], [0.0188674, 2.169749, -7.622424], [-0.0003950868, -0.006640441, 1]]
 #A4纸参数
 #可以换成其它尺寸
+#总钻风距离车中心底部坐标为225mm
 a4_w = 297
 a4_h = 210
 
-world_coordinates = [[(-a4_w/2),0],[a4_w/2,0],[(a4_w/2),a4_h],[(-a4_w/2),a4_h]]#这个顺序是错的，坐标对不上
-new_world_coordinates=[[(-a4_w/2),a4_h],[(a4_w/2),a4_h],[a4_w/2,0],[(-a4_w/2),0]]#新的坐标顺序
+world_coordinates = [[(-a4_w/2),0],[a4_w/2,0],[(a4_w/2),a4_h],[(-a4_w/2),a4_h]]#这个顺序是对的，坐标对的上
 #定义A4纸在现实世界的4个坐标，分别对应A4纸的4个角的现实坐标
 
 #返回透视矩阵
@@ -75,8 +75,21 @@ def cal_mtx(UV: np.array, XY: np.array) -> np.array:
 
 show =True
 while(True):
-    img = sensor.snapshot()
-
+    while(True):
+        img = sensor.snapshot()
+        new_img_coordinate=[]
+        new_img_coordinate.append([-43,104])
+        new_img_coordinate.append([26,104])
+        new_img_coordinate.append([53,51])
+        new_img_coordinate.append([-59,51])
+        new_world_coordinates=[]
+        new_world_coordinates.append([-185,575])
+        new_world_coordinates.append([220,575])
+        new_world_coordinates.append([220,175])
+        new_world_coordinates.append([-185,175])
+        H= cal_mtx(new_img_coordinate,new_world_coordinates)
+        pyb.mdelay(1000)
+        print(H)
     for r in img.find_rects(threshold = 20000):#这个矩形包含的像素点至少为20000个，防止矩形误判
         img.draw_rectangle(r.rect(), color = (255, 0, 0))#画出矩形,这个矩形框为红色
         img_coordinate=[]#定义一个列表，用来存放矩形的四个角的坐标
