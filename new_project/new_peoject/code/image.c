@@ -1401,19 +1401,20 @@ void test2(void)
     else if(Road_Type==CROSSING)    type=4;
     else if(Road_Type==BANMAXIAN)   type=5;
     if(Road_Type==CROSSING) Cross_Detect();
-    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    // {
-    //     ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+    {
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
-    // }
+    }
 //    ips114_draw_line(158,80,left_line[Left_Up_Find],Left_Up_Find,RGB565_PURPLE);
 //    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	ips114_show_uint(188,0,Longest_White_Column_Left[1],3);
     float my_err=Err_Handle();
-    ips114_show_uint(188,20,flag_test,2);
+    ips114_show_float(188, 20, my_err, 2, 3);
+    // ips114_show_uint(188,20,flag_test,2);
     ips114_show_uint(188,40,type,3);
     ips114_show_uint(188,60,right_line[Boundry_Start_Right],3);
     ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
@@ -1447,10 +1448,11 @@ void test(void)
         if(pick_up_mode==0)
         {
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+            Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {
-            Easy_Filtering(110,60,30,130,5);
+            Easy_Filtering(110,60,30,130,4);
             Search_Center();
         }
     }	

@@ -72,10 +72,10 @@ extern float last_center_distance;//目标检测算法中得到的上一次目标中心距离
 
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_600M); //?????????
-    CLOCK_EnableClock(kCLOCK_Pit);//pit???????
-    debug_init();                  //debug?????
-    system_delay_ms(300);           //??????????????????
+    clock_init(SYSTEM_CLOCK_600M); //设置时钟频率
+    CLOCK_EnableClock(kCLOCK_Pit);//pit
+    debug_init();                  //debug初始化
+    system_delay_ms(300);           //
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -92,37 +92,39 @@ int main(void)
     //     }
     // }
 //    PidInit();//PID?????
-    
-//	  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//?????????1??????????art???
-//	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    PidInit();//?????????
-    Pos_PidInit();//λ???pid?????
-    My_Communication_Init();//???????
-    ips114_init();//????????
+//----------函数(参数)初始化---------------------//    
+	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//串口1初始化，用于art
+	 Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    PidInit();//增量式pid初始化
+    Pos_PidInit();//位置式pid初始化
+//    My_Communication_Init();//通信初始化
+
+    ips114_init();//屏幕初始化
     ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
-   
-    interrupt_global_enable(0);    //????ж????
-	ips114_clear();                //?????????
-//    Motor_Init();                  //????????
-    Encoder_Init();                //???????????
-   Camera_Init();                 //??????????
-//    
-    pit_ms_init(PIT_CH0,15);    // ???0???????15ms
-    pit_ms_init(PIT_CH1,10);    // ???1???????10ms
-    pit_ms_init(PIT_CH2,15);    // ???2???????15ms
+  //----------模块初始化--------------------// 
+	ips114_clear();                //清屏
+    Motor_Init();                  //电机初始化
+    Encoder_Init();                //编码器初始化
+    Camera_Init();                 //摄像头初始化
+    my_pwm_gpio();                 //机械臂初始化，一定要加!!!烧过一次舵机了
+//------------中断初始化-------------------//    
+    pit_ms_init(PIT_CH0,15);    // 15ms
+    pit_ms_init(PIT_CH1,10);    // 10ms
+    pit_ms_init(PIT_CH2,15);    // 15ms
+	pit_ms_init(PIT_CH3,35);    // 25ms
 //    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
 
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     Last_Longest_White_Column_Left[1]=94;
-	  Longest_White_Column_Left[1]=94;
-	  Speed[3].target_speed=40.0;
+	Longest_White_Column_Left[1]=94;
+	Speed[3].target_speed=40.0;
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
-    Speed[0].target_speed=40.0;//右前轮
+    Speed[0].target_speed=40.0;//左前轮
 
     
     interrupt_global_enable(0);    //全局中断使能
@@ -153,7 +155,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		       test();	
+		        test();	
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
@@ -166,7 +168,7 @@ int main(void)
 //       printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
-        // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
+//        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
        //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
