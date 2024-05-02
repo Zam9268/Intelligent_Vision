@@ -59,7 +59,7 @@ extern int now_distance_x;
 extern unsigned int now_distance_y;
 extern unsigned int card_count;//Ŀ�����㷨�еõ��Ŀ�ƬĿ��������
 extern float center_distance;//Ŀ�����㷨�еõ���Ŀ�����ľ���
-extern float last_center_distance;//Ŀ�����㷨�еõ�����һ��Ŀ�����ľ���
+extern float last_center_distance;//Ŀ�����㷨�еõ�����һ��Ŀ�����ľ���'
 
 // ????????????????????????????????????
 // ????? ?????????????????
@@ -76,6 +76,7 @@ int main(void)
     CLOCK_EnableClock(kCLOCK_Pit);//pit???????
     debug_init();                  //debug?????
     system_delay_ms(300);           //??????????????????
+//	system_delay_ms(8000);           //??????????????????
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -118,8 +119,8 @@ int main(void)
 
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     Last_Longest_White_Column_Left[1]=94;
-	  Longest_White_Column_Left[1]=94;
-	  Speed[3].target_speed=40.0;
+	Longest_White_Column_Left[1]=94;
+	Speed[3].target_speed=40.0;
     Speed[2].target_speed=40.0;
     Speed[1].target_speed=40.0;
     Speed[0].target_speed=40.0;//��ǰ��
@@ -130,7 +131,6 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-		// ips114_show_uint(0,0,1,1);
         //  ips114_show_int(188,20,now_distance_x,3);
         //  ips114_show_int(188,40,now_distance_y,3);
         //  ips114_show_float(0,60,center_distance,3,2);
@@ -162,18 +162,14 @@ int main(void)
 //        uart_write_buffer(UART_8,other_data,5);
 //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
-		// Read_Encoder();
 //      printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
-       //printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
 		// ips114_show_int(    0 , 40,   encoder[2],         4);
 		// ips114_show_int(   0 , 60,   encoder[3],         4);
-        
-        // ?????????????????????
     }
 }
 

@@ -60,5 +60,6 @@ void test(void);
 void Zebra_Stripes_Detect(void);
 void Ramp_Detect(void);
 void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 end_column, uint8 threshold);
+void Get_Card_Center_coordinate(int left_up_camera_x,int left_up_camera_y,int right_up_camera_x,int right_up_camera_y,int *real_x,int *real_y);
 
 #endif

@@ -21,5 +21,5 @@ uint8 *Sobel_Edge(uint8 *image4);
 uint8 *Gaussian_Blur(uint8 *image2);
 uint8 *Mean_Binaryzation(uint8 *image1);
 void Simple_Binaryzation(uint8 *image0,uint8 threshold);
-
+uint8 *Scharr_Edge_Simple(uint8 *image10);
 #endif

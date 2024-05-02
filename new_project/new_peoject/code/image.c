@@ -1,6 +1,7 @@
 #include "image.h"
 #include "stdbool.h"
 #include "stdio.h"
+#include "math.h"
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 
@@ -32,8 +33,8 @@ uint8 flag_test=0;
 uint8 pick_up_mode=0;//when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
 uint8 card_left_up_find_flag=0;//the lef up corner of the card lying on the side of the road is found
 uint8 card_right_up_find_flag=0;//the right up corner of the card lying on the side of the road is found
-uint8 left_up_point[2]={0};//左上角拐点坐标
-uint8 right_up_point[2]={0};//右下角拐点坐标
+int left_up_point[2]={0};//左上角拐点坐标
+int right_up_point[2]={0};//右下角拐点坐标
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
@@ -45,7 +46,9 @@ extern uint32 fifo_data_count;//the number of data lied in the buffer
 extern uint8 data_length;//the length of the data received
 extern uint8 i;//the state of get data,this is unuseful
 extern int count;//this is unuseful
-extern unsigned int the_max_G;
+extern unsigned int the_max_G;//the scchar's threshold
+extern int now_distance_x;//the distance made by the target detection algorithm,left is negative,right is positive
+extern unsigned int now_distance_y;//the distance made by the target detection algorithm,up is always positive
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT]=
 {
@@ -415,11 +418,14 @@ uint8 Get_White_Point(uint8 x, uint8 y)
 void Pespective_point(int camera_x,int camera_y,int *real_x,int *real_y)
 {
     float x,y1,w;//定义现实3坐标系的坐标
+    /*先进行坐标系的转换*/
+    camera_x-=94;
+    camera_y=120-camera_y;
     x=getx(camera_x,camera_y);
     y1=gety(camera_x,camera_y);
     w=getw(camera_x,camera_y);
     *real_x=(int)(x/w);
-    *real_y=(int)(y1/w)+225;//对坐标进行齐次坐标变换，加上y的平移
+    *real_y=(int)(y1/w)+215;//对坐标进行齐次坐标变换，加上y的平移
 }
 
 /**
@@ -583,22 +589,24 @@ void Search_Center(void)
                 break;
             }
         }
-        ips114_show_uint(188,20,right_up_point[0],3);
-        ips114_show_uint(188,40,right_up_point[1],3);
-        ips114_show_uint(188,60,left_up_point[0],3);
-        ips114_show_uint(188,80,left_up_point[1],3);
+        // ips114_show_uint(188,75,right_up_point[0],3);
+        // ips114_show_uint(188,90,right_up_point[1],3);
+        // ips114_show_uint(188,105,left_up_point[0],3);
+        // ips114_show_uint(188,120,left_up_point[1],3);
         ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
         ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
     }
     if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
     {
         int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
+        int center_x,center_y;
+        Get_Card_Center_coordinate(left_up_point[0],left_up_point[1],right_up_point[0],right_up_point[1],&center_x,&center_y);
         Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
         Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
-        ips114_show_uint(188,100,real_left_up_x,3);
-        ips114_show_uint(188,120,real_left_up_y,3);
-        ips114_show_uint(188,140,real_right_up_x,3);
-        ips114_show_uint(188,160,real_right_up_y,3);
+        // ips114_show_int(188,75,real_left_up_x,3);
+        // ips114_show_int(188,90,real_left_up_y,3);
+        // ips114_show_int(188,105,real_right_up_x,3);
+        // ips114_show_int(188,120,real_right_up_y,3);
     }  
 }
 
@@ -611,14 +619,62 @@ void Search_Center(void)
  */
 void Get_Card_Center_coordinate(int left_up_camera_x,int left_up_camera_y,int right_up_camera_x,int right_up_camera_y,int *real_x,int *real_y)
 {
-    int left_up_x=0,left_up_y=0,right_up_x=0,right_up_y=0;//定义左上和右上角的现实坐标
-    Pespective_point(left_up_camera_x,left_up_camera_y,&left_up_x,&left_up_y);//将相机坐标转换为现实坐标
-    Pespective_point(right_up_camera_x,right_up_camera_y,&right_up_x,&right_up_y);//将相机坐标转换为现实坐标
+    int x1=0,y1=0,x2=0,y2=0;//定义左上和右上角的现实坐标
+    Pespective_point(left_up_camera_x,left_up_camera_y,&x1,&y1);//将相机坐标转换为现实坐标
+    Pespective_point(right_up_camera_x,right_up_camera_y,&x2,&y2);//将相机坐标转换为现实坐标
     //注意：卡片为正方形，求中心坐标就需要求出对角线的中心坐标
-    double dx=right_up_x-left_up_x;//计算对应的x坐标差值
-    double dy=right_up_y-left_up_y;//计算对应的y坐标差值
-    *real_x=left_up_x+dx/2.0-dy/2.0;//计算中心坐标的x坐标
-    *real_y=left_up_y+dy/2.0+dx/2.0;//计算中心坐标的y坐标
+    
+    /*用数学坐标系求解*/
+    // int x0=(x1+x2)/2;
+    // int y0=(y1+y2)/2;//计算中点坐标
+    // double a = pow((x2 - x1), 2) / pow((y2 - y1), 2) + 1;
+    // double b = -2 * x0 * pow((x2 - x1), 2) / pow((y2 - y1), 2) + 2 * x0;
+    // double c = pow(x0, 2) * pow((x2 - x1), 2) / pow((y2 - y1), 2) - pow(x0, 2) - 3600;
+    // double delta = pow(b, 2) - 4 * a * c;//计算判别式
+    // double my_x1,my_x2,my_y1,my_y2;
+    // if(delta < 0)   return;//如果判别式小于0，说明无解
+    // else
+    // {
+    //      my_x1 = (-b + sqrt(delta)) / (2 * a);
+    //      my_x2 = (-b - sqrt(delta)) / (2 * a);
+
+    //      my_y1 = (-(x1 - x0) * (x2 - x1) / (y2 - y1)) + y0;
+    //      my_y2 = (-(x2 - x0) * (x2 - x1) / (y2 - y1)) + y0;
+    // }
+    // if(abs(my_y1<=100)||abs(my_y2)<=100) return;
+    // if((pow(my_x1,2)+pow(my_y1,2))>(pow(my_x2,2)+pow(my_y2,2)))//取坐标相近的点
+    // {
+    //     *real_x=my_x1;
+    //     *real_y=my_y1;
+    // }
+    // else
+    // {
+    //     *real_x=my_x2;
+    //     *real_y=my_y2;
+    // }
+    // 计算右下顶点的坐标
+    double dx = x2 - x1;
+    double dy = y2 - y1;
+    double len = sqrt(dx*dx + dy*dy);
+    double ratio = 120.0 / len;
+    double x3 = x2 - dy * ratio;
+    double y3 = y2 - dx * ratio;
+
+    // 计算中心点的坐标
+    // // 计算中心点的坐标
+    *real_x = (x1 + x3) / 2.0;
+    *real_y = (y1 + y3) / 2.0;
+    /*display*/
+    // ips114_show_int(188,0,left_up_x,3);
+    // ips114_show_int(188,15,left_up_y,3);
+    // ips114_show_int(188,30,right_up_x,3);
+    // ips114_show_int(188,45,right_up_y,3);
+    ips114_show_int(188,0,*real_x,3);
+    ips114_show_int(188,15,*real_y,3);
+    ips114_show_int(188,60,x1,3);
+    ips114_show_int(188,75,y1,3);
+    ips114_show_int(188,90,x2,3);
+    ips114_show_int(188,105,y2,3);
 }
 
 /**
@@ -1237,7 +1293,6 @@ void Cross_Detect(void)
                 Lengthen_Right_Boundry(Right_Up_Find-1,IMAGE_HEIGHT-1);//lengthen the right boundary
             }
         }
-    // }
     }
 }
 
@@ -1420,15 +1475,36 @@ void test2(void)
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
     // }
-//    ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
-//    ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
-//    ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
-//    ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+    if(type==4)
+    {
+        ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+        ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+        ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+        ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+        int real_left_down_x,real_left_down_y;
+        Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
+        ips114_show_int(188,0,real_left_down_x,3);
+        ips114_show_int(188,15,real_left_down_y,3);
+        int real_right_down_x,real_right_down_y;
+        Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
+        ips114_show_int(188,30,real_right_down_x,4);
+        ips114_show_int(188,45,real_right_down_y,4);
+    }
+   
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
 	// ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
+    /*
+    
+    */
     // ips114_show_float(188,0,my_err,2,2);
+    // ips114_show_uint(188,75,Longest_White_Column_Left[1],3);
+    // ips114_show_uint(188,30,type,3);
+    // ips114_show_uint(188,45,Left_Lost_Time,3);
+    // ips114_show_uint(188,60,Right_Lost_Time,3);
+    // ips114_show_int(188,75,now_distance_x,3);
+    // ips114_show_int(188,90,now_distance_y,3);
     // ips114_show_uint(188,15,Left_Up_Find,3);
     // ips114_show_uint(188,30,right_line[Right_Up_Find],3);
     // ips114_show_uint(188,45,Right_Up_Find,3);
@@ -1463,20 +1539,24 @@ void test(void)
     else if(mode==0)
     {
         uint8 *output_address;//the address that located in the first pixel of the image
-        output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
-		uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
-        ips114_show_uint(188,15,the_max_G,4);
-        memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-		// Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
-        if(pick_up_mode==0)
+        /*attention:if the threshold in the*/
+        if(pick_up_mode==1)
         {
+            output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
+		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+            // ips114_show_uint(188,15,the_max_G,4);
+            memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
         }
         else//if the state is picking the card
         {
+            output_address=Scharr_Edge_Simple(*mt9v03x_image);//use the way of sccan edge to get the image
+		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+            // ips114_show_uint(188,15,the_max_G,4);
+            memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
+            Simple_Binaryzation(*Image_Use,threshold);/*to handle one picture,it needs nearly 9000us*/
             Easy_Filtering(110,60,30,130,5);
             Search_Center();
-            
         }
     }	
     test2();
