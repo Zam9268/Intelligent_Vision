@@ -1474,7 +1474,7 @@ void test2(void)
         ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
-    // }
+     }
     if(type==4)
     {
         ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
@@ -1495,6 +1495,10 @@ void test2(void)
 	ips114_displayimage03x(*Image_Use,188,120);
 	// ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
+    extern int now_distance_x;
+    extern unsigned int now_distance_y;
+    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
+    ips114_show_int(0,30,now_distance_y,3);//显示卡片x坐标
     /*
     
     */
@@ -1540,7 +1544,7 @@ void test(void)
     {
         uint8 *output_address;//the address that located in the first pixel of the image
         /*attention:if the threshold in the*/
-        if(pick_up_mode==1)
+        if(pick_up_mode==0)
         {
             output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
 		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);

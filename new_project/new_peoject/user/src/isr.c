@@ -57,8 +57,9 @@ void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))
     {
-		    turnloc_pid();//串级pid
-//	      increment_pid();
+        //读取编码器
+		Read_Encoder();
+        increment_pid();
         motor_close_control();
         pit_flag_clear(PIT_CH0);      
     }
@@ -66,10 +67,10 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH1))
     {
 		//读取编码器
-		Read_Encoder();
-//		Get_angle();
-//		Encoder_odometer();
-    pit_flag_clear(PIT_CH1);
+		// Read_Encoder();
+		Get_angle();
+		Encoder_odometer();
+        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
@@ -85,8 +86,10 @@ void PIT_IRQHandler(void)
     }
     
     if(pit_flag_get(PIT_CH3))
-    {
-		    Drive_Motor();//外环，位置环
+     {
+	// 	      Drive_Motor();//外环，位置环
+//			  float Err_Handle(void);
+//        car_run(Err_Handle());//为target_speed赋值
         pit_flag_clear(PIT_CH3);
     }
 

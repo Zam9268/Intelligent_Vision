@@ -4,11 +4,20 @@
 #include "camera.h"
 #include "image.h"
 #include "math.h"
-#define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
-#define Turn_limiting  40//转向速度输出限幅
+#include "communication.h"
+
 float Car_H = 0.8;//车长
 float Car_W = 0.6; // 车宽
 float Vx,Vy,Vz;
+float err_watch;
+float move_error;
+float turn_error;
+float angle;
+float ahead_speed = 40.0;//直行速度
+float correct_x_speed = 0;//x轴上的修正速度
+float correct_z_speed = 0;//z轴上的修正速度
+float correct_move_speed = 3;//x轴修正速度
+float correct_turn_speed = 7;//x轴修正速度
 int encoder[4];   // 编码器数据
 int encoder_test[4];//暂时代替的编码器数值
 float encoder_sum[4];//编码器累加值
@@ -30,13 +39,16 @@ float turn_error = 2;//可接受的角度误差
 float Turn_KP = 0.2;   //角度PID//
 float Turn_KD = 0.0; //角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
-float final = 0.0F; //一阶低通滤波参数
-float a = 0.25F;    //一阶低通滤波
 float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 float Vx_world, Vy_world;//世界坐标上的x，y
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias; 
+float dis_kp = 1.0;//距离环kp
+float dis_kd = 0.5;//距离环kd
+float dis_change[4];//存放距离环输出结果
+float card_y[10];//存放卡片y轴坐标
+int only_one = 1;
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -45,6 +57,9 @@ pid_info Speed[4]; // 增量式pid
 pid_info Angle_turn_pid;//角度环pid
 
 pid_info distance_pid[4];//距离环pid
+
+float last_error1=0.0f;
+
 /**
  * @brief 电机初始化
  * @param  无
@@ -136,8 +151,86 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
   Speed[1].target_speed = -target_Vx + target_Vy - target_Vz * (Car_H/2 + Car_W/2);//左后
   Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2);//右前
   Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); //右后
+}     
+/**
+ * @brief 停车
+ * @param 中线误差
+ * @return 无
+ */
+void car_stop(void)
+{
+    Speed[0].target_speed=0;//左前轮
+    Speed[1].target_speed=0;
+    Speed[2].target_speed=0;
+    Speed[3].target_speed=0;
 }
-         
+/**
+ * @brief 对速度预处理
+ * @param 中线误差
+ * @return 无
+ */
+void car_run(void)
+{
+	err_watch = Err_Handle();
+	move_error = err_watch/94.0f; //横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
+
+  float kp = 1.0f,kd = 0.2f;
+    
+  angle = kp * move_error + kd* (move_error-last_error1); //原本的+=，现在改成=      2024/3/26
+	
+	if (angle > 1.0f)
+	{
+		angle = 1.0f;
+	}
+	else if (angle < -1.0f)
+	{
+		angle = -1.0f;
+	}
+    
+  last_error1=move_error;//记录下上次误差
+
+  Speed[0].target_speed = 30*(1-angle);
+  Speed[1].target_speed = 30*(1-angle);
+  Speed[2].target_speed = 30*(1+angle);
+  Speed[3].target_speed = 30*(1+angle);
+  // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
+}
+
+/**
+ * @brief 距离环pid初始化
+ * @param 无 对kp kd赋值
+ * @return 无
+ */
+void Distance_PidInit(void)
+{
+  for(uint8 i=0;i<4;i++)
+  {
+    distance_pid[i].target_speed = 0.00;
+    distance_pid[i].target_pwm = 0;
+    distance_pid[i].kp        = 0.00;
+    distance_pid[i].ki        = 0.00;
+    distance_pid[i].kd        = 0.00;
+    distance_pid[i].error     = 0.00;
+    distance_pid[i].lastError = 0.00;
+    distance_pid[i].dError    = 0.00;
+    distance_pid[i].output    = 0.00;
+    distance_pid[i].output_last   = 0.00;
+    distance_pid[i].xuhao=i; //序号
+  }
+
+  //左前
+  distance_pid[0].kp = dis_kp;   //0.5对应速度40   0.3//  3/30   1.0  24/4/4纯p
+  distance_pid[0].kd = dis_kd;   //0.5对应速度40   0.8           
+  //左后
+  distance_pid[1].kp = dis_kp;
+  distance_pid[1].kd = dis_kd;
+  //右前
+  distance_pid[2].kp = dis_kp;
+  distance_pid[2].kd = dis_kd;
+  //右后
+  distance_pid[3].kp = dis_kp;
+  distance_pid[3].kd = dis_kd; //PD赋值
+}
 /**
  * @brief 位置式pid初始化
  * @param 无
@@ -172,7 +265,6 @@ void Pos_PidInit(void)
   //右后
   Pos_turn_pid[3].kp = loc_kp;
   Pos_turn_pid[3].kd = loc_kd; //PD赋值
-
 }
 
 void PidInit(void)
@@ -267,7 +359,7 @@ void Set_Distence_m(float distance)
 }
 
 /**************************************************************************
-位置环处理，直线上可使用
+位置环处理，直线上可使用,基本弃用
 **************************************************************************/
 void Drive_Motor()
 {
@@ -311,7 +403,7 @@ void Drive_Motor()
     loc_target[2] = RF_Target* 0.2636719 *PI /100;
     loc_target[3] = RB_Target* 0.2636719 *PI /100;//单位为cm/s
 
-  if(Turn_Left_flag==1)//左转，或者在中线右侧
+      if(Turn_Left_flag==1)//左转，或者在中线右侧
   {
     loc_target[0] = -fabsf(loc_target[0]);
     loc_target[1] = -fabsf(loc_target[1]);
@@ -334,19 +426,9 @@ void Drive_Motor()
 	for(uint8 i=0;i<4;i++)
 	{
 	loc_target[i] = PIDInfo_Limit(loc_target[i], 40.0);//输出速度限幅
+	}   
 	}
-  }
 }
-/**
- * @brief 对pwm的一阶低通滤波
- * @param 无
- * @return 无
- */
-float first_order_filter(float data)
-	{
-		final = a*data + (1-a)*final;    //两次数据乘上各自的权重
-		return  (final);
- }
 /**
  * @brief 串级pid 双环(位置环+速度环)
  * @param 无
@@ -536,31 +618,80 @@ float PIDInfo_Limit(float Value, float MaxValue)
  * @brief 距离环
  *
  * @param pid_info *pid 距离pid结构体
- * @param actual_distance 实际距离
- * @param target_distance 目标距离，单位均为cm
+ * @param delta_distance 实际距离
  * @return float
  */
-float Distance_pid(pid_info *pid, float actual_distance, float target_distance)
+float Distance_pid(pid_info *pid,int target_distance, int actual_distance)
 {
     pid->error = target_distance - actual_distance; //Calculate the deviation //
     
     pid->output = pid->kp * pid->error + pid->kd * (pid->error-pid->lastError);//距离闭环输出一个速度
-    
+    pid->output = PIDInfo_Limit(pid->output, Distance_output); //输出速度限幅，mm/s
     pid->lastError=pid->error;//记录下上次误差
 	
     return pid->output;
 }
-
 /**
- * @brief 定向移动
- *
- * @param distance移动距离
- * @param direction移动方向
+ * @brief 距离环处理
+ * @param 
+ * @param 
  * @return 无
  */
-
-void move_dir(float distance, float direction)
+void Distance_Motor(void)
 {
-
-
+  for(int i=0; i<4; i++)
+  {
+    dis_change[i] = Distance_pid(&distance_pid[i], card_y[0]/10, (int)Car_dis_y);//距离环输出速度 cm/s
+    if(dis_change[i]<2 && dis_change[i]>-3 && card_y[0]-Car_dis_y<10)//强制归零条件
+    {
+      dis_change[i] = 0;//强制归零
+    }
+  }
+}
+/**
+ * @brief 串级pid 双环(距离环+速度环)
+ * @param 期望为距离环的输入
+ * @return 无
+ */
+void inc_dis_pid(void)
+{
+  for(uint8 i=0;i<4;i++)
+  {
+      //速度环
+      Speed[i].lastlastError = Speed[i].lastError;  //记录上上次输出
+      Speed[i].lastError = Speed[i].error;          //记录上次输出
+      Speed[i].error =  dis_change[i]- Speed[i].now_speed; //改变目标速度
+      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //输出pwm
+      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+  }
+}
+/**
+ * @brief 小车模式切换，打包函数
+ * @param mode为模式选择
+ * @param 
+ * @return 无
+ */
+void car_findcard(uint8 mode)
+{
+  if(mode==Car_go)//寻迹模式，对赛道进行处理,默认设置
+  {
+    // Drive_Motor();//外环，位置环，对位置进行处理
+    // turnloc_pid();//串级pid
+    car_run();//正常巡线模式
+    if(now_distance_y>0)//art识别到卡片
+    {
+      if(only_one)//只执行一次
+      {
+        card_y[0] = now_distance_y/10;//记录下第一次传进来的数据
+        only_one = 0;
+        car_stop();//停车
+        system_delay_ms(300);//系统延时300ms
+        mode = Car_find_card;//转变小车运动模式
+      }
+    }
+  }
+  if(mode==Car_find_card)//找卡片
+  {
+    inc_dis_pid();//第一步，向目标卡片的y轴坐标趋近
+  }
 }
