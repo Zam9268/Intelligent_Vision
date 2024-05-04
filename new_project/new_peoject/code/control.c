@@ -13,6 +13,9 @@ float err_watch;
 float move_error;
 float turn_error;
 float angle;
+float now_angle = 0;//转向前的初始角度，默认为0
+float turn_angle = 0;//转向模式时的目标转向角度，默认为0
+int turn_angle_flag = 0;//角度旋转标志位
 float ahead_speed = 40.0;//直行速度
 float correct_x_speed = 0;//x轴上的修正速度
 float correct_z_speed = 0;//z轴上的修正速度
@@ -44,11 +47,12 @@ float Vx_world, Vy_world;//世界坐标上的x，y
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias; 
-float dis_kp = 1.0;//距离环kp
+float dis_kp = 1.5;//距离环kp
 float dis_kd = 0.5;//距离环kd
 float dis_change[4];//存放距离环输出结果
-float card_y[10];//存放卡片y轴坐标
+int card_y[10];//存放卡片y轴坐标
 int only_one = 1;
+int target_y = 20;//测试使用
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -534,9 +538,7 @@ void Turn_Angle_PD(float Tar_angle_Z)
       Turn = -Turn_limiting;
     Vz = Turn;
     Last_Turn_bias = Turn_Bias;
-    // Last_last_Turn_bias = Last_Turn_bias;
   }
-
 //  if ((abs((int)Turn_Bias) < turn_error + 2) && abs((int)Vz) < 10 && abs((int)Vz) > 0) //误差很小时的速度补偿，可能会导致转向成功后继续运动
 //  {
 //    if (Vz < 0)
@@ -559,10 +561,10 @@ void Encoder_odometer(void)
 
   Angle_Bias = Angle_Z * PI / 180;//转换成弧度制，Angle_Z为转向角度
 
-  V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637可以再精确多三位，计算车轮路程
-  V_enco[1] = 0.2636719 * PI * (float)encoder[1];
-  V_enco[2] = 0.2636719 * PI * (float)encoder[2];
-  V_enco[3] = 0.2636719 * PI * (float)encoder[3];
+  V_enco[0] = 0.2636719 * PI * encoder[0]; // 0.2637可以再精确多三位，计算车轮路程
+  V_enco[1] = 0.2636719 * PI * encoder[1];
+  V_enco[2] = 0.2636719 * PI * encoder[2];
+  V_enco[3] = 0.2636719 * PI * encoder[3];
 
   Vx_enco = (V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //前进为正，根据麦轮速度解算公式得出的底盘x轴位移量
   Vy_enco = (V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //左移为正，根据麦轮速度解算公式得出的底盘y轴位移量
@@ -639,30 +641,15 @@ float Distance_pid(pid_info *pid,int target_distance, int actual_distance)
  */
 void Distance_Motor(void)
 {
+
   for(int i=0; i<4; i++)
   {
-    dis_change[i] = Distance_pid(&distance_pid[i], card_y[0]/10, (int)Car_dis_y);//距离环输出速度 cm/s
-    if(dis_change[i]<2 && dis_change[i]>-3 && card_y[0]-Car_dis_y<10)//强制归零条件
+    dis_change[i] = Distance_pid(&distance_pid[i], target_y, (int)Car_dis_y);//距离环输出速度 cm/s
+    if(dis_change[i]<2 && dis_change[i]>-3 && target_y-Car_dis_y<10)//强制归零条件
     {
       dis_change[i] = 0;//强制归零
     }
-  }
-}
-/**
- * @brief 串级pid 双环(距离环+速度环)
- * @param 期望为距离环的输入
- * @return 无
- */
-void inc_dis_pid(void)
-{
-  for(uint8 i=0;i<4;i++)
-  {
-      //速度环
-      Speed[i].lastlastError = Speed[i].lastError;  //记录上上次输出
-      Speed[i].lastError = Speed[i].error;          //记录上次输出
-      Speed[i].error =  dis_change[i]- Speed[i].now_speed; //改变目标速度
-      Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //输出pwm
-      Speed[i].output = PIDInfo_Limit(Speed[i].output, AMPLITUDE_MOTOR); //限幅
+		Speed[i].target_speed = dis_change[i];//直接赋值给目标速度
   }
 }
 /**
@@ -675,23 +662,46 @@ void car_findcard(uint8 mode)
 {
   if(mode==Car_go)//寻迹模式，对赛道进行处理,默认设置
   {
-    // Drive_Motor();//外环，位置环，对位置进行处理
-    // turnloc_pid();//串级pid
     car_run();//正常巡线模式
     if(now_distance_y>0)//art识别到卡片
     {
       if(only_one)//只执行一次
       {
         card_y[0] = now_distance_y/10;//记录下第一次传进来的数据
-        only_one = 0;
-        car_stop();//停车
-        system_delay_ms(300);//系统延时300ms
-        mode = Car_find_card;//转变小车运动模式
+        only_one = 0;//测试使用
+        mode = Car_find_card_y;//转变小车运动模式
       }
     }
   }
-  if(mode==Car_find_card)//找卡片
+  if(mode==Car_find_card_y)//找卡片
   {
-    inc_dis_pid();//第一步，向目标卡片的y轴坐标趋近
+    car_stop();//停车
+    system_delay_ms(300);//系统延时300ms
+    Distance_Motor();//距离环处理，向目标卡片y坐标行进
+    if(Speed[0].target_speed == 0)//因为四个轮子输出相同的速度，因此任取一个轮子检测即可，此时已到达卡片y坐标地点，速度为0
+    {
+      mode = Car_turn;//模式转变
+      now_angle = Angle_Z;//记录下转向前的角度
+      Car_dis_y = 0;//清空里程计y的计数值
+    }
+  }
+  if(mode==Car_turn)//向卡片方向转向
+  {
+    if(now_distance_x<0)//卡片相对于小车在左边时
+    {
+      turn_angle=-90;//向左转90度 
+    }
+    else
+    {
+      turn_angle=90;//向右转向90度
+    }
+    if(turn_angle_flag)
+    {
+      Turn_Angle_PD(turn_angle);//向目标旋转
+      if(Vz==0)//认为已经旋转到 目标角度了
+      {
+        mode = Car_find_card_x;//模式转变,向x轴坐标移动，同时加上微调
+      }
+    }
   }
 }

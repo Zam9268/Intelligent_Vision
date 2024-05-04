@@ -69,7 +69,7 @@ extern float last_center_distance;//????????е???????????????????'
 #define PIT_CH_Enco (PIT_CH1)    // ??????????????
 #define PIT_PRIORITY (PIT_IRQn) // ??????????????????
 
-
+	
 int main(void)
 {
     clock_init(SYSTEM_CLOCK_600M); //设置时钟频率
@@ -77,7 +77,7 @@ int main(void)
     debug_init();                  //debug初始化
     system_delay_ms(300);          //等待核心板上电
 	
-    system_delay_ms(10000);         //等待art上电 
+    system_delay_ms(3000);         //开车后延时 
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -99,6 +99,7 @@ int main(void)
 	//  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//增量式pid初始化
     Pos_PidInit();//位置式pid初始化
+	  Distance_PidInit();//位置环pid初始化
     My_Communication_Init();//通信初始化
 
     ips114_init();//屏幕初始化
@@ -106,11 +107,11 @@ int main(void)
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
   //----------模块初始化--------------------// 
-	  ips114_clear();                //清屏
+	ips114_clear();                //清屏
     Motor_Init();                  //电机初始化
     Encoder_Init();                //编码器初始化
     Camera_Init();                 //摄像头初始化
-	  my_imu660ra_init();            //陀螺仪初始化
+	my_imu660ra_init();            //陀螺仪初始化
     my_pwm_gpio();                 //机械臂初始化，一定要加!!!烧过一次舵机了
 //------------中断初始化-------------------//    
     pit_ms_init(PIT_CH0,5);    // 15ms
@@ -123,11 +124,11 @@ int main(void)
 
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     Last_Longest_White_Column_Left[1]=94;
-	  Longest_White_Column_Left[1]=94;
-	  Speed[3].target_speed=40.0;
-    Speed[2].target_speed=40.0;
-    Speed[1].target_speed=40.0;
-    Speed[0].target_speed=40.0;//左前轮
+	Longest_White_Column_Left[1]=94;
+//	  Speed[3].target_speed=40.0;
+//    Speed[2].target_speed=40.0;
+//    Speed[1].target_speed=40.0;
+//    Speed[0].target_speed=40.0;//左前轮
 
     
     interrupt_global_enable(0);    //????ж????
@@ -160,8 +161,10 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		test();
-        car_findcard(1);						
+		    test();
+            car_findcard(1);
+			// Distance_Motor();
+        // car_findcard(1);						
 					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);

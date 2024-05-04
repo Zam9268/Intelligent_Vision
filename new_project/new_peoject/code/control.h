@@ -34,9 +34,11 @@
 #define AMPLITUDE_MOTOR 3000 //pwm???
 #define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
 #define Turn_limiting  40//转向速度输出限幅
-#define Car_go         0 //寻迹
-#define Car_find_card  1 //找卡片
-#define Car_stop       2 //停车  
+#define Car_go           0 //寻迹
+#define Car_find_card_y  1 //向卡片的y轴坐标前进
+#define Car_stop         2 //停车
+#define Car_turn         3 //转向
+#define Car_find_card_x  4 //向卡片的x轴坐标前进 
 #define Distance_output 40  //速度环输出限幅
 
 //??pid??
@@ -105,6 +107,7 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void car_run(void);
 void PidInit(void);
 void Pos_PidInit(void);
+void Distance_PidInit(void);
 void increment_pid(void);
 float Location_pid(pid_info *pid, float Encoder, float Target);
 void clear_encoder_sum(void);
@@ -119,6 +122,5 @@ void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid,int target_distance, int actual_distance);
 void Distance_Motor(void);
-void inc_dis_pid(void);
 void car_findcard(uint8 mode);
 #endif
