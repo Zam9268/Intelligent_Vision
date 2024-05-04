@@ -76,6 +76,7 @@ int main(void)
     CLOCK_EnableClock(kCLOCK_Pit);//pit
     debug_init();                  //debug��ʼ��
     system_delay_ms(300);           //
+//	system_delay_ms(10000);
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -93,11 +94,12 @@ int main(void)
     // }
 //    PidInit();//PID?????
 //----------����(����)��ʼ��---------------------//    
-	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
-	 Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+	// uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
+	//  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+     My_Communication_Init();//ͨ�ų�ʼ��
     PidInit();//����ʽpid��ʼ��
     Pos_PidInit();//λ��ʽpid��ʼ��
-//    My_Communication_Init();//ͨ�ų�ʼ��
+  
 
     ips114_init();//��Ļ��ʼ��
     ips114_set_dir(IPS114_PORTAIT);
@@ -108,7 +110,7 @@ int main(void)
     Motor_Init();                  //�����ʼ��
     Encoder_Init();                //��������ʼ��
     Camera_Init();                 //����ͷ��ʼ��
-    my_pwm_gpio();                 //��е�۳�ʼ����һ��Ҫ��!!!�չ�һ�ζ����
+    // my_pwm_gpio();                 //��е�۳�ʼ����һ��Ҫ��!!!�չ�һ�ζ����
 //------------�жϳ�ʼ��-------------------//    
     pit_ms_init(PIT_CH0,15);    // 15ms
     pit_ms_init(PIT_CH1,10);    // 10ms
@@ -132,8 +134,8 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-        ips114_show_int(188,20,-3,3);
-        //  ips114_show_int(188,40,now_distance_y,3);
+        ips114_show_int(188,40,now_distance_y,3);
+        ips114_show_int(188,60,now_distance_x,3);
         //  ips114_show_float(0,60,center_distance,3,2);
         //  ips114_show_int(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
