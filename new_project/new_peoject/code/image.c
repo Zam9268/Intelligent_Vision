@@ -1521,7 +1521,7 @@ void test2(void)
     // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
     // ips114_show_uint(188,100,Left_Lost_Time,3);   
     // ips114_show_uint(188,120,Right_Lost_Time,3);
-    
+}
 }
 
 /**
@@ -1546,7 +1546,7 @@ void test(void)
         /*attention:if the threshold in the*/
         if(pick_up_mode==0)
         {
-            output_address=Scharr_Edge(*mt9v03x_image,1500);//use the way of sccan edge to get the image
+            output_address=Scharr_Edge(*mt9v03x_image,1700);//use the way of sccan edge to get the image
 		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
