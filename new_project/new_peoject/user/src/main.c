@@ -106,7 +106,7 @@ int main(void)
    
     interrupt_global_enable(0);    //????��????
 	ips114_clear();                //?????????
-    Motor_Init();                  //????????
+//    Motor_Init();                  //????????
     Encoder_Init();                //???????????
     Camera_Init();                 //??????????
 //    
@@ -131,7 +131,7 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-        //  ips114_show_int(188,20,now_distance_x,3);
+        ips114_show_int(188,20,-3,3);
         //  ips114_show_int(188,40,now_distance_y,3);
         //  ips114_show_float(0,60,center_distance,3,2);
         //  ips114_show_int(188,80,right_data[3],3);
@@ -168,8 +168,10 @@ int main(void)
         // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
-		// ips114_show_int(    0 , 40,   encoder[2],         4);
-		// ips114_show_int(   0 , 60,   encoder[3],         4);
+		ips114_show_int(    0 , 0,   right_data[0],         4);
+		ips114_show_int(   0 , 20,   right_data[1],         4);
+		ips114_show_int(    0 , 40,   right_data[2],         4);
+		ips114_show_int(   0 , 60,   right_data[3],         4);
     }
 }
 
