@@ -22,8 +22,8 @@ float loc_err;//位置式输入误差
 float abs_loc_err;//位置式输入误差绝对值
 int pid_motor[4]; // PID处理后的电机pwm
 float bili_act_turn = 1.4;//1.28
-float loc_kp = 0.50;//位置式pd，方便调参使用 1.35位置式暂时最优 24/4/4     1.26
-float loc_kd = 0;                         //0.80                     //0.72
+float loc_kp = 1.24;//位置式pd，方便调参使用 1.35位置式暂时最优 24/4/4     1.26
+float loc_kd = 0.72;                         //0.80                     //0.72
 int test_count=0;
 float dt=0.005;
 float turn_error = 2;//可接受的角度误差
@@ -95,7 +95,7 @@ void Read_Encoder(void)
   encoder[0] = -encoder_get_count(ENCODER_LF); // 左前
   encoder[1] = -encoder_get_count(ENCODER_LB); // 左后
   encoder[2] = encoder_get_count(ENCODER_RF); // 右前
-  encoder[3] = encoder_get_count(ENCODER_RB); // 右后，正转读正
+  encoder[3]  = encoder_get_count(ENCODER_RB); // 右后，正转读正
 	
   for(uint8 i=0;i<4;i++)
   {
@@ -194,7 +194,7 @@ void PidInit(void)
 
   // ???
   Speed[0].kp = -16.3;  //-16.3  -26
-  Speed[0].ki = -3.0;  //-3.0 -1.80
+  Speed[0].ki = -3.3;  //-3.0 -1.80
   // ???
   Speed[1].kp = -14.0;    //-14.0 -34.5
   Speed[1].ki = -2.5;   //-2.5  -0.98
@@ -267,7 +267,7 @@ void Set_Distence_m(float distance)
 }
 
 /**************************************************************************
-位置环处理
+位置环处理，直线上可使用
 **************************************************************************/
 void Drive_Motor()
 {
@@ -275,7 +275,7 @@ void Drive_Motor()
 	loc_err = Err_Handle();
 	abs_loc_err = fabsf(Err_Handle())*bili_act_turn;   //Err_Handle()
 
-   if(abs_loc_err < 2.0 )//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
+   if(abs_loc_err < 4.0 )//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
   {
     loc_Finish_flag = 1;//位置式完成标志
     clear_encoder_sum();//清空编码器累计值
@@ -455,13 +455,13 @@ void Turn_Angle_PD(float Tar_angle_Z)
     // Last_last_Turn_bias = Last_Turn_bias;
   }
 
-  if ((abs((int)Turn_Bias) < turn_error + 2) && abs((int)Vz) < 10 && abs((int)Vz) > 0) //误差很小时的速度补偿,这里不确定要不要
-  {
-    if (Vz < 0)
-      Vz -= 5;
-    else if (Vz > 0)
-      Vz += 8;
-  }
+//  if ((abs((int)Turn_Bias) < turn_error + 2) && abs((int)Vz) < 10 && abs((int)Vz) > 0) //误差很小时的速度补偿，可能会导致转向成功后继续运动
+//  {
+//    if (Vz < 0)
+//      Vz -= 5;
+//    else if (Vz > 0)
+//      Vz += 8;
+//  }
   Car_Inverse_kinematics_solution(Vx, Vy, Vz);   //麦轮控制，为target_speed赋值
 }
 /**

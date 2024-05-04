@@ -1469,9 +1469,9 @@ void test2(void)
     else if(Road_Type==CROSSING)    type=4;
     else if(Road_Type==BANMAXIAN)   type=5;
     if(Road_Type==CROSSING) Cross_Detect();
-    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    // {
-    //     ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+    {
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
     // }
@@ -1547,6 +1547,7 @@ void test(void)
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+            Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {
