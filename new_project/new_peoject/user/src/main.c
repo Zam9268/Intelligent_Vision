@@ -60,7 +60,7 @@ extern unsigned int now_distance_y;
 extern unsigned int card_count;//????????��???????????????
 extern float center_distance;//????????��??????????????
 extern float last_center_distance;//????????��???????????????????'
-
+extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -94,9 +94,9 @@ int main(void)
     // }
 //    PidInit();//PID?????
 //----------����(����)��ʼ��---------------------//    
-	// uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
-	//  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-     My_Communication_Init();//ͨ�ų�ʼ��
+//	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
+//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
+    My_Communication_Init();//ͨ�ų�ʼ��
     PidInit();//����ʽpid��ʼ��
     Pos_PidInit();//λ��ʽpid��ʼ��
   
@@ -107,15 +107,15 @@ int main(void)
     ips114_set_color(RGB565_RED, RGB565_BLACK);
   //----------ģ���ʼ��--------------------// 
 	ips114_clear();                //����
-    Motor_Init();                  //�����ʼ��
+//    Motor_Init();                  //�����ʼ��
     Encoder_Init();                //��������ʼ��
     Camera_Init();                 //����ͷ��ʼ��
     // my_pwm_gpio();                 //��е�۳�ʼ����һ��Ҫ��!!!�չ�һ�ζ����
 //------------�жϳ�ʼ��-------------------//    
-    pit_ms_init(PIT_CH0,15);    // 15ms
-    pit_ms_init(PIT_CH1,10);    // 10ms
-    pit_ms_init(PIT_CH2,15);    // 15ms
-	pit_ms_init(PIT_CH3,35);    // 25ms
+     pit_ms_init(PIT_CH0,15);    // 15ms
+     pit_ms_init(PIT_CH1,10);    // 10ms
+     pit_ms_init(PIT_CH2,15);    // 15ms
+	 pit_ms_init(PIT_CH3,35);    // 25ms
 //    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -134,13 +134,16 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-        ips114_show_int(188,40,now_distance_y,3);
-        ips114_show_int(188,60,now_distance_x,3);
+        ips114_show_int(0,0,right_data[0],3);
+        ips114_show_int(0,20,right_data[1],3);
+        ips114_show_int(0,40,right_data[2],3);
+        ips114_show_int(0,60,right_data[3],3);
+       ips114_show_int(188,60,now_distance_x,3);
         //  ips114_show_float(0,60,center_distance,3,2);
         //  ips114_show_int(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
         // {
-        //     target_motor[i]=1000;
+        //     target_motor[i]=1000;cc 
         // }
 //		motor_control();
         // ?????????????????????            	
@@ -156,8 +159,7 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		        test();	
-					
+		// test();		
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);
@@ -169,13 +171,13 @@ int main(void)
         // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
 //        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
-       //printf("test");
+//       printf("test");
 		// ips114_show_int(0,0,encoder[0],4);
 		// ips114_show_int(    0 , 20,   `[1],         4);
-		ips114_show_int(    0 , 0,   right_data[0],         4);
-		ips114_show_int(   0 , 20,   right_data[1],         4);
-		ips114_show_int(    0 , 40,   right_data[2],         4);
-		ips114_show_int(   0 , 60,   right_data[3],         4);
+//		ips114_show_int(    0 , 0,   right_data[0],         4);
+//		ips114_show_int(   0 , 20,   right_data[1],         4);
+//		ips114_show_int(    0 , 40,   right_data[2],         4);
+//		ips114_show_int(   0 , 60,   right_data[3],         4);
     }
 }
 

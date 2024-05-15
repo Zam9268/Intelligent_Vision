@@ -1469,27 +1469,27 @@ void test2(void)
     else if(Road_Type==CROSSING)    type=4;
     else if(Road_Type==BANMAXIAN)   type=5;
     if(Road_Type==CROSSING) Cross_Detect();
-    for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    {
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
+    // {
+        // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
     // }
-    if(type==4)
-    {
-        ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
-        ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
-        ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
-        ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
-        int real_left_down_x,real_left_down_y;
-        Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
-        ips114_show_int(188,0,real_left_down_x,3);
-        ips114_show_int(188,15,real_left_down_y,3);
-        int real_right_down_x,real_right_down_y;
-        Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
-        ips114_show_int(188,30,real_right_down_x,4);
-        ips114_show_int(188,45,real_right_down_y,4);
-    }
+    // if(type==4)
+    // {
+    //     ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+    //     ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+    //     ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+    //     ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+    //     int real_left_down_x,real_left_down_y;
+    //     Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
+    //     ips114_show_int(188,0,real_left_down_x,3);
+    //     ips114_show_int(188,15,real_left_down_y,3);
+    //     int real_right_down_x,real_right_down_y;
+    //     Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
+    //     ips114_show_int(188,30,real_right_down_x,4);
+    //     ips114_show_int(188,45,real_right_down_y,4);
+    // }
    
 //    ips114_show_uint(188,120,threshold,3);      
 	ips114_displayimage03x(*Image_Use,188,120);
@@ -1518,7 +1518,7 @@ void test2(void)
     // ips114_show_uint(188,100,Left_Lost_Time,3);   
     // ips114_show_uint(188,120,Right_Lost_Time,3);
 }
-}
+
 
 /**
  * @brief the main function of the program
@@ -1543,11 +1543,11 @@ void test(void)
         if(pick_up_mode==0)
         {
             output_address=Scharr_Edge(*mt9v03x_image,1700);//use the way of sccan edge to get the image
-		    uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+		    // uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-            Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
-            Easy_Filtering(110,20,30,170,5);
+            // Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+            // Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {

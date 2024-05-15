@@ -22,13 +22,7 @@ sensor.set_framesize(sensor.QQVGA)#160,120 320,240
 sensor.skip_frames(time = 2000)
 sensor.set_auto_exposure(True)
 
-#第一个矩阵[[2.470379, -0.07614613, 2.842548], [0.1327659, 2.200122, -9.900547], [-0.0001568885, -0.007409661, 1]]
-#第二个矩阵[[2.456409, -0.001103401, -0.4289768], [0.01699971, 2.005967, -6.986886], [-0.0006716135, -0.007255046, 1]]
-#第三个矩阵[[2.517345, 0.04050088, -9.433081], [-0.01829684, 2.104136, -7.337032], [-0.0005856534, -0.006930158, 1]]
-#第四个矩阵[[2.520022, 0.03720546, -9.309653], [-0.01885598, 2.168438, -7.561249], [-0.0005745854, -0.006641914, 1]]
-#第五个[[2.518419, 0.0607779, -9.448061], [-0.01856822, 2.135345, -7.445855], [-0.0005800891, -0.006794296, 1]]
-#第六个矩阵[[2.510175, 0.04740071, -8.17518], [0.0, 2.147352, -8.589409], [-0.0004942547, -0.006826325, 1]]
-#第七个矩阵[[2.521138, 0.009609879, -6.695834], [0.0188674, 2.169749, -7.622424], [-0.0003950868, -0.006640441, 1]]
+#320*240 第一个矩阵 [[1.617274, -0.03811955, -7.224679], [0.03712427, 1.351323, -6.452198], [0.0005643311, -0.003098827, 1]]
 #A4纸参数
 #可以换成其它尺寸
 #总钻风距离车中心底部坐标为225mm
@@ -75,21 +69,22 @@ def cal_mtx(UV: np.array, XY: np.array) -> np.array:
 
 show =True
 while(True):
-    while(True):
-        img = sensor.snapshot()
-        new_img_coordinate=[]
-        new_img_coordinate.append([-43,104])
-        new_img_coordinate.append([26,104])
-        new_img_coordinate.append([53,51])
-        new_img_coordinate.append([-59,51])
-        new_world_coordinates=[]
-        new_world_coordinates.append([-185,575])
-        new_world_coordinates.append([220,575])
-        new_world_coordinates.append([220,175])
-        new_world_coordinates.append([-185,175])
-        H= cal_mtx(new_img_coordinate,new_world_coordinates)
-        pyb.mdelay(1000)
-        print(H)
+    #while(True):
+    #    img = sensor.snapshot()
+    #    new_img_coordinate=[]
+    #    new_img_coordinate.append([-43,104])
+    #    new_img_coordinate.append([26,104])
+    #    new_img_coordinate.append([53,51])
+    #    new_img_coordinate.append([-59,51])
+    #    new_world_coordinates=[]
+    #    new_world_coordinates.append([-185,575])
+    #    new_world_coordinates.append([220,575])
+    #    new_world_coordinates.append([220,175])
+    #    new_world_coordinates.append([-185,175])
+    #    H= cal_mtx(new_img_coordinate,new_world_coordinates)
+    #    pyb.mdelay(1000)
+    #    print(H)
+    img = sensor.snapshot()
     for r in img.find_rects(threshold = 20000):#这个矩形包含的像素点至少为20000个，防止矩形误判
         img.draw_rectangle(r.rect(), color = (255, 0, 0))#画出矩形,这个矩形框为红色
         img_coordinate=[]#定义一个列表，用来存放矩形的四个角的坐标
@@ -107,7 +102,7 @@ while(True):
         print(abs((dn_cx-up_cx)/(dn_cy-up_cy)))
         print(abs((dn_cx+up_cx)/2))
         #居中判定
-        if abs((dn_cx-up_cx)/(dn_cy-up_cy))<=0.05 and abs((dn_cx+up_cx)/2)<=5:
+        if abs((dn_cx-up_cx)/(dn_cy-up_cy))<=0.2 and abs((dn_cx+up_cx)/2)<=20:
             img_coordinate =np.array(img_coordinate)
             world_coordinates =np.array(world_coordinates)
             H= cal_mtx(img_coordinate,world_coordinates)
