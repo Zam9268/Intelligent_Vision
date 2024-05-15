@@ -6,7 +6,7 @@
 #define LED1                        (B9 )  
 #define PIT_CH                         (PIT_CH0 )                                 // ʹ�õ������жϱ�� ����޸� ��Ҫͬ����Ӧ�޸������жϱ���� isr.c �еĵ���
 
-float Angle_z,Angle_Z=90;//Ŀ��Ƕ�
+float Angle_z,Angle_Z;//Ŀ��Ƕ�
 float acc_y , acc_x;//y�ᣬx����ٶȣ����ڽ�����̬��
 float Gyro_z=0;
 float fil_Gyro_z;//�����ǽ��ٶ�

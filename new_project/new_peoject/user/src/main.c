@@ -53,7 +53,7 @@ extern uint8 right_data[64];
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
 extern char str[];//?????????????why
-extern int last_distance_x;//????????��???????x????
+extern int last_distance_x;//?????????????????x????
 extern unsigned int last_distance_y;//?????y????
 extern int now_distance_x;
 extern unsigned int now_distance_y;
@@ -69,14 +69,15 @@ extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 #define PIT_CH_Enco (PIT_CH1)    // ??????????????
 #define PIT_PRIORITY (PIT_IRQn) // ??????????????????
 
-
+	
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_600M); //����ʱ��Ƶ��
+    clock_init(SYSTEM_CLOCK_600M); //??????????
     CLOCK_EnableClock(kCLOCK_Pit);//pit
     debug_init();                  //debug��ʼ��
-    system_delay_ms(300);           //
-//	system_delay_ms(10000);
+    system_delay_ms(300);          //�ȴ����İ��ϵ�
+	
+    system_delay_ms(3000);         //��������ʱ 
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -94,12 +95,12 @@ int main(void)
     // }
 //    PidInit();//PID?????
 //----------����(����)��ʼ��---------------------//    
-//	uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
-//	Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    My_Communication_Init();//ͨ�ų�ʼ��
+	//  uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//����1��ʼ��������art
+	//  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
     PidInit();//����ʽpid��ʼ��
     Pos_PidInit();//λ��ʽpid��ʼ��
-  
+	  Distance_PidInit();//λ�û�pid��ʼ��
+    My_Communication_Init();//ͨ�ų�ʼ��
 
     ips114_init();//��Ļ��ʼ��
     ips114_set_dir(IPS114_PORTAIT);
@@ -110,12 +111,13 @@ int main(void)
 //    Motor_Init();                  //�����ʼ��
     Encoder_Init();                //��������ʼ��
     Camera_Init();                 //����ͷ��ʼ��
-    // my_pwm_gpio();                 //��е�۳�ʼ����һ��Ҫ��!!!�չ�һ�ζ����
+	my_imu660ra_init();            //�����ǳ�ʼ��
+    my_pwm_gpio();                 //��е�۳�ʼ����һ��Ҫ��!!!�չ�һ�ζ����
 //------------�жϳ�ʼ��-------------------//    
-     pit_ms_init(PIT_CH0,15);    // 15ms
-     pit_ms_init(PIT_CH1,10);    // 10ms
-     pit_ms_init(PIT_CH2,15);    // 15ms
-	 pit_ms_init(PIT_CH3,35);    // 25ms
+    pit_ms_init(PIT_CH0,5);    // 15ms
+    pit_ms_init(PIT_CH1,10);    // 10ms
+    pit_ms_init(PIT_CH2,15);    // 15ms
+	  pit_ms_init(PIT_CH3,35);    // 25ms
 //    
 	// target_motor[1]=1000;	
 	// target_motor[3]=1000;
@@ -123,10 +125,10 @@ int main(void)
 //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     Last_Longest_White_Column_Left[1]=94;
 	Longest_White_Column_Left[1]=94;
-	Speed[3].target_speed=40.0;
-    Speed[2].target_speed=40.0;
-    Speed[1].target_speed=40.0;
-    Speed[0].target_speed=40.0;//��ǰ��
+//	  Speed[3].target_speed=40.0;
+//    Speed[2].target_speed=40.0;
+//    Speed[1].target_speed=40.0;
+//    Speed[0].target_speed=40.0;//��ǰ��
 
     
     interrupt_global_enable(0);    //????��????
@@ -134,11 +136,11 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
-        ips114_show_int(0,0,right_data[0],3);
-        ips114_show_int(0,20,right_data[1],3);
-        ips114_show_int(0,40,right_data[2],3);
-        ips114_show_int(0,60,right_data[3],3);
-       ips114_show_int(188,60,now_distance_x,3);
+//			  Drive_Motor();//�⻷��λ�û�����λ�ý��д���
+//        turnloc_pid();//����pid
+//		car_run();
+        //  ips114_show_int(188,20,now_distance_x,3);
+        //  ips114_show_int(188,40,now_distance_y,3);
         //  ips114_show_float(0,60,center_distance,3,2);
         //  ips114_show_int(188,80,right_data[3],3);
         // for(uint8 i=0;i<4;i++)
@@ -159,7 +161,11 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		// test();		
+		    test();
+            car_findcard(1);
+			// Distance_Motor();
+        // car_findcard(1);						
+					
 		 		//   ips114_show_float(0,20,Speed[1].output,2,2);
 //        Vofa_JustFloat(&vofa1,other_data,5);
 //        uart_write_buffer(UART_1,other_data,5);

@@ -32,6 +32,8 @@
 #define ARMOREDCAR 14
 #define MOTORCYCLE 15
 
+extern int now_distance_x;
+extern unsigned int now_distance_y;
 
 void My_Communication_Init(void);
 void uart1_rx_interrupt_handler(void);

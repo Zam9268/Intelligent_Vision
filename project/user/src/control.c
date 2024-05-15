@@ -6,11 +6,18 @@
 #include "math.h"
 #define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
 #define Turn_limiting  40//转向速度输出限幅
+#define Car_go         0 //寻迹
+#define Car_find_card  1 //找卡片
+#define Car_stop       2 //停车
 float Car_H = 0.8;//车长
 float Car_W = 0.6; // 车宽
 float Vx,Vy,Vz;
+float ahead_speed = 40.0;//直行速度
 int encoder[4];   // 编码器数据
-int encoder_test[4];//暂时代替的编码器数值
+float correct_x_speed;//x轴上的修正速度
+float correct_z_speed;//z轴上的修正速度
+float correct_move_speed = 5;//x轴修正速度
+float correct_turn_speed = 25;//x轴修正速度
 float encoder_sum[4];//编码器累加值
 float target_encoder_sum[4];//目标编码器累加值
 float loc_target[4];//位置式处理后的速度
@@ -136,7 +143,54 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
   Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2);//右前
   Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); //右后
 }
-         
+
+/**
+ * @brief 差速跑
+ * @param 无
+ * @return 无
+ */
+void car_run(float error)
+{
+	float move_error = (error/94)*(error/94); //横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
+  float turn_error = (error/94)*(error/94); //转向比例系数
+  if(fabsf(error)<4)//误差很小时不作调整
+  {
+    correct_x_speed = 0;
+    correct_z_speed = 0; 
+  }
+  if(fabsf(error)>4 && fabsd(error)<10)//误差不大的时候，认为它在直道上，仅做平移处理
+  {
+    for(int i=0; i<4; i++)
+    {
+      correct_x_speed = move_error * correct_move_speed;//平移的修正
+      if(error>0)//在中线右侧
+      {
+        correct_x_speed = -correct_x_speed;//向左移动
+      }
+      else//在中线右侧
+      {
+        correct_x_speed = correct_x_speed;//向右移动
+      }
+    }
+  }
+  else if(fabsf(error)>10)//误差大，认为有转弯
+  {
+    for(int i=0; i<4; i++)
+    {
+      correct_z_speed = turn_error * correct_turn_speed;//转弯的修正
+      if(error>0)//左转弯
+      {
+        correct_z_speed = -correct_z_speed;
+      }
+      else//右转弯
+      {
+        correct_z_speed = correct_z_speed;
+      }
+    }
+  }
+
+  Car_Inverse_kinematics_solution(correct_x_speed, ahead_speed, correct_z_speed);//速度解算赋值
+}   
 /**
  * @brief 位置式pid初始化
  * @param 无

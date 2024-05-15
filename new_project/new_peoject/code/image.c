@@ -1495,6 +1495,10 @@ void test2(void)
 	ips114_displayimage03x(*Image_Use,188,120);
 	// ips114_show_uint(188,0,left_line[Left_Up_Find],3);
     float my_err=Err_Handle();
+    extern int now_distance_x;
+    extern unsigned int now_distance_y;
+    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
+    ips114_show_int(0,30,now_distance_y,3);//显示卡片x坐标
     /*
     
     */

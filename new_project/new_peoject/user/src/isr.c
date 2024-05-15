@@ -1,35 +1,35 @@
 /*********************************************************************************************************************
-* RT1064DVL6A Opensourec Library ï¿½ï¿½ï¿½ï¿½RT1064DVL6A ï¿½ï¿½Ô´ï¿½â£©ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ú¹Ù·ï¿½ SDK ï¿½Ó¿ÚµÄµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½
-* Copyright (c) 2022 SEEKFREE ï¿½ï¿½É¿Æ¼ï¿½
+* RT1064DVL6A Opensourec Library ????RT1064DVL6A ???????????????? SDK ??????????????
+* Copyright (c) 2022 SEEKFREE ?????
 * 
-* ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ RT1064DVL6A ï¿½ï¿½Ô´ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½
+* ??????? RT1064DVL6A ???????????
 * 
-* RT1064DVL6A ï¿½ï¿½Ô´ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-* ï¿½ï¿½ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á·¢ï¿½ï¿½ï¿½ï¿½ GPLï¿½ï¿½GNU General Public Licenseï¿½ï¿½ï¿½ï¿½ GNUÍ¨ï¿½Ã¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-* ï¿½ï¿½ GPL ï¿½Äµï¿½3ï¿½æ£¨ï¿½ï¿½ GPL3.0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½Ä£ï¿½ï¿½ÎºÎºï¿½ï¿½ï¿½ï¿½Ä°æ±¾ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½
+* RT1064DVL6A ????? ?????????
+* ?????????????????????????? GPL??GNU General Public License???? GNU??¨´????????????????
+* ?? GPL ???3?—¤?? GPL3.0????????????¦Ê¦Ê?????·Ú?????¡¤?????/???????
 * 
-* ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½Ü·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎºÎµÄ±ï¿½Ö¤
-* ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô»ï¿½ï¿½Êºï¿½ï¿½Ø¶ï¿½ï¿½ï¿½Í¾ï¿½Ä±ï¿½Ö¤
-* ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½ï¿½ï¿½Î¼ï¿½ GPL
+* ????????????????????????????????¦Ä???????¦Ê¦Å???
+* ?????????????????????????????????
+* ?????????¦Ì? GPL
 * 
-* ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½Í¬Ê±ï¿½Õµï¿½Ò»ï¿½ï¿½ GPL ï¿½Ä¸ï¿½ï¿½ï¿½
-* ï¿½ï¿½ï¿½Ã»ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½<https://www.gnu.org/licenses/>
+* ?????????????????????????? GPL ?????
+* ?????§µ??????<https://www.gnu.org/licenses/>
 * 
-* ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½ï¿½ï¿½
-* ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½Ê¹ï¿½ï¿½ GPL3.0 ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½Ö¤Ð­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Ä°æ±¾
-* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¢ï¿½Ä°ï¿½ï¿½ï¿½ libraries/doc ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Âµï¿½ GPL3_permission_statement.txt ï¿½Ä¼ï¿½ï¿½ï¿½
-* ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ libraries ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Âµï¿½ LICENSE ï¿½Ä¼ï¿½
-* ï¿½ï¿½Ó­ï¿½ï¿½Î»Ê¹ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ë±£ï¿½ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½Ä°ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ?????????
+* ?????????? GPL3.0 ????????§¿?? ?????????????????·Ú
+* ?????????????? libraries/doc ???????? GPL3_permission_statement.txt ?????
+* ??????????? libraries ??????? ???????????? LICENSE ???
+* ?????¦Ë??¨°??????????? ?????????????????????????????????????????
 * 
-* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½          isr
-* ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½ï¿½          ï¿½É¶ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾
-* ï¿½æ±¾ï¿½ï¿½Ï¢          ï¿½é¿´ libraries/doc ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ version ï¿½Ä¼ï¿½ ï¿½æ±¾Ëµï¿½ï¿½
-* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½          IAR 8.32.4 or MDK 5.33
-* ï¿½ï¿½ï¿½ï¿½Æ½Ì¨          RT1064DVL6A
-* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½          https://seekfree.taobao.com/
+* ???????          isr
+* ???????          ??????????????
+* ?·Ú???          ?? libraries/doc ??????? version ??? ?·Ú???
+* ????????          IAR 8.32.4 or MDK 5.33
+* ??????          RT1064DVL6A
+* ????????          https://seekfree.taobao.com/
 * 
-* ï¿½Þ¸Ä¼ï¿½Â¼
-* ï¿½ï¿½ï¿½ï¿½              ï¿½ï¿½ï¿½ï¿½                ï¿½ï¿½×¢
+* ?????
+* ????              ????                ???
 * 2022-09-21        SeekFree            first version
 ********************************************************************************************************************/
 
@@ -41,43 +41,44 @@
 #include "imu660ra.h"
 
 
-extern pid_info Speed[4]; //ï¿½ï¿½ï¿½ï¿½pidï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pid
-extern float loc_target[4]; //ï¿½ï¿½ï¿½ï¿½pidï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½pid
+extern pid_info Speed[4]; //????pid???????pid
+extern float loc_target[4]; //????pid???????pid
 extern uint8 step;
 int count = 0;
 int arm_flag = 0;
 
 void CSI_IRQHandler(void)
 {
-    CSI_DriverIRQHandler();     // ï¿½ï¿½ï¿½ï¿½SDKï¿½Ô´ï¿½ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÃµÄ»Øµï¿½ï¿½ï¿½ï¿½ï¿½
-    __DSB();                    // ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    CSI_DriverIRQHandler();     // ????SDK??????§Ø???? ?????????????????????????????
+    __DSB();                    // ???????????
 }
 
 void PIT_IRQHandler(void)
 {
     if(pit_flag_get(PIT_CH0))
     {
-		    turnloc_pid();//ï¿½ï¿½ï¿½ï¿½pid
-//	      increment_pid();
+        //¶ÁÈ¡±àÂëÆ÷
+		Read_Encoder();
+        increment_pid();
         motor_close_control();
         pit_flag_clear(PIT_CH0);      
     }
     
     if(pit_flag_get(PIT_CH1))
     {
-		//ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
-		Read_Encoder();
-//		Get_angle();
-//		Encoder_odometer();
-    pit_flag_clear(PIT_CH1);
+		//¶ÁÈ¡±àÂëÆ÷
+		// Read_Encoder();
+		Get_angle();
+		Encoder_odometer();
+        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
 
-        pit_flag_clear(PIT_CH2);//ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î»
+        pit_flag_clear(PIT_CH2);//??????¦Ë
         count++;
-        if(count > 1000)//Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½
+        if(count > 1000)//§³?????¨°???
         {
             arm_flag = 1;
 			      count = 0;
@@ -85,8 +86,10 @@ void PIT_IRQHandler(void)
     }
     
     if(pit_flag_get(PIT_CH3))
-    {
-		    Drive_Motor();//ï¿½â»·ï¿½ï¿½Î»ï¿½Ã»ï¿½
+     {
+	// 	      Drive_Motor();//Íâ»·£¬Î»ÖÃ»·
+//			  float Err_Handle(void);
+//        car_run(Err_Handle());//Îªtarget_speed¸³Öµ
         pit_flag_clear(PIT_CH3);
     }
 
@@ -97,44 +100,44 @@ void LPUART1_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART1))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
-//    #if DEBUG_UART_USE_INTERRUPT                        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ debug ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
-//        debug_interrupr_handler();                      // ï¿½ï¿½ï¿½ï¿½ debug ï¿½ï¿½ï¿½Ú½ï¿½ï¿½Õ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ý»á±» debug ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡
-//    #endif                                              // ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ DEBUG_UART_INDEX ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Åµï¿½ï¿½ï¿½Ó¦ï¿½Ä´ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½È¥
+        // ?????§Ø?
+//    #if DEBUG_UART_USE_INTERRUPT                        // ??????? debug ?????§Ø?
+//        debug_interrupr_handler();                      // ???? debug ?????????????? ????? debug ???¦Ë????????
+//    #endif                                              // ???????? DEBUG_UART_INDEX ????¦Ä??????????????????§Ø??
 extern void UART1_handler(void);//?????????
 		UART1_handler();
     }
         
-    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 void LPUART2_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        // ?????§Ø?
         
     }
         
-    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 void LPUART3_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART3))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        // ?????§Ø?
         
     }
         
-    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 void LPUART4_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ 
+        // ?????§Ø? 
 //        flexio_camera_uart_handler();
 //        
 //        gnss_uart_callback();
@@ -142,29 +145,29 @@ void LPUART4_IRQHandler(void)
 //		UART4_handler();
     }
         
-    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 void LPUART5_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        // ?????§Ø?
         camera_uart_handler();
     }
         
-    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 void LPUART6_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART6))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        // ?????§Ø?
         
     }
         
-    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 
@@ -172,12 +175,12 @@ void LPUART8_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART8))
     {
-        // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        // ?????§Ø?
         wireless_module_uart_handler();
         
     }
         
-    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag);    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É¾ï¿½ï¿½
+    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag);    // ?????????
 }
 
 
@@ -185,7 +188,7 @@ void GPIO1_Combined_0_15_IRQHandler(void)
 {
     if(exti_flag_get(B0))
     {
-        exti_flag_clear(B0);// ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
+        exti_flag_clear(B0);// ????§Ø???¦Ë
     }
     
 }
@@ -196,7 +199,7 @@ void GPIO1_Combined_16_31_IRQHandler(void)
     wireless_module_spi_handler();
     if(exti_flag_get(B16))
     {
-        exti_flag_clear(B16); // ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
+        exti_flag_clear(B16); // ????§Ø???¦Ë
     }
 
     
@@ -208,20 +211,20 @@ void GPIO2_Combined_0_15_IRQHandler(void)
     
     if(exti_flag_get(C0))
     {
-        exti_flag_clear(C0);// ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
+        exti_flag_clear(C0);// ????§Ø???¦Ë
     }
 
 }
 
 void GPIO2_Combined_16_31_IRQHandler(void)
 {
-    // -----------------* ToF INT ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ Ô¤ï¿½ï¿½ï¿½Ð¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *-----------------
+    // -----------------* ToF INT ?????§Ø? ????§Ø???????? *-----------------
     tof_module_exti_handler();
-    // -----------------* ToF INT ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ Ô¤ï¿½ï¿½ï¿½Ð¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ *-----------------
+    // -----------------* ToF INT ?????§Ø? ????§Ø???????? *-----------------
     
     if(exti_flag_get(C16))
     {
-        exti_flag_clear(C16); // ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
+        exti_flag_clear(C16); // ????§Ø???¦Ë
     }
     
 }
@@ -234,7 +237,7 @@ void GPIO3_Combined_0_15_IRQHandler(void)
 
     if(exti_flag_get(D4))
     {
-        exti_flag_clear(D4);// ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
+        exti_flag_clear(D4);// ????§Ø???¦Ë
     }
 }
 
@@ -247,14 +250,14 @@ void GPIO3_Combined_0_15_IRQHandler(void)
 
 
 /*
-ï¿½Ð¶Ïºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã¶ï¿½Ó¦ï¿½ï¿½ï¿½Üµï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½
-Sample usage:ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¶ï¿½Ê±ï¿½ï¿½ï¿½Ð¶ï¿½
+?§Ø?????????????????????????§Ø????
+Sample usage:??????????????????§Ø?
 void PIT_IRQHandler(void)
 {
-    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î»
+    //?????????¦Ë
     __DSB();
 }
-ï¿½ÇµÃ½ï¿½ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¾Î»
+???????§Ø????????¦Ë
 CTI0_ERROR_IRQHandler
 CTI1_ERROR_IRQHandler
 CORE_IRQHandler

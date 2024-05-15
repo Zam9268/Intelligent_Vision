@@ -32,6 +32,14 @@
 #define ENCODER_RB_DIR                   (QTIMER2_ENCODER2_CH2_C25)
 
 #define AMPLITUDE_MOTOR 3000 //pwm???
+#define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
+#define Turn_limiting  40//转向速度输出限幅
+#define Car_go           0 //寻迹
+#define Car_find_card_y  1 //向卡片的y轴坐标前进
+#define Car_stop         2 //停车
+#define Car_turn         3 //转向
+#define Car_find_card_x  4 //向卡片的x轴坐标前进 
+#define Distance_output 40  //速度环输出限幅
 
 //??pid??
 typedef struct{
@@ -53,6 +61,11 @@ typedef struct{
 
 extern float Car_H;//车长
 extern float Car_W;//车宽
+extern float ahead_speed;//直行速度
+extern float correct_x_speed;//x轴上的修正速度
+extern float correct_z_speed;//z轴上的修正速度
+extern float correct_move_speed ;//x轴修正速度
+extern float correct_turn_speed;//x轴修正速度
 extern int encoder[4];//四个编码器读数
 extern int encoder_test[4];
 extern float encoder_sum[4];
@@ -72,6 +85,9 @@ extern float Vx_world, Vy_world;//世界坐标上的x，y
 extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 extern float Car_dis_x2, Car_dis_y2;
 extern float Turn_Bias;
+extern float dis_kp;//距离环kp
+extern float dis_kd;//距离环kd
+extern float dis_change[4];//存放距离环输出结果
 
 extern int pid_motor[4];
 
@@ -88,8 +104,10 @@ void Encoder_Init(void);
 void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
+void car_run(void);
 void PidInit(void);
 void Pos_PidInit(void);
+void Distance_PidInit(void);
 void increment_pid(void);
 float Location_pid(pid_info *pid, float Encoder, float Target);
 void clear_encoder_sum(void);
@@ -102,5 +120,7 @@ void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
 void Turn_Angle_PD(float Tar_angle_Z);
 void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
-
+float Distance_pid(pid_info *pid,int target_distance, int actual_distance);
+void Distance_Motor(void);
+void car_findcard(uint8 mode);
 #endif
