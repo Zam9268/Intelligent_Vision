@@ -131,10 +131,10 @@ void Read_Encoder(void)
   } 
   
   // 编码器清空
-  encoder_clear_count(ENCODER_LF);
-  encoder_clear_count(ENCODER_LB);
-  encoder_clear_count(ENCODER_RF);
-  encoder_clear_count(ENCODER_RB);
+  // encoder_clear_count(ENCODER_LF);
+  // encoder_clear_count(ENCODER_LB);
+  // encoder_clear_count(ENCODER_RF);
+  // encoder_clear_count(ENCODER_RB);
 }
 
 /**
