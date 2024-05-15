@@ -593,8 +593,8 @@ void Search_Center(void)
         // ips114_show_uint(188,90,right_up_point[1],3);
         // ips114_show_uint(188,105,left_up_point[0],3);
         // ips114_show_uint(188,120,left_up_point[1],3);
-        ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
-        ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
+        // ips114_draw_line(0,0,left_up_point[0],left_up_point[1],RGB565_RED);
+        // ips114_draw_line(0,0,right_up_point[0],right_up_point[1],RGB565_BLUE);
     }
     if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
     {
@@ -1477,18 +1477,18 @@ void test2(void)
      }
     if(type==4)
     {
-        ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
-        ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
-        ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
-        ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
-        int real_left_down_x,real_left_down_y;
-        Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
-        ips114_show_int(188,0,real_left_down_x,3);
-        ips114_show_int(188,15,real_left_down_y,3);
-        int real_right_down_x,real_right_down_y;
-        Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
-        ips114_show_int(188,30,real_right_down_x,4);
-        ips114_show_int(188,45,real_right_down_y,4);
+        // ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
+        // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
+        // ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
+        // ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+        // int real_left_down_x,real_left_down_y;
+        // Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
+        // ips114_show_int(188,0,real_left_down_x,3);
+        // ips114_show_int(188,15,real_left_down_y,3);
+        // int real_right_down_x,real_right_down_y;
+        // Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
+        // ips114_show_int(188,30,real_right_down_x,4);
+        // ips114_show_int(188,45,real_right_down_y,4);
     }
    
 //    ips114_show_uint(188,120,threshold,3);      
@@ -1497,8 +1497,8 @@ void test2(void)
     float my_err=Err_Handle();
     extern int now_distance_x;
     extern unsigned int now_distance_y;
-    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
-    ips114_show_int(0,30,now_distance_y,3);//显示卡片x坐标
+//    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
+//    ips114_show_int(0,30,now_distance_y,3);//显示卡片x坐标
     /*
     
     */
@@ -1507,8 +1507,8 @@ void test2(void)
     // ips114_show_uint(188,30,type,3);
     // ips114_show_uint(188,45,Left_Lost_Time,3);
     // ips114_show_uint(188,60,Right_Lost_Time,3);
-    // ips114_show_int(188,75,now_distance_x,3);
-    // ips114_show_int(188,90,now_distance_y,3);
+    //  ips114_show_int(188,75,now_distance_x,3);
+    //  ips114_show_int(188,90,now_distance_y,3);
     // ips114_show_uint(188,15,Left_Up_Find,3);
     // ips114_show_uint(188,30,right_line[Right_Up_Find],3);
     // ips114_show_uint(188,45,Right_Up_Find,3);
@@ -1521,7 +1521,6 @@ void test2(void)
     // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
     // ips114_show_uint(188,100,Left_Lost_Time,3);   
     // ips114_show_uint(188,120,Right_Lost_Time,3);
-}
 }
 
 /**
