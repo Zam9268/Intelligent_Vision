@@ -235,6 +235,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>Car_dis_y</ItemText>
         </Ww>
+        <Ww>
+          <count>16</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>card_y[0],0x0A</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>

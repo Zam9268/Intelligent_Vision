@@ -58,7 +58,7 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH0))
     {
         //读取编码器
-		Read_Encoder();
+		    Read_Encoder();
         increment_pid();
         motor_close_control();
         pit_flag_clear(PIT_CH0);      
@@ -76,22 +76,13 @@ void PIT_IRQHandler(void)
     if(pit_flag_get(PIT_CH2))
     {
 
-        pit_flag_clear(PIT_CH2);//??????λ
-        count++;
-        if(count > 1000)//С?????ò???
-        {
-            arm_flag = 1;
-			      count = 0;
-        }
+        pit_flag_clear(PIT_CH2);//
     }
     
     if(pit_flag_get(PIT_CH3))
      {
-	// 	      Drive_Motor();//外环，位置环
-//			  float Err_Handle(void);
-//        car_run(Err_Handle());//为target_speed赋值
         pit_flag_clear(PIT_CH3);
-    }
+     }
 
     __DSB();
 }
@@ -104,7 +95,7 @@ void LPUART1_IRQHandler(void)
 //    #if DEBUG_UART_USE_INTERRUPT                        // ??????? debug ?????ж?
 //        debug_interrupr_handler();                      // ???? debug ?????????????? ????? debug ???λ????????
 //    #endif                                              // ???????? DEBUG_UART_INDEX ????δ??????????????????ж??
-extern void UART1_handler(void);//?????????
+   extern void UART1_handler(void);//?????????
 		UART1_handler();
     }
         

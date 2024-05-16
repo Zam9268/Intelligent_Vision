@@ -3,15 +3,15 @@
 
 #include "zf_common_headfile.h"
 
-#define SERVO_MOTOR_PWM1                (PWM4_MODULE2_CHA_C30)                      // ¶¨ÒåÖ÷°åÉÏÇ°±Û¶æ»ú¶ÔÓ¦Òý½Å
-#define SERVO_MOTOR_PWM2                (PWM4_MODULE3_CHA_C31)                       // ¶¨ÒåÖ÷°åÉÏºó±Û¶æ»ú¶ÔÓ¦Òý½Å 
-#define SERVO_MOTOR_PWM3                (PWM2_MODULE0_CHA_C6)                       // ¶¨ÒåÖ÷°åÉÏ¶æ»ú¶ÔÓ¦Òý½Å 
-#define SERVO_MOTOR_FREQ                (50)                                       // ¶¨ÒåÖ÷°åÉÏ¶æ»úÆµÂÊ  ÇëÎñ±Ø×¢Òâ·¶Î§ 50-30
-#define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //¶æ»ú½Ç¶ÈÉèÖÃÎª0 - 180£¬90¶ÈÎªÖÐÖµ
+#define SERVO_MOTOR_PWM1                (PWM4_MODULE2_CHA_C30)                      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½Û¶ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
+#define SERVO_MOTOR_PWM2                (PWM4_MODULE3_CHA_C31)                       // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïºï¿½Û¶ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ 
+#define SERVO_MOTOR_PWM3                (PWM2_MODULE0_CHA_C6)                       // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ 
+#define SERVO_MOTOR_FREQ                (50)                                       // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¶ï¿½ï¿½Æµï¿½ï¿½  ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½â·¶Î§ 50-30
+#define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //ï¿½ï¿½ï¿½ï¿½Ç¶ï¿½ï¿½ï¿½ï¿½ï¿½Îª0 - 180ï¿½ï¿½90ï¿½ï¿½Îªï¿½ï¿½Öµ
 
 
 #define ARM_PICK_NOT_DONE        (0)
-#define ARM_PICK_DONE            (1)//ÉèÖÃÊ°È¡Íê³ÉµÄ±êÖ¾Î»
+#define ARM_PICK_DONE            (1)//ï¿½ï¿½ï¿½ï¿½Ê°È¡ï¿½ï¿½ÉµÄ±ï¿½Ö¾Î»
 
 #define ARM_STATE_OFF            (0)
 #define ARM_STATE_ON             (1)
@@ -22,7 +22,7 @@ extern uint16 servo3_duty;
 
 extern uint32 servo1_pwm;
 extern uint32 servo2_pwm;
-extern uint32 servo3_pwm;//¶æ»úÕ¼¿Õ±È
+extern uint32 servo3_pwm;//ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½
 //extern uint16 servo3_duty;
 extern uint8 step;
 extern uint8 side_step; 
@@ -33,7 +33,6 @@ extern uint8 arm_put_down;
 extern int finish_count;
 //extern uint8 key_speed;
 
-void PIT_CH2_Int_Init(uint32 ldval);
 void my_pwm_gpio(void);
 void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_count);
 void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count);

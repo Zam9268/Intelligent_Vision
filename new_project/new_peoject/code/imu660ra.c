@@ -6,7 +6,7 @@
 #define LED1                        (B9 )  
 #define PIT_CH                         (PIT_CH0 )                                 // ʹ�õ������жϱ�� ����޸� ��Ҫͬ����Ӧ�޸������жϱ���� isr.c �еĵ���
 
-float Angle_z,Angle_Z;//Ŀ��Ƕ�
+float Angle_z,Angle_Z=0;//Ŀ��Ƕ�
 float acc_y , acc_x;//y�ᣬx����ٶȣ����ڽ�����̬��
 float Gyro_z=0;
 float fil_Gyro_z;//�����ǽ��ٶ�
@@ -34,8 +34,6 @@ void my_imu660ra_init()//����������
         }
         gpio_toggle_level(LED1);                                                // ��ת LED ���������ƽ ���� LED ���� ��ʼ����������ƻ����ĺ���
     }
-    pit_ms_init(PIT_CH, 5);
-    interrupt_global_enable(0);
 }
 
 /*******************ƽ�������˲���������ȡ�Ƕ�****************/
@@ -89,7 +87,7 @@ void IMU660ra_newValues()
 void Get_angle()
 {
     IMU660ra_newValues();
-	 Angle_Z-=fil_Gyro_z*dt;
+	 Angle_Z+=fil_Gyro_z*dt;
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
 }

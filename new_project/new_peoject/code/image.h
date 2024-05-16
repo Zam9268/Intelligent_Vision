@@ -12,6 +12,7 @@
 #define BLACK_POINT 0
 
 extern int center[IMAGE_HEIGHT];//��������
+extern uint8 pick_up_mode;//捡卡片模式
 typedef enum{
     STRAIGHT_ROAD,
     LEFT_TURN,
