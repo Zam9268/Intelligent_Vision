@@ -37,7 +37,8 @@
 #define Car_go           0 //寻迹
 #define Car_find_card_y  1 //向卡片的y轴坐标前进
 #define Car_turn         2 //转向
-#define Car_find_card_x  3 //向卡片的x轴坐标前进 
+#define Car_find_card_cor  3 //总钻风微调标
+#define Pick_up_card  4 //机械臂拾取卡片
 #define Distance_output 40  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 

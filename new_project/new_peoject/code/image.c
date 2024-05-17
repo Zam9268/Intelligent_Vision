@@ -39,6 +39,7 @@ float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
 float last_err=0.00;
+int center_x,center_y;
 
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];//store the data received from the serial port,it only store 64 bytes  
@@ -599,7 +600,7 @@ void Search_Center(void)
     if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
     {
         int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
-        int center_x,center_y;
+        // int center_x,center_y;
         Get_Card_Center_coordinate(left_up_point[0],left_up_point[1],right_up_point[0],right_up_point[1],&center_x,&center_y);
         Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
         Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
@@ -1474,7 +1475,7 @@ void test2(void)
         // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
-     }
+//     }
     if(type==4)
     {
         // ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
@@ -1502,7 +1503,7 @@ void test2(void)
     /*
     
     */
-    // ips114_show_float(188,0,my_err,2,2);
+    ips114_show_float(188,0,my_err,2,2);
     // ips114_show_uint(188,75,Longest_White_Column_Left[1],3);
     // ips114_show_uint(188,30,type,3);
     // ips114_show_uint(188,45,Left_Lost_Time,3);
@@ -1545,12 +1546,12 @@ void test(void)
         /*attention:if the threshold in the*/
         if(pick_up_mode==0)
         {
-            output_address=Scharr_Edge(*mt9v03x_image,1700);//use the way of sccan edge to get the image
+            output_address=Scharr_Edge(*mt9v03x_image,2100);//use the way of sccan edge to get the image
 		    // uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
-            // Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
-            // Easy_Filtering(110,20,30,170,5);
+            Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+            Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {
@@ -1563,5 +1564,6 @@ void test(void)
             Search_Center();
         }
     }	
-    test2();
+		ips114_displayimage03x(*Image_Use,188,120);
+//    test2();
 }

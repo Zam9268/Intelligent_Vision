@@ -48,8 +48,8 @@ float Vx_world, Vy_world;//世界坐标上的x，y
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias; 
-float dis_kp = 0.4;//距离环kp
-float dis_kd = 0.5;//距离环kd
+float dis_kp = 0.2;//距离环kp
+float dis_kd = 0.1;//距离环kd
 float dis_error;
 float dis_change[4];//存放距离环输出结果
 int card_y[10];//存放卡片y轴坐标
@@ -62,6 +62,7 @@ int CSI_correct_flag = 0;//总钻风判断标志
 int Put_flag = 0;//图片放置标志位
 int test_csi;//延时计数
 int car_mode = 0;//车辆运动模式
+int find_car_flag = 0;//找到卡片标志位
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -85,10 +86,10 @@ void Motor_Init(void)
   gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
   gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
 
-  pwm_init(motor_LF, 15000, 1000); // PWM初始化
-  pwm_init(motor_LB, 15000, 1000); //
-  pwm_init(motor_RF, 15000, 1000); // 
-  pwm_init(motor_RB, 15000, 1000); // 
+  pwm_init(motor_LF, 15000, 0); // PWM初始化
+  pwm_init(motor_LB, 15000, 0); //
+  pwm_init(motor_RF, 15000, 0); // 
+  pwm_init(motor_RB, 15000, 0); // 
 
   
 }
@@ -130,11 +131,11 @@ void Read_Encoder(void)
     Speed[i].now_speed = (encoder[i] * 0.2636719*PI); // 编码器数据转换成车轮速度，单位为cm/s
   } 
   
-  // 编码器清空
-  // encoder_clear_count(ENCODER_LF);
-  // encoder_clear_count(ENCODER_LB);
-  // encoder_clear_count(ENCODER_RF);
-  // encoder_clear_count(ENCODER_RB);
+  //编码器清空
+  encoder_clear_count(ENCODER_LF);
+  encoder_clear_count(ENCODER_LB);
+  encoder_clear_count(ENCODER_RF);
+  encoder_clear_count(ENCODER_RB);
 }
 
 /**
@@ -167,7 +168,7 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
 }     
 /**
  * @brief 停车
- * @param 中线误差
+ * @param 无
  * @return 无
  */
 void car_stop(void)
@@ -701,8 +702,10 @@ void CSI_dis_correct(float cor_x, float cor_y)
       CSI_correct_flag = CSI_CORRECT_DONE; //校正完成
       Car_Inverse_kinematics_solution(Vx, Vy, Vz);
       if (Put_flag == 0)
-      arm_pick_flag = ARM_PICK_NOT_DONE;
-      arm_state_flag = ARM_STATE_ON; //打开机械臂拾取功能
+      {
+        arm_pick_flag = ARM_PICK_NOT_DONE;
+        arm_state_flag = ARM_STATE_ON; //打开机械臂拾取功能
+      }
       // avoid_flag=NOTAVOID;
       // uart_write_string(UART_INDEX, "sta"); //给art发送开始识别的信号"start"
       //这个uart_write不一定要放在这里？可以放在机械臂拾取之前，放在while?
@@ -724,13 +727,13 @@ void car_findcard(int *mode)
 {
   if(*mode==Car_go)//寻迹模式，对赛道进行处理,默认设置
   {
-		if(now_distance_y>0 && now_distance_y<800)//art识别到卡片
+		if(now_distance_y>0 && now_distance_y<800)//art识别到卡片，设定识别区间
     {
       if(only_one)//只执行一次
       {
 				Car_dis_y = 0;
         card_y[0] = now_distance_y/10;//记录下第一次传进来的数据
-        card_x[0] = now_distance_x;//存放卡片y轴坐标
+        card_x[0] = now_distance_x/10;//存放卡片y轴坐标
         only_one = 0;//测试使用
         *mode = Car_find_card_y;//转变小车运动模式
 				target_type = *mode;//测试变量使用
@@ -745,7 +748,7 @@ void car_findcard(int *mode)
   }
   if(*mode==Car_find_card_y)//找卡片
   {
-		if(card_y[0]-(int)Car_dis_y<4)//到达卡片附近
+		if(find_car_flag==1)//到达卡片附近，原本是4
     {
 			if(only_one)
 			{
@@ -760,14 +763,21 @@ void car_findcard(int *mode)
         }
 				only_one = 0;//只执行一次
 				*mode = Car_turn;//模式转变
-			  pick_up_mode = 1;
+//			  pick_up_mode = 1;
 			  target_type = *mode;
 			}
     }
 		else
 		{
 			only_one=1;//重新打开only_one
-      Distance_Motor();//距离环处理，向目标卡片y坐标行进
+      car_run();//正常循迹跑
+      if(card_y[0]-(int)Car_dis_y<3 && abs(card_x[0])<400)//到达卡片附近
+      {
+        car_stop();
+				system_delay_ms(1000);
+        find_car_flag = 1;
+      }
+      // Distance_Motor();//距离环处理，向目标卡片y坐标行进，需要修改，改变成输入参数
 			*mode=Car_find_card_y;
 		}
   }
@@ -776,7 +786,7 @@ void car_findcard(int *mode)
     if(fabsf(Angle_Z-turn_angle)<1)//陀螺仪转向识别
     {
 			// Vz = 0;//清0Vz
-      *mode = Car_find_card_x;//模式转变
+      *mode = Car_find_card_cor;//模式转变
 			target_type = *mode;
     }
 		else
@@ -785,4 +795,18 @@ void car_findcard(int *mode)
 			*mode = Car_turn;
 		}
   }
+	if(*mode==Car_find_card_cor)//总钻风微调识别
+  {
+    if(CSI_correct_flag==1)//总钻风坐标对正
+    {
+			// Vz = 0;//清0Vz
+      *mode = Pick_up_card;//模式转变
+			target_type = *mode;
+    }
+		else
+		{
+      CSI_dis_correct(center_x, center_y);//总钻风坐标对正
+			*mode = Car_find_card_cor;
+		}
+	}
 }

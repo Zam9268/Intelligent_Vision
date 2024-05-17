@@ -72,10 +72,10 @@ int main(void)
 {
     clock_init(SYSTEM_CLOCK_600M); //??????????
     CLOCK_EnableClock(kCLOCK_Pit);//pit
-    debug_init();                  //debug³õÊ¼»¯
+    debug_init();                  //debugï¿½ï¿½Ê¼ï¿½ï¿½
     system_delay_ms(300);         
 	
-//    system_delay_ms(10000);         //¿ª³µºóÑÓÊ± 
+//    system_delay_ms(10000);         //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê± 
     // key_init(10);//?????????
 	// pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
     // while(1)//????????1s???????
@@ -92,26 +92,26 @@ int main(void)
     //     }
     // }
 //    PidInit();//PID?????
-//----------º¯Êı(²ÎÊı)³õÊ¼»¯---------------------//    
-	//   uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//´®¿Ú1³õÊ¼»¯£¬ÓÃÓÚart
+//----------ï¿½ï¿½ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½Ê¼ï¿½ï¿½---------------------//    
+	//   uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½art
 //	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-	  My_Communication_Init();//Í¨ĞÅ³õÊ¼»¯
-    PidInit();//ÔöÁ¿Ê½pid³õÊ¼»¯
-    Pos_PidInit();//Î»ÖÃÊ½pid³õÊ¼»¯
-	  Distance_PidInit();//Î»ÖÃ»·pid³õÊ¼»¯
+	 My_Communication_Init();//Í¨ï¿½Å³ï¿½Ê¼ï¿½ï¿½
+   PidInit();//ï¿½ï¿½ï¿½ï¿½Ê½pidï¿½ï¿½Ê¼ï¿½ï¿½
+//   Pos_PidInit();//Î»ï¿½ï¿½Ê½pidï¿½ï¿½Ê¼ï¿½ï¿½
+	 Distance_PidInit();//
 
     ips114_init();//????????
     ips114_set_dir(IPS114_PORTAIT);
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
-//  //----------Ä£¿é³õÊ¼»¯--------------------// 
-	  ips114_clear();                //ÇåÆÁ
-   Motor_Init();                  //µç»ú³õÊ¼»¯
-   Encoder_Init();                //±àÂëÆ÷³õÊ¼»¯
-   Camera_Init();                 //ÉãÏñÍ·³õÊ¼»¯
-	  my_imu660ra_init();            //ÍÓÂİÒÇ³õÊ¼»¯
-    my_pwm_gpio();                 //»úĞµ±Û³õÊ¼»¯£¬Ò»¶¨Òª¼Ó!!!ÉÕ¹ıÒ»´Î¶æ»úÁË
-//------------ÖĞ¶Ï³õÊ¼»¯-------------------//    
+//  //----------Ä£ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½--------------------// 
+	ips114_clear();                //ï¿½ï¿½ï¿½ï¿½
+   Motor_Init();                  //ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+   Encoder_Init();                //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
+   Camera_Init();                 //ï¿½ï¿½ï¿½ï¿½Í·ï¿½ï¿½Ê¼ï¿½ï¿½
+	my_imu660ra_init();            //ï¿½ï¿½ï¿½ï¿½ï¿½Ç³ï¿½Ê¼ï¿½ï¿½
+//    my_pwm_gpio();                 //ï¿½ï¿½Ğµï¿½Û³ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½Òªï¿½ï¿½!!!ï¿½Õ¹ï¿½Ò»ï¿½Î¶ï¿½ï¿½ï¿½ï¿½
+//------------ï¿½Ğ¶Ï³ï¿½Ê¼ï¿½ï¿½-------------------//    
     pit_ms_init(PIT_CH0,5);    // 5ms
     pit_ms_init(PIT_CH1,5);    // 10ms
     pit_ms_init(PIT_CH2,15);    // 15ms
@@ -128,29 +128,48 @@ int main(void)
 //    Speed[1].target_speed=40.0;
 //    Speed[0].target_speed=40.0;//?????
 
-    
+//    int once = 1;
+//		int zuobiao_x=0;
+//		int zuobiao_y=0;
     interrupt_global_enable(0);    //??????????
 //		int b = 1;
 //		float start_angle = 100.0;
     while(1)
     {   
- 		  ips114_show_int(90,0,now_distance_y,4);
-       ips114_show_int(90,20,now_distance_x,3);//ÏÔÊ¾×ø±ê
- 			ips114_show_int(90,40,card_y[0],3);
- 			ips114_show_int(90,60,target_type,3);
- 			ips114_show_int(90,80,card_y[0] - (int)Car_dis_y,3);
- 			ips114_show_int(90,100,(int)Car_dis_y,3);
- //			ips114_show_float(0,0,Angle_Z,3,2);
- 			ips114_show_float(0,0,dis_change[0],3,2);
- 			ips114_show_float(0,20,turn_angle,3,2);
-			      ips114_show_float(0,40,Angle_Z,3,2);
-            //Turn_Angle_PD(90);//²âÊÔÍ¨¹ı
-            ips114_show_float(0,60,Vz,3,2);
-////		// test_arm();
-       car_findcard(&car_mode);//Ä¬ÈÏcarmodeÎª0
+  	   	 ips114_show_int(90,0,now_distance_y,4);
+        ips114_show_int(90,20,now_distance_x,4);//ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
+// //			 ips114_show_float(0,0,Car_dis_x,3,4);
+// // 			 ips114_show_float(0,20,Car_dis_y,3,4);
+//  	 		ips114_show_int(90,40,card_y[0],3);
+//  	 		ips114_show_int(90,60,target_type,3);
+//  	 		ips114_show_int(90,80,card_y[0] - (int)Car_dis_y,3);
+// //*********************æµ‹è¯•å¼¯é“å¡ç‰‡åæ ‡***********************//
+// //			if(abs(now_distance_y)>0&&abs(now_distance_x)>0)
+// //			{
+// //				if(once)
+// //				{
+// //					Car_dis_x = 0;
+// //					Car_dis_y = 0;
+// //					zuobiao_x=now_distance_x;
+// //					zuobiao_y=now_distance_y;
+// //					once = 0;
+// //				}
+// //			}
+// //			ips114_show_int(90,60,zuobiao_x,4);//ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
+// //			 ips114_show_int(90,80,zuobiao_y,4);//ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
+// //      ips114_show_int(90,80,(int)Car_dis_x,3);
+//  			ips114_show_int(90,100,(int)Car_dis_y,3);
+//  			ips114_show_float(0,0,Angle_Z,3,2);
+// // 			 ips114_show_float(0,0,dis_change[0],3,2);
+//  			 ips114_show_float(0,20,turn_angle,3,2);
+// 			 ips114_show_float(0,40,Vz,3,2);
+//             //Turn_Angle_PD(90);//ï¿½ï¿½ï¿½ï¿½Í¨ï¿½ï¿½
+// //            ips114_show_float(0,60,Vz,3,2);
+// ////		// test_arm();
+//         car_findcard(&car_mode);//æ¨¡å¼é€‰æ‹©
 			
-//			  Drive_Motor();//Íâ»·£¬Î»ÖÃ»·£¬¶ÔÎ»ÖÃ½øĞĞ´¦Àí
-//        turnloc_pid();//´®¼¶pid
+//			  Drive_Motor();//ï¿½â»·ï¿½ï¿½Î»ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã½ï¿½ï¿½Ğ´ï¿½ï¿½ï¿½
+//        turnloc_pid();//ï¿½ï¿½ï¿½ï¿½pid
 //		car_run();
         //  ips114_show_int(188,20,now_distance_x,3);
         //  ips114_show_int(188,40,now_distance_y,3);
@@ -174,14 +193,21 @@ int main(void)
         // }
 //        Move_Transfrom(1000,1000,0);
 ////        text_arm();
-		        test();
+		         test();
+//                uint8 *output_address;
+//                output_address=Scharr_Edge(*mt9v03x_image,1700);//use the way of sccan edge to get the image
+//		    // uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
+//            // ips114_show_uint(188,15,the_max_G,4);
+//            memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
+//            // Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
+//            ips114_displayimage03x(*Image_Use,188,120);
 //            car_findcard(1);
 //			 Distance_Motor();
-//			 if(Speed[0].target_speed == 0)//ÒòÎªËÄ¸öÂÖ×ÓÊä³öÏàÍ¬µÄËÙ¶È£¬Òò´ËÈÎÈ¡Ò»¸öÂÖ×Ó¼ì²â¼´¿É£¬´ËÊ±ÒÑµ½´ï¿¨Æ¬y×ø±êµØµã£¬ËÙ¶ÈÎª0
+//			 if(Speed[0].target_speed == 0)//ï¿½ï¿½Îªï¿½Ä¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ó¼ï¿½â¼´ï¿½É£ï¿½ï¿½ï¿½Ê±ï¿½Ñµï¿½ï¿½ï¿¨Æ¬yï¿½ï¿½ï¿½ï¿½Øµã£¬ï¿½Ù¶ï¿½Îª0
 //      {
-////         mode = Car_turn;//Ä£Ê½×ª±ä
-////         now_angle = Angle_Z;//¼ÇÂ¼ÏÂ×ªÏòÇ°µÄ½Ç¶È
-//         Car_dis_y = 0;//Çå¿ÕÀï³Ì¼ÆyµÄ¼ÆÊıÖµ
+////         mode = Car_turn;//Ä£Ê½×ªï¿½ï¿½
+////         now_angle = Angle_Z;//ï¿½ï¿½Â¼ï¿½ï¿½×ªï¿½ï¿½Ç°ï¿½Ä½Ç¶ï¿½
+//         Car_dis_y = 0;//ï¿½ï¿½ï¿½ï¿½ï¿½Ì¼ï¿½yï¿½Ä¼ï¿½ï¿½ï¿½Öµ
 //				 Turn_Angle_PD(90);
 //      }
         // car_findcard(1);						
