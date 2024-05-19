@@ -134,20 +134,20 @@ int main(void)
 //		float start_angle = 100.0;
     while(1)
     {   
- 		  ips114_show_int(90,0,now_distance_y,4);
-       ips114_show_int(90,20,now_distance_x,3);//显示坐标
- 			ips114_show_int(90,40,card_y[0],3);
- 			ips114_show_int(90,60,target_type,3);
- 			ips114_show_int(90,80,card_y[0] - (int)Car_dis_y,3);
- 			ips114_show_int(90,100,(int)Car_dis_y,3);
- //			ips114_show_float(0,0,Angle_Z,3,2);
- 			ips114_show_float(0,0,dis_change[0],3,2);
- 			ips114_show_float(0,20,turn_angle,3,2);
-			      ips114_show_float(0,40,Angle_Z,3,2);
-            //Turn_Angle_PD(90);//测试通过
-            ips114_show_float(0,60,Vz,3,2);
-////		// test_arm();
-       car_findcard(&car_mode);//默认carmode为0
+// 		  ips114_show_int(90,0,now_distance_y,4);
+//       ips114_show_int(90,20,now_distance_x,3);//显示坐标
+// 			ips114_show_int(90,40,card_y[0],3);
+// 			ips114_show_int(90,60,target_type,3);
+// 			ips114_show_int(90,80,card_y[0] - (int)Car_dis_y,3);
+// 			ips114_show_int(90,100,(int)Car_dis_y,3);
+// //			ips114_show_float(0,0,Angle_Z,3,2);
+// 			ips114_show_float(0,0,dis_change[0],3,2);
+// 			ips114_show_float(0,20,turn_angle,3,2);
+//			      ips114_show_float(0,40,Angle_Z,3,2);
+//            //Turn_Angle_PD(90);//测试通过
+//            ips114_show_float(0,60,Vz,3,2);
+//////		// test_arm();
+//       car_findcard(&car_mode);//默认carmode为0
 			
 //			  Drive_Motor();//外环，位置环，对位置进行处理
 //        turnloc_pid();//串级pid
