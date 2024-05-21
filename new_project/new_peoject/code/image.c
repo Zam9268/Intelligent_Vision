@@ -33,13 +33,13 @@ uint8 flag_test=0;
 uint8 pick_up_mode=0;//when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
 uint8 card_left_up_find_flag=0;//the lef up corner of the card lying on the side of the road is found
 uint8 card_right_up_find_flag=0;//the right up corner of the card lying on the side of the road is found
+uint8 left_island_flag,right_island_flag;//the flag of the island on the left and right
 int left_up_point[2]={0};//左上角拐点坐标
 int right_up_point[2]={0};//右下角拐点坐标
 float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
 float last_err=0.00;
-int center_x,center_y;
 
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];//store the data received from the serial port,it only store 64 bytes  
@@ -600,7 +600,7 @@ void Search_Center(void)
     if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
     {
         int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
-        // int center_x,center_y;
+        int center_x,center_y;
         Get_Card_Center_coordinate(left_up_point[0],left_up_point[1],right_up_point[0],right_up_point[1],&center_x,&center_y);
         Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
         Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
@@ -734,8 +734,8 @@ void Outer_Analyse(void)
         if(Left_Lost_Time<=15&&Right_Lost_Time<=15&&Both_Lost_Time<=15) Road_Type=STRAIGHT_ROAD;
         if(Left_Lost_Time<15&&Right_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=RIGHT_TURN;
         if(Right_Lost_Time<15&&Left_Lost_Time>=30&&Both_Lost_Time<15&&Search_Stop_Line<=100)   Road_Type=LEFT_TURN;
-        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;
-        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;
+        if(Left_Lost_Time>=15&&Right_Lost_Time<=5&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=LEFT_HUANDAO;left_island_flag=1;
+        if(Left_Lost_Time<=5&&Right_Lost_Time>=15&&Both_Lost_Time<=5&&Search_Stop_Line>=100)    Road_Type=RIGHT_HUANDAO;right_island_flag=1;
         if(Right_Lost_Time>=30&&Left_Lost_Time>=30&&Both_Lost_Time>=30) Road_Type=CROSSING;
     }
     if(Road_Type==STRAIGHT_ROAD)    Ramp_Detect();
@@ -1409,15 +1409,59 @@ uint8 Black_White_Dump(uint8 row,uint8 start_column,uint8 end_column)
  * @param none
  * @return none
  */
-uint8 Island_State=0;
+uint8 Island_State=0;//record the state of the island on the left or right
 void Island_Detect(void)
 {
-    static int state1_down_guai[2]={0};//record the position of the the down point of the state1
-    static int state1_up_guai[2]={0};//record the position of the the up point of the state1
+    static int left_down_guai[2]={0};//record the position of the the down point of the state1
+    static int right_down_guai[2]={0};//record the position of the the up point of the state1
     int monotonicity_change_left_flag=0;
     int monotonicity_change_right_flag=0;//record the position of the left and right boundary monotonicity row
     int continuity_change_left_flag=0;//record the position of the left boundary continuity row
     int continuity_change_right_flag=0;//record the position of the right boundary continuity row
+    int monotonicity_change_line[2];
+    continuity_change_left_flag=Continuity_Change_Left(IMAGE_HEIGHT-1,5,10);//find the position of the left boundary continuity row
+    continuity_change_right_flag=Continuity_Change_Right(IMAGE_HEIGHT-1,5,10);//find the position of the right boundary continuity row
+    monotonicity_change_right_flag = Monotonicity_Change_Right(MT9V03X_H - 1 - 10, 10);
+    monotonicity_change_left_flag = Monotonicity_Change_Left(MT9V03X_H - 1 - 10, 10);
+    /*the code of ips*/
+    /*test the left island firstly*/
+    switch(Island_State)
+    {
+        case 0://the state of the island is 0:There is no access to the roundabout, only one side of the road is repaired
+        {
+            if(monotonicity_change_right_flag == 0&&continuity_change_left_flag!=0
+            &&continuity_change_right_flag ==0 && continuity_change_left_flag >=60 && Left_Lost_Time >=10&&
+            Left_Lost_Time <=55 && Right_Lost_Time<= 15 &&Both_Lost_Time <= 15)
+            {
+                left_down_guai[0]=left_line[continuity_change_left_flag];//record the column of the left down point
+                left_down_guai[1]=continuity_change_left_flag;//record the row of the left down point
+                if(left_down_guai[0]>=20 &&left_down_guai[1] >=60)
+                {
+                    Island_State=1;//change the state to 1
+                }
+                else
+                {
+                    Island_State=0;//remain the state to 0
+                }
+            }
+        }break;
+        case 1:
+        {
+            /*patching line first*/
+            monotonicity_change_line[0] = Monotonicity_Change_Left(30, 5); // 寻找单调性改变点
+            monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
+            Left_Add_Line((int)(monotonicity_change_line[1] * 0.15), MT9V03X_H - 1, monotonicity_change_line[1], monotonicity_change_line[0]);
+            if(continuity_change_left_flag > 60)
+			{
+			}
+        }break;
+
+        case 2:
+        {
+
+        }break;
+
+    }
 }
 /**
  * @brief Zebra crossing detection function
@@ -1469,13 +1513,16 @@ void test2(void)
     else if(Road_Type==LEFT_TURN)   type=3;
     else if(Road_Type==CROSSING)    type=4;
     else if(Road_Type==BANMAXIAN)   type=5;
+    else if(Road_Type==LEFT_HUANDAO) type=6;
+    else if(Road_Type == RIGHT_HUANDAO) type=7;
     if(Road_Type==CROSSING) Cross_Detect();
+    if(left_island_flag||right_island_flag) Island_Detect();
     // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
     // {
         // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
-//     }
+     
     if(type==4)
     {
         // ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
@@ -1504,10 +1551,10 @@ void test2(void)
     
     */
     ips114_show_float(188,0,my_err,2,2);
-    // ips114_show_uint(188,75,Longest_White_Column_Left[1],3);
-    // ips114_show_uint(188,30,type,3);
-    // ips114_show_uint(188,45,Left_Lost_Time,3);
-    // ips114_show_uint(188,60,Right_Lost_Time,3);
+    ips114_show_uint(188,15,Longest_White_Column_Left[1],3);
+    ips114_show_uint(188,30,type,3);
+    ips114_show_uint(188,45,Left_Lost_Time,3);
+    ips114_show_uint(188,60,Right_Lost_Time,3);
     //  ips114_show_int(188,75,now_distance_x,3);
     //  ips114_show_int(188,90,now_distance_y,3);
     // ips114_show_uint(188,15,Left_Up_Find,3);
@@ -1546,12 +1593,12 @@ void test(void)
         /*attention:if the threshold in the*/
         if(pick_up_mode==0)
         {
-            output_address=Scharr_Edge(*mt9v03x_image,2100);//use the way of sccan edge to get the image
+            output_address=Scharr_Edge(*mt9v03x_image,1700);//use the way of sccan edge to get the image
 		    // uint8 threshold=OSTU_GetThreshold((uint8 *)mt9v03x_image,IMAGE_WIDTH,IMAGE_HEIGHT);
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use,output_address,IMAGE_HEIGHT*IMAGE_WIDTH*sizeof(uint8));
             Center_line_deal_plus(23,163);//Cannot set too high or too low boundary, otherwise it will cause an error
-//            Easy_Filtering(110,20,30,170,5);
+           Easy_Filtering(110,20,30,170,5);
         }
         else//if the state is picking the card
         {
@@ -1564,6 +1611,5 @@ void test(void)
             Search_Center();
         }
     }	
-		ips114_displayimage03x(*Image_Use,188,120);
-//    test2();
+    test2();
 }
