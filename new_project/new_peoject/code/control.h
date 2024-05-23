@@ -37,7 +37,8 @@
 #define Car_go           0 //寻迹
 #define Car_find_card_y  1 //向卡片的y轴坐标前进
 #define Car_turn         2 //转向
-#define Car_find_card_x  3 //向卡片的x轴坐标前进 
+#define Car_find_card_cor  3 //总钻风微调标
+#define Pick_up_card  4 //机械臂拾取卡片
 #define Distance_output 40  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 
@@ -85,6 +86,7 @@ extern float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 extern float Vx_world, Vy_world;//世界坐标上的x，y
 extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 extern float Car_dis_x2, Car_dis_y2;
+extern float Car_dis_car_x,Car_dis_car_y;
 extern float Turn_Bias;
 extern float dis_kp;//距离环kp
 extern float dis_kd;//距离环kd
@@ -96,6 +98,7 @@ extern int Put_flag;
 extern int target_type;
 extern int car_mode;
 extern float turn_angle;
+extern int catch_card_flag;
 
 extern int pid_motor[4];
 

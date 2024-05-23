@@ -9,10 +9,10 @@
 #define WHITE_POINT 255
 #define BLACK_POINT 0
 
-extern int center[IMAGE_HEIGHT]; // ��������
-extern uint8 pick_up_mode;       // 捡卡片模式
-typedef enum
-{
+extern int center[IMAGE_HEIGHT];//��������
+extern uint8 pick_up_mode;//捡卡片模式
+extern int center_x,center_y;//卡片中心坐标
+typedef enum{
     STRAIGHT_ROAD,
     LEFT_TURN,
     RIGHT_TURN,

@@ -66,11 +66,11 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH1))
     {
-        // ��ȡ������
-        //  Read_Encoder();
-        Get_angle();
-        Encoder_odometer();
-        pit_flag_clear(PIT_CH1);
+		//��ȡ������
+		// Read_Encoder();
+		 Get_angle();
+		 Encoder_odometer();
+     pit_flag_clear(PIT_CH1);
     }
 
     if (pit_flag_get(PIT_CH2))

@@ -88,6 +88,7 @@ void Get_angle()
 {
     IMU660ra_newValues();
 	 Angle_Z+=fil_Gyro_z*dt;
+	 Angle_z+=fil_Gyro_z*dt;//用作拾取卡片时
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
 }
