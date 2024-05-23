@@ -69,21 +69,21 @@ def cal_mtx(UV: np.array, XY: np.array) -> np.array:
 
 show =True
 while(True):
-    #while(True):
-    #    img = sensor.snapshot()
-    #    new_img_coordinate=[]
-    #    new_img_coordinate.append([-43,104])
-    #    new_img_coordinate.append([26,104])
-    #    new_img_coordinate.append([53,51])
-    #    new_img_coordinate.append([-59,51])
-    #    new_world_coordinates=[]
-    #    new_world_coordinates.append([-185,575])
-    #    new_world_coordinates.append([220,575])
-    #    new_world_coordinates.append([220,175])
-    #    new_world_coordinates.append([-185,175])
-    #    H= cal_mtx(new_img_coordinate,new_world_coordinates)
-    #    pyb.mdelay(1000)
-    #    print(H)
+    while(True):
+        img = sensor.snapshot()
+        new_img_coordinate=[]
+        new_img_coordinate.append([-30,101])
+        new_img_coordinate.append([30,101])
+        new_img_coordinate.append([62,32])
+        new_img_coordinate.append([-62,32])
+        new_world_coordinates=[]
+        new_world_coordinates.append([-210,590])
+        new_world_coordinates.append([210,590])
+        new_world_coordinates.append([210,80])
+        new_world_coordinates.append([-210,80])#偏移坐标210
+        H= cal_mtx(new_img_coordinate,new_world_coordinates)
+        pyb.mdelay(1000)
+        print(H)
     img = sensor.snapshot()
     for r in img.find_rects(threshold = 20000):#这个矩形包含的像素点至少为20000个，防止矩形误判
         img.draw_rectangle(r.rect(), color = (255, 0, 0))#画出矩形,这个矩形框为红色

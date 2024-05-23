@@ -5,192 +5,171 @@
 #include "math.h"
 
 uint8 uart_get_data[64];
-uint8 fifo_get_data[64];//¶¨Òå»º³åÇøĞÅÏ¢´æ´¢Êı×é
-uint8 get_data =0;//¶¨Òå½ÓÊÕÊı¾İ
-uint32 fifo_data_count =0;//¶¨Òå»º³åÇøÊı¾İ¼ÆÊı
-fifo_struct uart_data_fifo;//¶¨Òå»º³åÇø½á¹¹Ìå
-uint8 get_states=0;//¶¨Òå½ÓÊÕ×´Ì¬
-uint8 right_data[64]={0};//¶¨Òå½ÓÊÕÊı¾İÊı×é   
-uint8 arm_uart_flag =0 ;//¶¨Òå»úĞµ±Û´®¿Ú±êÖ¾Î»
-uint8 arm_uart_flag_on=0;
-uint8 testuart_flag =0;//¶¨Òå²âÊÔ´®¿Ú±êÖ¾Î»
-uint8 data_length=0;//¶¨ÒåÊı¾İ³¤¶È
-uint8 transform_counts=0;//¶¨ÒåÊı¾İ×ª»»¼ÆÊı
-char str[]="why";//¶¨Òå½ÓÊÕ×Ö·û´®get
+uint8 fifo_get_data[64];    // ç”¨äºå­˜å‚¨æ¥æ”¶åˆ°çš„æ•°æ®
+uint8 get_data = 0;         // æ¥æ”¶æ•°æ®çš„å˜é‡
+uint32 fifo_data_count = 0; // ç”¨äºå­˜å‚¨æ¥æ”¶æ•°æ®çš„ä¸ªæ•°
+fifo_struct uart_data_fifo; // å®šä¹‰ä¸€ä¸ªæ¥æ”¶æ•°æ®çš„ç»“æ„ä½“
+uint8 get_states = 0;       // æ¥æ”¶çŠ¶æ€
+uint8 right_data[64] = {0}; // æ¥æ”¶åˆ°çš„æ•°æ®å­˜å‚¨æ•°ç»„
+uint8 arm_uart_flag = 0;    // ARMä¸²å£é€šä¿¡æ ‡å¿—ä½
+uint8 arm_uart_flag_on = 0;
+uint8 testuart_flag = 0;    // æµ‹è¯•ä¸²å£é€šä¿¡æ ‡å¿—ä½
+uint8 data_length = 0;      // æ•°æ®é•¿åº¦
+uint8 transform_counts = 0; // æ•°æ®è½¬æ¢è®¡æ•°
+char str[] = "why";         // å‘é€å­—ç¬¦ä¸²get
 /**
- * @brief ´®¿ÚÍ¨ĞÅ³õÊ¼»¯
- * @param ÎŞ
- * @return ÎŞ
+ * @brief ä¸²å£é€šä¿¡åˆå§‹åŒ–
+ * @param æ— 
+ * @return æ— 
  */
 void My_Communication_Init(void)
 {
-    fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//³õÊ¼»¯»º³åÇø
-    uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//³õÊ¼»¯´®¿Ú1Í¨ĞÅÄ£¿é
-//    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//³õÊ¼»¯´®¿Ú2Í¨ĞÅÄ£¿é
-    uart_rx_interrupt(UART_1,1);//´®¿Ú1½ÓÊÕÖĞ¶ÏÊ¹ÄÜ
-//    uart_rx_interrupt(UART_4,1);//´®¿Ú2½ÓÊÕÖĞ¶ÏÊ¹ÄÜ
-    NVIC_SetPriority(LPUART1_IRQn,0);//ÉèÖÃ´®¿Ú1ÖĞ¶ÏÓÅÏÈ¼¶
-//    NVIC_SetPriority(LPUART4_IRQn,1);//ÉèÖÃ´®¿Ú2ÖĞ¶ÏÓÅÏÈ¼¶
+    fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // åˆå§‹åŒ–æ¥æ”¶æ•°æ®ç¼“å†²åŒº
+    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // åˆå§‹åŒ–ä¸²å£1é€šé“æ¨¡å—
+    //    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//åˆå§‹åŒ–ä¸²å£2é€šé“æ¨¡å—
+    uart_rx_interrupt(UART_1, 1); // ä½¿èƒ½ä¸²å£1æ¥æ”¶ä¸­æ–­
+    //    uart_rx_interrupt(UART_4,1);//ä½¿èƒ½ä¸²å£2æ¥æ”¶ä¸­æ–­
+    NVIC_SetPriority(LPUART1_IRQn, 0); // è®¾ç½®ä¸²å£1ä¸­æ–­ä¼˜å…ˆçº§
+    //    NVIC_SetPriority(LPUART4_IRQn,1);//è®¾ç½®ä¸²å£2ä¸­æ–­ä¼˜å…ˆçº§
 }
 
 /**
- * @brief ´®¿Ú1½ÓÊÕÖĞ¶Ï´¦Àíº¯Êı
- * @param ÎŞ
- * @return ÎŞ
- * @attention 1. Õâ¸öÊÇÖĞ¶Ï½ÓÊÕÊı¾İ£¬Ê¡Ê±¼ä£¬²»ÓÃµÈ´ı£¬Ö±½Ó´æÈë»º³åÇø£¨Î¢»úÔ­Àí½²¹ıµÄ£©
+ * @brief ç¬¬1ä¸ªä¸²å£æ¥æ”¶ä¸­æ–­å¤„ç†å‡½æ•°
+ * @param æ— 
+ * @return æ— 
+ * @attention 1. è¯¥å‡½æ•°ç”¨äºæ¥æ”¶ä¸²å£1çš„æ•°æ®ï¼Œå¹¶å°†æ¥æ”¶åˆ°çš„æ•°æ®å­˜å…¥get_dataå˜é‡ä¸­ï¼Œæ³¨æ„get_dataæ˜¯ä¸€ä¸ªå…¨å±€å˜é‡ã€‚
  */
 void uart1_rx_interrupt_handler(void)
 {
-    uart_query_byte(UART_1,&get_data);//²éÑ¯´®¿Ú1½ÓÊÕÊı¾İ£¬½«½ÓÊÕÊı¾İ´æÈëget_dataÖĞ£¬×¢Òâget_dataÊÇÒ»¸öÈ«¾Ö±äÁ¿
-    fifo_write_buffer(&uart_data_fifo,&get_data,1);//½«get_dataÖĞµÄÊı¾İ´æÈë»º³åÇøÖĞ
+    uart_query_byte(UART_1, &get_data);               // æŸ¥è¯¢ä¸²å£1çš„æ•°æ®ï¼Œå¹¶å°†æ•°æ®å­˜å…¥get_dataå˜é‡ä¸­
+    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // å°†get_dataä¸­çš„æ•°æ®å†™å…¥ç¼“å†²åŒº
 }
 
 /**
- * @brief ´®¿Ú4½ÓÊÕÖĞ¶Ï´¦Àíº¯Êı
- * @param ÎŞ
- * @return ÎŞ
+ * @brief ç¬¬4ä¸ªä¸²å£æ¥æ”¶ä¸­æ–­å¤„ç†å‡½æ•°
+ * @param æ— 
+ * @return æ— 
  */
 void uart4_rx_interrupt_handler(void)
 {
-    uart_query_byte(UART_4,&get_data);//²éÑ¯´®¿Ú2½ÓÊÕÊı¾İ£¬½«½ÓÊÕÊı¾İ´æÈëget_dataÖĞ£¬×¢Òâget_dataÊÇÒ»¸öÈ«¾Ö±äÁ¿
-    fifo_write_buffer(&uart_data_fifo,&get_data,1);//½«get_dataÖĞµÄÊı¾İ´æÈë»º³åÇøÖĞ
+    uart_query_byte(UART_4, &get_data);               // æŸ¥è¯¢ä¸²å£4çš„æ•°æ®ï¼Œå¹¶å°†æ•°æ®å­˜å…¥get_dataå˜é‡ä¸­
+    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // å°†get_dataä¸­çš„æ•°æ®å†™å…¥ç¼“å†²åŒº
 }
 
 /**
- * @brief ´®¿Ú1,4½ÓÊÕÊı¾İº¯Êı
- * @param ÎŞ
- * @return ÎŞ
- * @attention  1.Í¨¹ı×´Ì¬»úÀ´ÊµÏÖ£¬ºÍÉÏÒ»½ìÊ¦ĞÖµÄÓĞ²î±ğ£¬¸ÄÁËÒ»ÏÂ£¬Õâ¸ö¿ÉÒÔÒ»´ÎĞÔ¶àÊı¾İÊÕ·¢
- *             2.´®¿Ú1ÓÃÓÚart1£¨15·ÖÀàÊ¶±ğ£©    ´®¿Ú4ÓÃÓÚart2£¨Ä¿±ê¼ì²â£©
- *              ¶ÔÓÚart1Ö»ĞèÒª·¢ËÍÒ»¸öÊı×Ö£¬0~F£¬¶ø¶ÔÓÚart2ĞèÒª·¢ËÍÁ½¸öÊı×ÖÎª¶ÔÓ¦µÄ×ø±ê£¨·¢ËÍµÄÊıÄ¿¿ÉÒÔµ÷Õû£©
+ * @brief è·å–ä¸²å£1å’Œ4çš„æ•°æ®
+ * @param æ— 
+ * @return æ— 
+ * @attention  1. é€šè¿‡çŠ¶æ€æœºå®ç°æ•°æ®çš„è§£æï¼Œé¦–å…ˆåˆ¤æ–­æ˜¯å¦ä¸ºå¸§å¤´ï¼Œå¸§å¤´ä¸º0xB7ï¼Œå¦‚æœæ˜¯å¸§å¤´åˆ™è¿›å…¥çŠ¶æ€1ã€‚
+ *             2. åœ¨çŠ¶æ€1ä¸‹ï¼Œåˆ¤æ–­æ¥æ”¶åˆ°çš„æ•°æ®æ˜¯å¦ä¸ºæœ‰æ•ˆæ•°æ®ï¼Œæœ‰æ•ˆæ•°æ®èŒƒå›´ä¸º1-16ï¼Œå¦‚æœæ˜¯æœ‰æ•ˆæ•°æ®ï¼Œåˆ™å°†æ•°æ®å­˜å…¥transform_countså˜é‡ä¸­ï¼Œè¿›å…¥çŠ¶æ€2ã€‚
+ *             3. åœ¨çŠ¶æ€2ä¸‹ï¼Œå¼€å§‹æ¥æ”¶å¯¹åº”æ•°æ®ï¼Œç›´åˆ°æ¥æ”¶åˆ°å¸§å°¾0x98ï¼Œåˆ¤æ–­æ¥æ”¶åˆ°çš„æ•°æ®ä¸ªæ•°æ˜¯å¦ä¸transform_countsç›¸ç­‰ï¼Œå¦‚æœç›¸ç­‰åˆ™è¡¨ç¤ºæ¥æ”¶å®Œæ•´ï¼Œè¿›å…¥çŠ¶æ€0ï¼Œå¦åˆ™è¿›å…¥çŠ¶æ€0å¹¶æ¸…ç©ºæ•°æ®ã€‚
  */
 void get_uartdata(void)
 {
-    fifo_data_count = fifo_used(&uart_data_fifo); //»ñÈ¡»º³åÇøÊı¾İ¼ÆÊı
-    
-    if(fifo_data_count!=0)
+    fifo_data_count = fifo_used(&uart_data_fifo); // è·å–ç¼“å†²åŒºä¸­çš„æ•°æ®ä¸ªæ•°
+
+    if (fifo_data_count != 0)
     {
-        if(get_states==0)//ÅĞ¶Ï½ÓÊÕ×´Ì¬
+        if (get_states == 0) // åˆ¤æ–­çŠ¶æ€
         {
-            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            //¶ÁÈ¡»º³åÇøÊı¾İ²¢Çå¿Õ»º³åÇø
-            if(fifo_get_data[0]==0xB7)  get_states=1;//ÅĞ¶ÏÊÇ·ñÎªÖ¡Í·£¬Èç¹ûÊÇÖ¡Í·Ôò½øÈëÏÂÒ»¸ö×´Ì¬
-            else get_states=0;//·ñÔò×´Ì¬Îª0
-            fifo_get_data[0]=0;//Çå¿Õ
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // è¯»å–ç¼“å†²åŒºä¸­çš„æ•°æ®å¹¶æ¸…ç©ºç¼“å†²åŒº
+            if (fifo_get_data[0] == 0xB7)
+                get_states = 1; // åˆ¤æ–­æ˜¯å¦ä¸ºå¸§å¤´ï¼Œå¦‚æœæ˜¯å¸§å¤´åˆ™è¿›å…¥çŠ¶æ€1
+            else
+                get_states = 0;   // çŠ¶æ€ä¸º0
+            fifo_get_data[0] = 0; // æ¸…ç©ºæ•°æ®
         }
-        else if(get_states==1)//½ÓÊÕ×´Ì¬Îª1
+        else if (get_states == 1) // çŠ¶æ€ä¸º1
         {
-            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            if(fifo_get_data[0]>=1&&fifo_get_data[0]<=16)   //ÅĞ¶ÏÊÇ·ñÎªÓĞĞ§Êı¾İ£¬Êı¾İµÄÊıÁ¿±ØĞëÎª1-16
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // è¯»å–ç¼“å†²åŒºä¸­çš„æ•°æ®å¹¶æ¸…ç©ºç¼“å†²åŒº
+            if (fifo_get_data[0] >= 1 && fifo_get_data[0] <= 16)
             {
-                transform_counts=fifo_get_data[0];//½«½ÓÊÕµ½µÄÊı¾İ´æÈëtransform_countsÖĞ
-                fifo_get_data[0]=0;//Çå¿Õ
-                get_states=2;//½ÓÊÕ×´Ì¬Îª2
+                transform_counts = fifo_get_data[0]; // åˆ¤æ–­æ˜¯å¦ä¸ºæœ‰æ•ˆæ•°æ®ï¼Œæœ‰æ•ˆæ•°æ®èŒƒå›´ä¸º1-16ï¼Œå°†æ•°æ®å­˜å…¥transform_countså˜é‡ä¸­
+                fifo_get_data[0] = 0;                // æ¸…ç©ºæ•°æ®
+                get_states = 2;                      // è¿›å…¥çŠ¶æ€2
             }
             else
             {
-                get_states=0;//·ñÔò×´Ì¬Îª0
-                fifo_get_data[0]=0;//Çå¿Õ
+                get_states = 0;       // çŠ¶æ€ä¸º0
+                fifo_get_data[0] = 0; // æ¸…ç©ºæ•°æ®
             }
         }
-        else if(get_states==2)//½ÓÊÕ×´Ì¬Îª2£¬¿ªÊ¼¶ÁÈ¡¶ÔÓ¦µÄÊı¾İ
+        else if (get_states == 2) // çŠ¶æ€ä¸º2ï¼Œå¼€å§‹æ¥æ”¶å¯¹åº”æ•°æ®
         {
-            static uint8 i = 0;//¶¨ÒåÊı¾İ¼ÆÊı£¬×¢ÒâÕâ¸öÊÇ¾²Ì¬±äÁ¿£¬Ã¿´Î½øÈëÕâ¸öº¯Êı¶¼»á±£ÁôÉÏÒ»´ÎµÄÖµ
-            fifo_read_buffer(&uart_data_fifo,fifo_get_data,&fifo_data_count,FIFO_READ_AND_CLEAN);
-            if(fifo_get_data[0]==0x98) // ÅĞ¶ÏÊÇ·ñÎªÖ¡Î²
+            static uint8 i = 0;                                                                      // é™æ€å˜é‡ç”¨äºè®°å½•æ•°æ®çš„ç´¢å¼•
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // è¯»å–ç¼“å†²åŒºä¸­çš„æ•°æ®å¹¶æ¸…ç©ºç¼“å†²åŒº
+            if (fifo_get_data[0] == 0x98)                                                            // åˆ¤æ–­æ˜¯å¦ä¸ºå¸§å°¾
             {
-                if(transform_counts==i)//Ë«ÖØ¼ì²â£¬ÅĞ¶ÏÊµ¼ÊÉÏ½ÓÊÕµ½µÄÊı¾İºÍ·¢ËÍ¶Ë·¢ËÍµÄÊı¾İÊÇ·ñÒ»ÖÂ
+                if (transform_counts == i) // åˆ¤æ–­å®é™…æ¥æ”¶åˆ°çš„æ•°æ®ä¸ªæ•°ä¸transform_countsæ˜¯å¦ä¸€è‡´
                 {
-                    data_length=i;//Êı¾İ³¤¶ÈÎªi
-                    i=0;//Êı×éÖ¸Õë¼ÆÊıÇåÁã
-                    get_states=0;//½ÓÊÕ×´Ì¬Îª0
-                    for(uint8 j=data_length;j<64;j++)
+                    data_length = i; // æ•°æ®é•¿åº¦ä¸ºi
+                    i = 0;           // é‡ç½®ç´¢å¼•
+                    get_states = 0;  // çŠ¶æ€ä¸º0
+                    for (uint8 j = data_length; j < 64; j++)
                     {
-                        right_data[j]=0;//Çå¿ÕÊı×é
+                        right_data[j] = 0; // æ¸…ç©ºæ•°æ®
                     }
-                    uart_write_string(UART_1,str);//·¢ËÍ×Ö·û´®get£¬×¢ÒâÈç¹ûmain.cÀïÃæÓÃÁËvofaµÄ»°£¬¾ÍÒª×¢ÊÍµô(while1µÄprintfº¯Êı)£¬·ñÔòÒ²»á·¢ËÍ¸øart£¬ÕâÑù·¢ËÍ¾Í»áÓĞÎÊÌâ
-                    uart_data_handle();//Êı¾İ´¦Àíº¯Êı
+                    uart_write_string(UART_1, str); // å‘ä¸²å£1å‘é€å­—ç¬¦ä¸²
+                    uart_data_handle();             // æ•°æ®å¤„ç†å‡½æ•°
                 }
                 else
                 {
-                    for(uint8 j=0;j<i;j++)
+                    for (uint8 j = 0; j < i; j++)
                     {
-                        right_data[j]=0;
-                        get_states=0;
+                        right_data[j] = 0;
+                        get_states = 0;
                     }
                 }
             }
             else
             {
-                right_data[i] = fifo_get_data[0]; // ½«½ÓÊÕµ½µÄÊı¾İ´æÈëright_dataÊı×éÖĞ
-                i++;//Êı¾İ¼ÆÊı¼Ó1
-                fifo_get_data[0]=0;//Çå¿Õ
+                right_data[i] = fifo_get_data[0]; // å°†æ¥æ”¶åˆ°çš„æ•°æ®å­˜å…¥right_dataæ•°ç»„ä¸­
+                i++;                              // ç´¢å¼•åŠ 1
+                fifo_get_data[0] = 0;             // æ¸…ç©ºæ•°æ®
             }
         }
         else
         {
-            get_states=0;//·ñÔò×´Ì¬Îª0
-            fifo_get_data[0]=0;//Çå¿Õ
+            get_states = 0;       // çŠ¶æ€ä¸º0
+            fifo_get_data[0] = 0; // æ¸…ç©ºæ•°æ®
         }
     }
 }
 
-int last_distance_x;//Ä¿±ê¼ì²âËã·¨ÖĞµÃµ½µÄÄ¿±êx×ø±ê
-unsigned int last_distance_y;//µÃµ½µÄy×ø±ê
-int now_distance_x;
-unsigned int now_distance_y;
-unsigned int card_count;//Ä¿±ê¼ì²âËã·¨ÖĞµÃµ½µÄ¿¨Æ¬Ä¿±ê×ÜÊıÁ¿
-float center_distance;//Ä¿±ê¼ì²âËã·¨ÖĞµÃµ½µÄÄ¿±êÖĞĞÄ¾àÀë
-float last_center_distance;//Ä¿±ê¼ì²âËã·¨ÖĞµÃµ½µÄÉÏÒ»´ÎÄ¿±êÖĞĞÄ¾àÀë
-uint8 find_card_flag=0;//Ñ°ÕÒ¿¨Æ¬±êÖ¾Î»
+int last_distance_x;          // ä¸Šä¸€æ¬¡ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹xåæ ‡
+unsigned int last_distance_y; // ä¸Šä¸€æ¬¡ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹yåæ ‡
+int now_distance_x;           // å½“å‰ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹xåæ ‡
+unsigned int now_distance_y;  // å½“å‰ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹yåæ ‡
+unsigned int card_count;      // ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹ä¸Šçš„å¡ç‰‡æ•°é‡
+float center_distance;        // å½“å‰ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹ä¸åŸç‚¹çš„è·ç¦»
+float last_center_distance;   // ä¸Šä¸€æ¬¡ç®—æ³•å¾—åˆ°çš„ç›®æ ‡ç‚¹ä¸åŸç‚¹çš„è·ç¦»
+uint8 find_card_flag = 0;     // æ˜¯å¦æ‰¾åˆ°å¡ç‰‡çš„æ ‡å¿—ä½
+
 /**
- * @brief ´®¿Ú1ºÍ´®¿Ú4½ÓÊÕµÄÊı¾İ×Ü´¦Àíº¯Êı
- * @param ÎŞ
- * @return ÎŞ
- * @attention 1. ÈçºÎÇø·Ö´®¿Ú1ºÍ´®¿Ú4·¢ËÍµÄÊı¾İÄØ£¿ºÜ¼òµ¥£¬ÕâÀïart£¨Ä¿±ê¼ì²â£©Á¬ÔÚ´®¿Ú1ÉÏÃæ£¬Ò»°ãÄ¿±ê¼ì²â¶¼ÊÇ·¢Á½¸öÊı¾İ£¬ËùÒÔÕâÀïµÄÊı¾İ³¤¶ÈÊÇ2¡£
- *            ¶øÈç¹ûÊÇart£¨·ÖÀà¼ì²â£©Á¬ÔÚ´®¿Ú4ÉÏÃæ£¬Õâ¸öÊ±ºò¶¼ÊÇ·¢Ò»¸öÊı¾İ£¬¹ÊÕâÀïµÄÊı¾İ³¤¶ÈÊÇ1¡£
- *            2. Èç¹û¼ì²âµ½µÄ¾àÀëºÍÉÏÒ»´ÎµÄ¾àÀë¾àÀë½ÏĞ¡£¬ÄÇÃ´¾ÍÄ¬ÈÏÎªÍ¬Ò»¸öÄ¿±ê£¬·ñÔò¾ÍÊÇĞÂµÄÄ¿±ê£¬¶ÔÓÚÍ¬Ò»¸öÄ¿±ê£¬Ö»¸üĞÂ×ø±ê£¬²»¸üĞÂÊıÁ¿¡£
+ * @brief å¤„ç†ä¸²å£1å’Œ4æ¥æ”¶åˆ°çš„æ•°æ®
+ * @param æ— 
+ * @return æ— 
+ * @attention 1. é€šè¿‡çŠ¶æ€æœºå®ç°æ•°æ®çš„è§£æï¼Œé¦–å…ˆåˆ¤æ–­æ˜¯å¦ä¸ºå¸§å¤´ï¼Œå¸§å¤´ä¸º0xB7ï¼Œå¦‚æœæ˜¯å¸§å¤´åˆ™è¿›å…¥çŠ¶æ€1ã€‚
+ *             2. åœ¨çŠ¶æ€1ä¸‹ï¼Œåˆ¤æ–­æ¥æ”¶åˆ°çš„æ•°æ®æ˜¯å¦ä¸ºæœ‰æ•ˆæ•°æ®ï¼Œæœ‰æ•ˆæ•°æ®èŒƒå›´ä¸º1-16ï¼Œå¦‚æœæ˜¯æœ‰æ•ˆæ•°æ®ï¼Œåˆ™å°†æ•°æ®å­˜å…¥transform_countså˜é‡ä¸­ï¼Œè¿›å…¥çŠ¶æ€2ã€‚
+ *             3. åœ¨çŠ¶æ€2ä¸‹ï¼Œå¼€å§‹æ¥æ”¶å¯¹åº”æ•°æ®ï¼Œç›´åˆ°æ¥æ”¶åˆ°å¸§å°¾0x98ï¼Œåˆ¤æ–­æ¥æ”¶åˆ°çš„æ•°æ®ä¸ªæ•°æ˜¯å¦ä¸transform_countsç›¸ç­‰ï¼Œå¦‚æœç›¸ç­‰åˆ™è¡¨ç¤ºæ¥æ”¶å®Œæ•´ï¼Œè¿›å…¥çŠ¶æ€0ï¼Œå¦åˆ™è¿›å…¥çŠ¶æ€0å¹¶æ¸…ç©ºæ•°æ®ã€‚
  */
 void uart_data_handle(void)
 {
-    if(data_length==5)//Èç¹ûÊÇÄ¿±ê¼ì²â½ÓÊÕµ½µÄÊı¾İ
+    if (data_length == 5) // åˆ¤æ–­æ¥æ”¶åˆ°çš„æ•°æ®é•¿åº¦æ˜¯å¦ä¸º5
     {
-        /*µÚÒ»Î»£ºxÖáÕı¸º µÚ¶şÎ»:x×ø±êÒç³öÏµÊı  µÚÈıÎ»£ºx×ø±êÈ¡ÓàÖµ
-        µÚËÄÎ»£º y×ø±êÒç³öÏµÊı  µÚÎåÎ»£ºy×ø±êÈ¡ÓàÖµ*/
-        if(right_data[0]==1)
+        /* ç¬¬ä¸€ä½ä¸ºxåæ ‡çš„é«˜å…«ä½ï¼Œç¬¬äºŒä½ä¸ºxåæ ‡çš„ä½å…«ä½ï¼Œç¬¬ä¸‰ä½ä¸ºyåæ ‡çš„é«˜å…«ä½ï¼Œç¬¬å››ä½ä¸ºyåæ ‡çš„ä½å…«ä½ */
+        if (right_data[0] == 1)
         {
-            now_distance_x=(right_data[1]*256+right_data[2]);
+            now_distance_x = (right_data[1] * 256 + right_data[2]); // xåæ ‡ä¸ºæ­£å€¼
         }
-        else if(right_data[0]==0)//È¡¸ºÖµ
+        else if (right_data[0] == 0)
         {
-            now_distance_x=-(right_data[1]*256+right_data[2]);
+            now_distance_x = -(right_data[1] * 256 + right_data[2]); // xåæ ‡ä¸ºè´Ÿå€¼
         }
-        now_distance_y=(right_data[3]*255+right_data[4]);
-        center_distance=sqrt(now_distance_x*now_distance_x+now_distance_y*now_distance_y);//Çó³öÖĞĞÄ¾àÀë
-        if((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0) 
-            card_count++;//×ø±ê¾àÀëÏà²î½Ï´ó£¬¾ÍÄ¬ÈÏÎª¼ì²âµ½ÁËĞÂµÄ¿¨Æ¬
-        /*µ±¿¨Æ¬Óë×ÖÊı¾àÀë·Ç³£½Ó½üÊ±£¬¾Í²»ÔÙ¸üĞÂ×ø±ê£¬Ö±½Ó¼ÇÂ¼µ±Ç°×ø±ê*/
+        now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // yåæ ‡
+        center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // è®¡ç®—è·ç¦»
+        if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
+            card_count++; // å¦‚æœè·ç¦»å˜åŒ–å¤§äº100.0ï¼Œåˆ™é»˜è®¤ä¸ºå‘ç°äº†æ–°çš„å¡ç‰‡
+        /* å¤„ç†å¡ç‰‡çš„é€»è¾‘ */
     }
 }
-/*
-??????????
-??????
-01 firearms??????
-02 explosives???????
-03 dagger??????
-04 spontoon????????
-05 fire_axe ??????????
-?????
-06 first_aid_kit?????????
-07 flashlight????????
-08 intercom ?????????
-09 bulletproof???????????
-10 telescope?????????
-11 helmet???????
-????????
-12 fire_engine??????????
-13 ambulance?????????
-14 armoredcar????????
-15 motorcycle????§Ô???
-
-*/
