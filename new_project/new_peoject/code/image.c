@@ -37,8 +37,9 @@ uint8 card_right_up_find_flag = 0;         // the right up corner of the card ly
 uint8 left_island_flag, right_island_flag; // the flag of the island on the left and right
 uint8 ramp_flag = 0;                       // the flag of the ramp
 uint8 Island_State = 0;                    // record the state of the island on the left or right
-int left_up_point[2] = {0};                // 左上角拐点坐标
-int right_up_point[2] = {0};               // 右下角拐点坐标
+int center_x, center_y;
+int left_up_point[2] = {0};  // 左上角拐点坐标
+int right_up_point[2] = {0}; // 右下角拐点坐标
 float Left_derivative[IMAGE_HEIGHT] = {0.0};
 float Right_derivative[IMAGE_HEIGHT] = {0.0};
 float err = 0.00;
@@ -426,7 +427,7 @@ begin:
         right_line[i] = right_border;
     }
     /*?????��???????????????????????????????????*/
-    Outer_Analyse();
+
     if (Longest_White_Column_Left[1] <= 60 && Left_Lost_Time >= 60 && Right_Lost_Time <= 5)
     {
         if (right_line[Boundry_Start_Right] <= (IMAGE_WIDTH / 2)) //????????????
@@ -659,7 +660,7 @@ void Search_Center(void)
     if (card_right_up_find_flag == 1 && card_left_up_find_flag == 1)
     {
         int real_left_up_x = 0, real_left_up_y = 0, real_right_up_x = 0, real_right_up_y = 0;
-        int center_x, center_y;
+
         Get_Card_Center_coordinate(left_up_point[0], left_up_point[1], right_up_point[0], right_up_point[1], &center_x, &center_y);
         Pespective_point(left_up_point[0], left_up_point[1], &real_left_up_x, &real_left_up_y);
         Pespective_point(right_up_point[0], right_up_point[1], &real_right_up_x, &real_right_up_y);
@@ -1071,6 +1072,101 @@ int Monotonicity_Change_Left(int start, int end)
     return monotonicity_change_line; //??????????????????
 }
 
+void Draw_Line(int startX, int startY, int endX, int endY)
+{
+    int i, x, y;
+    int start = 0, end = 0;
+    if (startX >= MT9V03X_W - 1) // �޷�����
+        startX = MT9V03X_W - 1;
+    else if (startX <= 0)
+        startX = 0;
+    if (startY >= MT9V03X_H - 1)
+        startY = MT9V03X_H - 1;
+    else if (startY <= 0)
+        startY = 0;
+    if (endX >= MT9V03X_W - 1)
+        endX = MT9V03X_W - 1;
+    else if (endX <= 0)
+        endX = 0;
+    if (endY >= MT9V03X_H - 1)
+        endY = MT9V03X_H - 1;
+    else if (endY <= 0)
+        endY = 0;
+    if (startX == endX) // һ������
+    {
+        if (startY > endY) // ����
+        {
+            start = endY;
+            end = startY;
+        }
+        for (i = start; i <= end; i++)
+        {
+            if (i <= 1)
+                i = 1;
+            Image_Use[i][startX] = BLACK_POINT;
+            Image_Use[i - 1][startX] = BLACK_POINT;
+        }
+    }
+    else if (startY == endY) // ��һ������
+    {
+        if (startX > endX) // ����
+        {
+            start = endX;
+            end = startX;
+        }
+        for (i = start; i <= end; i++)
+        {
+            if (startY <= 1)
+                startY = 1;
+            Image_Use[startY][i] = BLACK_POINT;
+            Image_Use[startY - 1][i] = BLACK_POINT;
+        }
+    }
+    else // ����������ˮƽ����ֱ��������������ǳ������
+    {
+        if (startY > endY) // ��ʼ�����
+        {
+            start = endY;
+            end = startY;
+        }
+        else
+        {
+            start = startY;
+            end = endY;
+        }
+        for (i = start; i <= end; i++) // �����ߣ���֤ÿһ�ж��кڵ�
+        {
+            x = (int)(startX + (endX - startX) * (i - startY) / (endY - startY)); // ����ʽ����
+            if (x >= MT9V03X_W - 1)
+                x = MT9V03X_W - 1;
+            else if (x <= 1)
+                x = 1;
+            Image_Use[i][x] = BLACK_POINT;
+            Image_Use[i][x - 1] = BLACK_POINT;
+        }
+        if (startX > endX)
+        {
+            start = endX;
+            end = startX;
+        }
+        else
+        {
+            start = startX;
+            end = endX;
+        }
+        for (i = start; i <= end; i++) // �����ߣ���֤ÿһ�ж��кڵ�
+        {
+
+            y = (int)(startY + (endY - startY) * (i - startX) / (endX - startX)); // ����ʽ����
+            if (y >= MT9V03X_H - 1)
+                y = MT9V03X_H - 1;
+            else if (y <= 0)
+                y = 0;
+            Image_Use[y][i] = BLACK_POINT;
+        }
+    }
+}
+
 /**
  * @brief ???�n??????
  * @param int start ?????, int end ?????
@@ -1143,6 +1239,26 @@ float Err_Handle(void)
                               //        if((abs(last_err-err)>=15)&&Road_Type==CROSSING)    err=last_err;//???????????????????????????????????????)
                               //    }
     return err;
+}
+
+void K_Draw_Line(float k, int startX, int startY, int endY)
+{
+    int endX = 0;
+
+    if (startX >= MT9V03X_W - 1) // 限幅处理
+        startX = MT9V03X_W - 1;
+    else if (startX <= 0)
+        startX = 0;
+    if (startY >= MT9V03X_H - 1)
+        startY = MT9V03X_H - 1;
+    else if (startY <= 0)
+        startY = 0;
+    if (endY >= MT9V03X_H - 1)
+        endY = MT9V03X_H - 1;
+    else if (endY <= 0)
+        endY = 0;
+    endX = (int)((endY - startY) / k + startX); //(y-y1)=k(x-x1)变形，x=(y-y1)/k+x1
+    Draw_Line(startX, startY, endX, endY);
 }
 
 /**
@@ -1303,6 +1419,111 @@ void inverse(double a[3][3], double inv[3][3])
     inv[2][2] = (a[0][0] * a[1][1] - a[1][0] * a[0][1]) * invdet;
 }
 
+int Find_Left_Up_Point(int start, int end) // 找四个角点，返回值是角点所在的行数
+{
+    int i, t;
+    int left_up_line = 0;
+    if (Left_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有拐点判断的意义
+        return left_up_line;
+    if (start < end)
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+    if (end <= MT9V03X_H - Search_Stop_Line) // 搜索截止行往上的全都不判
+        end = MT9V03X_H - Search_Stop_Line;
+    if (end <= 5) // 及时最长白列非常长，也要舍弃部分点，防止数组越界
+        end = 5;
+    if (start >= MT9V03X_H - 1 - 5)
+        start = MT9V03X_H - 1 - 5;
+    for (i = start; i >= end; i--)
+    {
+        if (left_up_line == 0 && // 只找第一个符合条件的点
+            abs(left_line[i] - left_line[i - 1]) <= 5 &&
+            abs(left_line[i - 1] - left_line[i - 2]) <= 5 &&
+            abs(left_line[i - 2] - left_line[i - 3]) <= 5 &&
+            (left_line[i] - left_line[i + 2]) >= 15 &&
+            (left_line[i] - left_line[i + 3]) >= 15 &&
+            (left_line[i] - left_line[i + 4]) >= 15)
+        {
+            left_up_line = i; // 获取行数即可
+            break;
+        }
+    }
+    return left_up_line; // 如果是MT9V03X_H-1，说明没有这么个拐点
+}
+
+int Find_Right_Down_Point(int start, int end) // 找四个角点，返回值是角点所在的行数
+{
+    int i, t;
+    int right_down_line = 0;
+    if (Right_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有拐点判断的意义
+        return right_down_line;
+    if (start < end)
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+    if (start >= MT9V03X_H - 1 - 5) // 下面5行数据不稳定，不能作为边界点来判断，舍弃
+        start = MT9V03X_H - 1 - 5;
+    if (end <= MT9V03X_H - Search_Stop_Line)
+        end = MT9V03X_H - Search_Stop_Line;
+    if (end <= 5)
+        end = 5;
+    for (i = start; i >= end; i--)
+    {
+        if (right_down_line == 0 &&                        // 只找第一个符合条件的点
+            abs(right_line[i] - right_line[i + 1]) <= 5 && // 角点的阈值可以更改
+            abs(right_line[i + 1] - right_line[i + 2]) <= 5 &&
+            abs(right_line[i + 2] - right_line[i + 3]) <= 5 &&
+            (right_line[i] - right_line[i - 2]) <= -5 &&
+            (right_line[i] - right_line[i - 3]) <= -10 &&
+            (right_line[i] - right_line[i - 4]) <= -10)
+        {
+            right_down_line = i; // 获取行数即可
+            break;
+        }
+    }
+    return right_down_line;
+}
+
+int Find_Right_Up_Point(int start, int end) // 找四个角点，返回值是角点所在的行数
+{
+    int i, t;
+    int right_up_line = 0;
+    if (Right_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没有拐点判断的意义
+        return right_up_line;
+    if (start < end)
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+    if (end <= MT9V03X_H - Search_Stop_Line) // 搜索截止行往上的全都不判
+        end = MT9V03X_H - Search_Stop_Line;
+    if (end <= 5) // 及时最长白列非常长，也要舍弃部分点，防止数组越界
+        end = 5;
+    if (start >= MT9V03X_H - 1 - 5)
+        start = MT9V03X_H - 1 - 5;
+    for (i = start; i >= end; i--)
+    {
+        if (right_up_line == 0 &&                          // 只找第一个符合条件的点
+            abs(right_line[i] - right_line[i - 1]) <= 5 && // 下面两行位置差不多
+            abs(right_line[i - 1] - right_line[i - 2]) <= 5 &&
+            abs(right_line[i - 2] - right_line[i - 3]) <= 5 &&
+            (right_line[i] - right_line[i + 2]) <= -8 &&
+            (right_line[i] - right_line[i + 3]) <= -15 &&
+            (right_line[i] - right_line[i + 4]) <= -15)
+        {
+            right_up_line = i; // 获取行数即可
+            break;
+        }
+    }
+    return right_up_line;
+}
+
 /**
  * @brief the function to find the upper point
  * @param start: the starting index, end: the ending index
@@ -1446,6 +1667,19 @@ void Lengthen_Right_Boundry(int start, int end)
     }
 }
 
+uint8 Find_Max_left_line(void)
+{
+    uint8 max[2] = {0};
+    for (uint8 i = Boundry_Start_Left; i >= 5; i--)
+    {
+        if (left_line[i] > max[0])
+        {
+            max[0] = left_line[i];
+            max[1] = i;
+        }
+    }
+    return max[1];
+}
 /**
  * @brief the function to detect the crossing
  * @param null
@@ -1634,6 +1868,7 @@ uint8 Black_White_Dump(uint8 row, uint8 start_column, uint8 end_column)
 
 void Island_Detect(void)
 {
+    static float k = 0;                  // 补线的斜率k
     static int left_down_guai[2] = {0};  // record the position of the the down point of the state1
     static int right_down_guai[2] = {0}; // record the position of the the up point of the state1
     int monotonicity_change_left_flag = 0;
@@ -1641,17 +1876,17 @@ void Island_Detect(void)
     int continuity_change_left_flag = 0;    // record the position of the left boundary continuity row
     int continuity_change_right_flag = 0;   // record the position of the right boundary continuity row
     int monotonicity_change_line[2];
+    int Left_Up_Guai[2] = {0};                                                           // 定义左上角拐点的坐标
     continuity_change_left_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10);   // find the position of the left boundary continuity row
     continuity_change_right_flag = Continuity_Change_Right_Island(IMAGE_HEIGHT - 1, 10); // find the position of the right boundary continuity row
     monotonicity_change_right_flag = Monotonicity_Change_Right(MT9V03X_H - 1 - 10, 10);
     monotonicity_change_left_flag = Monotonicity_Change_Left(MT9V03X_H - 1 - 10, 10);
-    // ips114_draw_line(0, 0, left_line[continuity_change_left_flag], continuity_change_left_flag, RGB565_RED);
-    // ips114_draw_line(0, 0, left_line[monotonicity_change_left_flag], monotonicity_change_left_flag, RGB565_BLUE);
-    // ips114_show_uint(188, 40, Island_State, 3);
-    // ips114_show_uint(188, 50, continuity_change_left_flag, 3);
-    // ips114_show_uint(188, 60, continuity_change_right_flag, 3);
-    // ips114_show_uint(188, 70, monotonicity_change_left_flag, 3);
-    // ips114_show_uint(188, 80, monotonicity_change_right_flag, 3);
+
+    // ips114_draw_line(94, 60, left_line[monotonicity_change_left_flag], monotonicity_change_left_flag, RGB565_BLUE);
+    ips114_show_uint(188, 40, Island_State, 3);
+    ips114_show_uint(188, 50, continuity_change_left_flag, 3);
+    ips114_show_uint(188, 60, Boundry_Start_Left, 3);
+
     /*the code of ips*/
     /*test the left island firstly*/
     switch (Island_State)
@@ -1673,17 +1908,44 @@ void Island_Detect(void)
     case 1:
     {
         /*patching line first*/
-        monotonicity_change_line[0] = Monotonicity_Change_Left(30, 5); // 寻找单调性改变点
-        monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
-        Left_Add_Line((int)(monotonicity_change_line[1] * 0.15), MT9V03X_H - 1, monotonicity_change_line[1], monotonicity_change_line[0]);
-        if (continuity_change_left_flag > 60)
+        left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
+        left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
+        ips114_show_uint(188, 70, left_down_guai[0], 3);
+        ips114_show_uint(188, 80, left_down_guai[1], 3);
+        Left_Add_Line(Longest_White_Column_Left[1], 3, left_down_guai[1], left_down_guai[0]);
+        if (Boundry_Start_Left < 50) // 当左边线起点小于60时，进入状态2
         {
+            Island_State = 2;
         }
     }
     break;
 
-    case 2:
+    case 2: // 左下角丢线，找到左边线的列坐标最大处
     {
+        uint8 max_left_line = 0;
+        max_left_line = Find_Max_left_line(); // 寻找单调点
+        // ips114_draw_line(94, 60, left_line[max_left_line], max_left_line, RGB565_RED);
+        // monotonicity_change_line[0] = Monotonicity_Change_Left(70, 10); // 寻找单调性的点
+        // monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
+        Left_Add_Line(left_line[max_left_line], max_left_line, 3, 117);
+        // if ((Boundry_Start_Left >= IMAGE_HEIGHT - 5 || monotonicity_change_line[0] > 50))
+        // {
+        //     Island_State = 3; // 当圆弧靠下的时候，就进入状态3
+        // }
+    }
+    break;
+
+    case 3:
+    {
+        if (k != 0)
+        {
+            K_Draw_Line(k, IMAGE_WIDTH - 30, IMAGE_HEIGHT - 1, 0);
+            Center_line_deal_plus(23, 163); // 重新处理中线
+        }
+        else
+        {
+            Left_Up_Guai[0] = Find_Left_Up_Point(3, 50);
+        }
     }
     break;
     }
@@ -1755,10 +2017,12 @@ void test2(void)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
         Island_Detect();
-    // for(uint8 i=0;i<IMAGE_HEIGHT-1;i++)
-    // {
+    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    {
+        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
-    //     ips114_draw_point(left_line[i],i,RGB565_BLUE);
+
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
 
     if (type == 4)
@@ -1788,13 +2052,16 @@ void test2(void)
     /*
 
     */
-    // ips114_show_float(188, 0, my_err, 2, 2);
-    // ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
-    // ips114_show_uint(188, 20, type, 3);
-    // ips114_show_int(188, 30, Search_Stop_Line, 3);
-    // ips114_show_int(188, 90, Left_Lost_Time, 3);
-    // ips114_show_int(188, 100, Right_Lost_Time, 3);
-    // ips114_show_uint(188, 110, Both_Lost_Time, 3);
+    ips114_show_float(188, 0, my_err, 2, 2);
+    ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
+    ips114_show_uint(188, 20, type, 3);
+    ips114_show_int(188, 30, Search_Stop_Line, 3);
+    // ips114_show_uint(188, 40, Boundry_Start_Left, 3);
+    // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
+
+    ips114_show_int(188, 90, Left_Lost_Time, 3);
+    ips114_show_int(188, 100, Right_Lost_Time, 3);
+    ips114_show_uint(188, 110, Both_Lost_Time, 3);
     //  ips114_show_int(188,90,now_distance_y,3);
     /*计算矩阵
     61 18 126 20 30 87 155 89
@@ -1833,7 +2100,7 @@ void test(void)
         Simple_Binaryzation(*Image_Use, threshold);
         Center_line_deal(5, 183); // 处理中线
     }
-    else if (mode == 1)
+    else if (mode == 0)
     {
         uint8 *output_address; // 图像第一个像素的地址
         /*注意：如果阈值在*/
@@ -1844,6 +2111,7 @@ void test(void)
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));
             Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
+            Outer_Analyse();
             //    Easy_Filtering(110,20,30,170,5);
         }
         else // 如果处于拾取卡片的状态

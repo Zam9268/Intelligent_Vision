@@ -9,10 +9,11 @@
 #define WHITE_POINT 255
 #define BLACK_POINT 0
 
-extern int center[IMAGE_HEIGHT];//��������
-extern uint8 pick_up_mode;//捡卡片模式
-extern int center_x,center_y;//卡片中心坐标
-typedef enum{
+extern int center[IMAGE_HEIGHT]; // ��������
+extern uint8 pick_up_mode;       // 捡卡片模式
+extern int center_x, center_y;   // 卡片中心坐标
+typedef enum
+{
     STRAIGHT_ROAD,
     LEFT_TURN,
     RIGHT_TURN,
@@ -54,6 +55,8 @@ typedef enum{
 
 float Err_Handle(void);
 void Outer_Analyse(void);
+void K_Draw_Line(float k, int startX, int startY, int endY);
+void Draw_Line(int startX, int startY, int endX, int endY);
 void Center_line_deal(uint8 start_column, uint8 end_column);
 void Image_denoising(uint8 *bin_image);
 void test(void);
