@@ -49,8 +49,8 @@ float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2;//对底盘坐标的cos，sin分解
 float Vx_world, Vy_world;//世界坐标上的x，y
 float Vx_card, Vy_card;//相对于车底盘的更新坐标
-float Car_dis_car_x=0;
-float Car_dis_car_y=0;//相对于车的更新坐标
+float Card_dis_car_x=0;
+float Card_dis_car_y=0;//相对于车的更新坐标
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias; 
@@ -72,6 +72,8 @@ int car_mode = 0;//车辆运动模式
 float card_angle = 0;//卡片的解算角度
 int catch_card_flag = 0;//捕获到卡片的标志位
 int find_car_flag = 0;//到达卡片位置的标志位
+double delta_card_y,delta_card_x;//卡片x,y坐标与新y里程和x里程的差值
+double delta_angle;//计算出来的即时偏转角
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -95,10 +97,10 @@ void Motor_Init(void)
   gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
   gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); // 
 
-  pwm_init(motor_LF, 15000, 0); // PWM初始化
-  pwm_init(motor_LB, 15000, 0); //
-  pwm_init(motor_RF, 15000, 0); // 
-  pwm_init(motor_RB, 15000, 0); // 
+  pwm_init(motor_LF, 15000, 1000); // PWM初始化
+  pwm_init(motor_LB, 15000, 1000); //
+  pwm_init(motor_RF, 15000, 1000); // 
+  pwm_init(motor_RB, 15000, 1000); // 
 
   
 }
@@ -633,8 +635,8 @@ if(catch_card_flag==1)
     Vx_card = Vx_2 + Vy_2;//简单的分解计算
     Vy_card = -Vx_1 + Vy_1;
   }
-  Car_dis_car_x += Vx_card * 0.005;
-  Car_dis_car_y += Vy_card * 0.005;//分解出卡片所需的里程
+  Card_dis_car_x += Vx_card * 0.005;
+  Card_dis_car_y += Vy_card * 0.005;//分解出卡片所需的里程
 }
   Car_dis_x += Vx_world * 0.005;
   Car_dis_y += Vy_world * 0.005;
@@ -763,13 +765,10 @@ void car_findcard(int *mode)
     {
       if(only_one)//只执行一次
       {
-				Car_dis_car_y=0;//底座坐标清零
+				Card_dis_car_y=0;//底座坐标清零
         card_y[0] = now_distance_y/10;//记录下第一次传进来的数据
         card_x[0] = now_distance_x/10;//存放卡片y轴坐标
-        // card_distance = (float)sqrt((double)card_y[0]*card_y[0]+card_x[0]*card_x[0]);//求卡片的合成距离
-        // card_angle = atan2((double)card_y[0],(double)card_x[0]);//求出卡片的反正切角度
-        catch_card_flag = 1;//捕获成功，记得要重新关闭
-        catch_angle = ;
+        catch_card_flag = 1;//捕获成功，记得要重新关闭,打开里程计的第二种模式
         Angle_z = 0;//角度清0
         only_one = 0;//测试使用
         *mode = Car_find_card_y;//转变小车运动模式
@@ -780,12 +779,6 @@ void car_findcard(int *mode)
 		else
 		{
       car_run();//正常巡线模式
-      catch_angle = Angle_z;
-      if(fabsf(catch_angle - last_catch_angle)<5)//角度变化不大
-      {
-        last_catch_angle = catch_angle;//记录下本次的角度值
-        catch_angle = 0;//此时认为是直行
-      }
 			*mode=Car_go;
 		}
   }
@@ -796,13 +789,13 @@ void car_findcard(int *mode)
 			if(only_one)
 			{
          now_angle = Angle_Z;//记录下转向前的角度
-			   if(card_x[0]<=0)//卡片相对于小车在左边时
+			   if(delta_x<=0)//卡片相对于小车在左边时
         {
-           turn_angle=90+now_angle;//向左转90度 
+          turn_angle=90+now_angle;//向左转90度 
         }
          else
         {
-           turn_angle=-90+now_angle;//向右转向90度
+          turn_angle=-90+now_angle;//向右转向90度
         }
 				only_one = 0;//只执行一次
 				*mode = Car_turn;//模式转变
@@ -814,17 +807,18 @@ void car_findcard(int *mode)
 		{
 			only_one=1;//重新打开only_one
       car_run();//正常循迹跑
-      if(abs(card_y[0]-(int)Car_dis_car_y)<2 && abs(Car_dis_car_x)<2)//直道上到达卡片坐标位置
+      delta_card_y = card_y[0]-(int)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
+      delta_card_x = card_x[0]-(int)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
+			if(delta_card_x == 0)
+				delta_angle = 0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为0
+			else
+        delta_angle = atan((delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
+      if( delta_angle-Angle_z<15 || delta_angle-Angle_z>-20)//因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
       {
-        car_stop();
+        car_stop();//停车
 				system_delay_ms(1000);
         find_car_flag = 1;
       }
-      else if((card_x[0]-Car_dis_car_x)/(card_y[0]-(int)Car_dis_car_y)-tan())
-      {
-
-      }
-      // Distance_Motor();//距离环处理，向目标卡片y坐标行进，需要修改，改变成输入参数
 			*mode=Car_find_card_y;
 		}
   }
@@ -846,13 +840,12 @@ void car_findcard(int *mode)
   {
     if(CSI_correct_flag==1)//总钻风坐标对正
     {
-			// Vz = 0;//清0Vz
       *mode = Pick_up_card;//模式转变
 			target_type = *mode;
     }
 		else
 		{
-      CSI_dis_correct(center_x, center_y);//总钻风坐标对正
+      CSI_dis_correct((float)center_x, (float)center_y);//总钻风坐标对正
 			*mode = Car_find_card_cor;
 		}
 	}

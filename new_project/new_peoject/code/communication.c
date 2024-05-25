@@ -138,7 +138,7 @@ void get_uartdata(void)
 int last_distance_x;//目标检测算法中得到的目标x坐标
 unsigned int last_distance_y;//得到的y坐标
 int now_distance_x;
-unsigned int now_distance_y;
+unsigned long now_distance_y;
 unsigned int card_count;//目标检测算法中得到的卡片目标总数量
 float center_distance;//目标检测算法中得到的目标中心距离
 float last_center_distance;//目标检测算法中得到的上一次目标中心距离

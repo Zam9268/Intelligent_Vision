@@ -40,6 +40,7 @@ float Left_derivative[IMAGE_HEIGHT]={0.0};
 float Right_derivative[IMAGE_HEIGHT]={0.0};
 float err=0.00;
 float last_err=0.00;
+int center_x,center_y;//卡片中心坐标
 
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];//store the data received from the serial port,it only store 64 bytes  
@@ -600,7 +601,7 @@ void Search_Center(void)
     if(card_right_up_find_flag==1&&card_left_up_find_flag==1)
     {
         int real_left_up_x=0,real_left_up_y=0,real_right_up_x=0,real_right_up_y=0;
-        int center_x,center_y;
+        // int center_x,center_y;//改为全局变量
         Get_Card_Center_coordinate(left_up_point[0],left_up_point[1],right_up_point[0],right_up_point[1],&center_x,&center_y);
         Pespective_point(left_up_point[0],left_up_point[1],&real_left_up_x,&real_left_up_y);
         Pespective_point(right_up_point[0],right_up_point[1],&real_right_up_x,&real_right_up_y);
@@ -670,12 +671,12 @@ void Get_Card_Center_coordinate(int left_up_camera_x,int left_up_camera_y,int ri
     // ips114_show_int(188,15,left_up_y,3);
     // ips114_show_int(188,30,right_up_x,3);
     // ips114_show_int(188,45,right_up_y,3);
-    ips114_show_int(188,0,*real_x,3);
-    ips114_show_int(188,15,*real_y,3);
-    ips114_show_int(188,60,x1,3);
-    ips114_show_int(188,75,y1,3);
-    ips114_show_int(188,90,x2,3);
-    ips114_show_int(188,105,y2,3);
+    // ips114_show_int(188,0,*real_x,3);
+    // ips114_show_int(188,15,*real_y,3);
+    // ips114_show_int(188,60,x1,3);
+    // ips114_show_int(188,75,y1,3);
+    // ips114_show_int(188,90,x2,3);
+    // ips114_show_int(188,105,y2,3);
 }
 
 /**
@@ -1550,11 +1551,11 @@ void test2(void)
     /*
     
     */
-    ips114_show_float(188,0,my_err,2,2);
-    ips114_show_uint(188,15,Longest_White_Column_Left[1],3);
-    ips114_show_uint(188,30,type,3);
-    ips114_show_uint(188,45,Left_Lost_Time,3);
-    ips114_show_uint(188,60,Right_Lost_Time,3);
+    // ips114_show_float(188,0,my_err,2,2);
+    // ips114_show_uint(188,15,Longest_White_Column_Left[1],3);
+    // ips114_show_uint(188,30,type,3);
+    // ips114_show_uint(188,45,Left_Lost_Time,3);
+    // ips114_show_uint(188,60,Right_Lost_Time,3);
     //  ips114_show_int(188,75,now_distance_x,3);
     //  ips114_show_int(188,90,now_distance_y,3);
     // ips114_show_uint(188,15,Left_Up_Find,3);

@@ -86,7 +86,9 @@ extern float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 extern float Vx_world, Vy_world;//世界坐标上的x，y
 extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 extern float Car_dis_x2, Car_dis_y2;
-extern float Car_dis_car_x,Car_dis_car_y;
+extern float Card_dis_car_x,Card_dis_car_y;
+extern double delta_card_y, delta_card_x;
+extern double delta_angle;
 extern float Turn_Bias;
 extern float dis_kp;//距离环kp
 extern float dis_kd;//距离环kd
@@ -131,5 +133,6 @@ void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid,int target_distance, int actual_distance);
 void Distance_Motor(void);
+void CSI_dis_correct(float cor_x, float cor_y);
 void car_findcard(int *mode);
 #endif
