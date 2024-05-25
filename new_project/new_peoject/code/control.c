@@ -45,13 +45,13 @@ float turn_error = 2; // 可接受的角度误差
 float Turn_KP = 0.5;  // 角度PID//
 float Turn_KD = 0.0;  // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
-float Vx_1, Vx_2, Vy_1, Vy_2;                 // 对里程的cos，sin分解
-float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2; // 对底盘坐标的cos，sin分解
-float Vx_world, Vy_world;                     // 世界坐标上的x，y
-float Vx_card, Vy_card;                       // 相对于车底盘的更新坐标
-float Car_dis_car_x = 0;
-float Car_dis_car_y = 0;    // 相对于车的更新坐标
-float Car_dis_x, Car_dis_y; // x轴，y轴行走距离
+float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
+float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2;//对底盘坐标的cos，sin分解
+float Vx_world, Vy_world;//世界坐标上的x，y
+float Vx_card, Vy_card;//相对于车底盘的更新坐标
+float Card_dis_car_x=0;
+float Card_dis_car_y=0;//相对于车的更新坐标
+float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias;
 float dis_kp = 0.2; // 距离环kp
@@ -62,18 +62,20 @@ int card_y[10];      // 存放卡片y轴坐标
 int card_x[10];      // 存放卡片y轴坐标
 float card_distance; // 存放卡片的合成距离
 int only_one = 1;
-int target_type = 0;      // 测试使用,观察模式
-int delta_x, delta_y;     // 总钻风识别的卡片中心坐标
-float speed_k = 1;        // 校正的速度
-int CSI_correct_flag = 0; // 总钻风判断标志
-int Put_flag = 0;         // 图片放置标志位
-int test_csi;             // 延时计数
-int car_mode = 0;         // 车辆运动模式
-float card_angle = 0;     // 卡片的解算角度
-int catch_card_flag = 0;  // 捕获到卡片的标志位
-int find_car_flag = 0;    // 到达卡片位置的标志位
-extern int center_x, center_y;
-pid_info Pos_turn_pid[4]; // 位置式pid
+int target_type = 0;//测试使用,观察模式
+int delta_x,delta_y;//总钻风识别的卡片中心坐标
+float speed_k = 1;//校正的速度
+int CSI_correct_flag = 0;//总钻风判断标志
+int Put_flag = 0;//图片放置标志位
+int test_csi;//延时计数
+int car_mode = 0;//车辆运动模式
+float card_angle = 0;//卡片的解算角度
+int catch_card_flag = 0;//捕获到卡片的标志位
+int find_car_flag = 0;//到达卡片位置的标志位
+double delta_card_y,delta_card_x;//卡片x,y坐标与新y里程和x里程的差值
+double delta_angle;//计算出来的即时偏转角
+
+pid_info Pos_turn_pid[4];//位置式pid
 
 pid_info Speed[4]; // 增量式pid
 
@@ -611,28 +613,28 @@ void Encoder_odometer(void)
   {
     Angle_bias = Angle_z * PI / 180;
 
-    if (Angle_bias >= 0) // 旋转角度(参照x轴)大于0时
-    {
-      Vx_car_1 = Vx_enco * sin(Angle_bias);
-      Vx_car_2 = Vx_enco * cos(Angle_bias);
-      Vy_car_1 = Vy_enco * cos(Angle_bias);
-      Vy_car_2 = Vy_enco * sin(Angle_bias); // 分解到车辆底盘坐标上
-      Vx_card = Vx_2 - Vy_2;                // 简单的分解计算
-      Vy_card = Vx_1 + Vy_1;
-    }
-    if (Angle_bias < 0)
-    {
-      Angle_bias = -Angle_bias;
-      Vx_car_1 = Vx_enco * sin(Angle_bias);
-      Vx_car_2 = Vx_enco * cos(Angle_bias);
-      Vy_car_1 = Vy_enco * cos(Angle_bias);
-      Vy_car_2 = Vy_enco * sin(Angle_bias); // 分解到车辆底盘坐标上
-      Vx_card = Vx_2 + Vy_2;                // 简单的分解计算
-      Vy_card = -Vx_1 + Vy_1;
-    }
-    Car_dis_car_x += Vx_card * 0.005;
-    Car_dis_car_y += Vy_card * 0.005; // 分解出卡片所需的里程
+  if (Angle_bias >= 0)//旋转角度(参照x轴)大于0时
+  {
+    Vx_car_1 = Vx_enco * sin(Angle_bias);
+    Vx_car_2 = Vx_enco * cos(Angle_bias);
+    Vy_car_1 = Vy_enco * cos(Angle_bias);
+    Vy_car_2 = Vy_enco * sin(Angle_bias); //分解到车辆底盘坐标上
+    Vx_card = Vx_2 - Vy_2;//简单的分解计算
+    Vy_card = Vx_1 + Vy_1;
   }
+  if (Angle_bias < 0)
+  {
+    Angle_bias = -Angle_bias;
+    Vx_car_1 = Vx_enco * sin(Angle_bias);
+    Vx_car_2 = Vx_enco * cos(Angle_bias);
+    Vy_car_1 = Vy_enco * cos(Angle_bias);
+    Vy_car_2 = Vy_enco * sin(Angle_bias); //分解到车辆底盘坐标上
+    Vx_card = Vx_2 + Vy_2;//简单的分解计算
+    Vy_card = -Vx_1 + Vy_1;
+  }
+  Card_dis_car_x += Vx_card * 0.005;
+  Card_dis_car_y += Vy_card * 0.005;//分解出卡片所需的里程
+}
   Car_dis_x += Vx_world * 0.005;
   Car_dis_y += Vy_world * 0.005;
 
@@ -760,45 +762,37 @@ void car_findcard(int *mode)
     {
       if (only_one) // 只执行一次
       {
-        Car_dis_car_y = 0;               // 底座坐标清零
-        card_y[0] = now_distance_y / 10; // 记录下第一次传进来的数据
-        card_x[0] = now_distance_x / 10; // 存放卡片y轴坐标
-        // card_distance = (float)sqrt((double)card_y[0]*card_y[0]+card_x[0]*card_x[0]);//求卡片的合成距离
-        // card_angle = atan2((double)card_y[0],(double)card_x[0]);//求出卡片的反正切角度
-        catch_card_flag = 1; // 捕获成功，记得要重新关闭
-        //        catch_angle = 1;
-        Angle_z = 0;             // 角度清0
-        only_one = 0;            // 测试使用
-        *mode = Car_find_card_y; // 转变小车运动模式
-        target_type = *mode;     // 测试变量使用
+				Card_dis_car_y=0;//底座坐标清零
+        card_y[0] = now_distance_y/10;//记录下第一次传进来的数据
+        card_x[0] = now_distance_x/10;//存放卡片y轴坐标
+        catch_card_flag = 1;//捕获成功，记得要重新关闭,打开里程计的第二种模式
+        Angle_z = 0;//角度清0
+        only_one = 0;//测试使用
+        *mode = Car_find_card_y;//转变小车运动模式
+				target_type = *mode;//测试变量使用
       }
-    }
-    else
-    {
-      car_run(); // 正常巡线模式
-      catch_angle = Angle_z;
-      if (fabsf(catch_angle - last_catch_angle) < 5) // 角度变化不大
-      {
-        last_catch_angle = catch_angle; // 记录下本次的角度值
-        catch_angle = 0;                // 此时认为是直行
-      }
-      *mode = Car_go;
-    }
+    			
+     }
+		else
+		{
+      car_run();//正常巡线模式
+			*mode=Car_go;
+		}
   }
   if (*mode == Car_find_card_y) // 找卡片
   {
     if (find_car_flag == 1) // 到达卡片附近，原本是4
     {
-      if (only_one)
-      {
-        now_angle = Angle_Z; // 记录下转向前的角度
-        if (card_x[0] <= 0)  // 卡片相对于小车在左边时
+			if(only_one)
+			{
+         now_angle = Angle_Z;//记录下转向前的角度
+			   if(delta_x<=0)//卡片相对于小车在左边时
         {
-          turn_angle = 90 + now_angle; // 向左转90度
+          turn_angle=90+now_angle;//向左转90度 
         }
         else
         {
-          turn_angle = -90 + now_angle; // 向右转向90度
+          turn_angle=-90+now_angle;//向右转向90度
         }
         only_one = 0;     // 只执行一次
         *mode = Car_turn; // 模式转变
@@ -806,22 +800,24 @@ void car_findcard(int *mode)
         target_type = *mode;
       }
     }
-    else
-    {
-      only_one = 1;                                                          // 重新打开only_one
-      car_run();                                                             // 正常循迹跑
-      if (abs(card_y[0] - (int)Car_dis_car_y) < 2 && abs(Car_dis_car_x) < 2) // 直道上到达卡片坐标位置
+		else
+		{
+			only_one=1;//重新打开only_one
+      car_run();//正常循迹跑
+      delta_card_y = card_y[0]-(int)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
+      delta_card_x = card_x[0]-(int)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
+			if(delta_card_x == 0)
+				delta_angle = 0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为0
+			else
+        delta_angle = atan((delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
+      if( delta_angle-Angle_z<15 || delta_angle-Angle_z>-20)//因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
       {
-        car_stop();
-        system_delay_ms(1000);
+        car_stop();//停车
+				system_delay_ms(1000);
         find_car_flag = 1;
       }
-      else if ((card_x[0] - Car_dis_car_x) / (card_y[0] - (int)Car_dis_car_y) - tan(11))
-      {
-      }
-      // Distance_Motor();//距离环处理，向目标卡片y坐标行进，需要修改，改变成输入参数
-      *mode = Car_find_card_y;
-    }
+			*mode=Car_find_card_y;
+		}
   }
   if (*mode == Car_turn) // 向卡片方向转向
   {
@@ -841,14 +837,13 @@ void car_findcard(int *mode)
   {
     if (CSI_correct_flag == 1) // 总钻风坐标对正
     {
-      // Vz = 0;//清0Vz
-      *mode = Pick_up_card; // 模式转变
-      target_type = *mode;
+      *mode = Pick_up_card;//模式转变
+			target_type = *mode;
     }
-    else
-    {
-      CSI_dis_correct(center_x, center_y); // 总钻风坐标对正
-      *mode = Car_find_card_cor;
-    }
-  }
+		else
+		{
+      CSI_dis_correct((float)center_x, (float)center_y);//总钻风坐标对正
+			*mode = Car_find_card_cor;
+		}
+	}
 }

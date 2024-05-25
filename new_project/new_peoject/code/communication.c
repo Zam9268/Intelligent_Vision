@@ -5,112 +5,112 @@
 #include "math.h"
 
 uint8 uart_get_data[64];
-uint8 fifo_get_data[64];    // 用于存储接收到的数据
-uint8 get_data = 0;         // 接收数据的变量
-uint32 fifo_data_count = 0; // 用于存储接收数据的个数
-fifo_struct uart_data_fifo; // 定义一个接收数据的结构体
-uint8 get_states = 0;       // 接收状态
-uint8 right_data[64] = {0}; // 接收到的数据存储数组
-uint8 arm_uart_flag = 0;    // ARM串口通信标志位
+uint8 fifo_get_data[64];    // ���ڴ洢���յ�������
+uint8 get_data = 0;         // �������ݵı���
+uint32 fifo_data_count = 0; // ���ڴ洢�������ݵĸ���
+fifo_struct uart_data_fifo; // ����һ���������ݵĽṹ��
+uint8 get_states = 0;       // ����״̬
+uint8 right_data[64] = {0}; // ���յ������ݴ洢����
+uint8 arm_uart_flag = 0;    // ARM����ͨ�ű�־λ
 uint8 arm_uart_flag_on = 0;
-uint8 testuart_flag = 0;    // 测试串口通信标志位
-uint8 data_length = 0;      // 数据长度
-uint8 transform_counts = 0; // 数据转换计数
-char str[] = "why";         // 发送字符串get
+uint8 testuart_flag = 0;    // ���Դ���ͨ�ű�־λ
+uint8 data_length = 0;      // ���ݳ���
+uint8 transform_counts = 0; // ����ת������
+char str[] = "why";         // �����ַ���get
 /**
- * @brief 串口通信初始化
- * @param 无
- * @return 无
+ * @brief ����ͨ�ų�ʼ��
+ * @param ��
+ * @return ��
  */
 void My_Communication_Init(void)
 {
-    fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化接收数据缓冲区
-    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化串口1通道模块
-    //    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通道模块
-    uart_rx_interrupt(UART_1, 1); // 使能串口1接收中断
-    //    uart_rx_interrupt(UART_4,1);//使能串口2接收中断
-    NVIC_SetPriority(LPUART1_IRQn, 0); // 设置串口1中断优先级
-    //    NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
+    fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // ��ʼ���������ݻ�����
+    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // ��ʼ������1ͨ��ģ��
+    //    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//��ʼ������2ͨ��ģ��
+    uart_rx_interrupt(UART_1, 1); // ʹ�ܴ���1�����ж�
+    //    uart_rx_interrupt(UART_4,1);//ʹ�ܴ���2�����ж�
+    NVIC_SetPriority(LPUART1_IRQn, 0); // ���ô���1�ж����ȼ�
+    //    NVIC_SetPriority(LPUART4_IRQn,1);//���ô���2�ж����ȼ�
 }
 
 /**
- * @brief 第1个串口接收中断处理函数
- * @param 无
- * @return 无
- * @attention 1. 该函数用于接收串口1的数据，并将接收到的数据存入get_data变量中，注意get_data是一个全局变量。
+ * @brief ��1�����ڽ����жϴ�������
+ * @param ��
+ * @return ��
+ * @attention 1. �ú������ڽ��մ���1�����ݣ��������յ������ݴ���get_data�����У�ע��get_data��һ��ȫ�ֱ�����
  */
 void uart1_rx_interrupt_handler(void)
 {
-    uart_query_byte(UART_1, &get_data);               // 查询串口1的数据，并将数据存入get_data变量中
-    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // 将get_data中的数据写入缓冲区
+    uart_query_byte(UART_1, &get_data);               // ��ѯ����1�����ݣ��������ݴ���get_data������
+    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // ��get_data�е�����д�뻺����
 }
 
 /**
- * @brief 第4个串口接收中断处理函数
- * @param 无
- * @return 无
+ * @brief ��4�����ڽ����жϴ�������
+ * @param ��
+ * @return ��
  */
 void uart4_rx_interrupt_handler(void)
 {
-    uart_query_byte(UART_4, &get_data);               // 查询串口4的数据，并将数据存入get_data变量中
-    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // 将get_data中的数据写入缓冲区
+    uart_query_byte(UART_4, &get_data);               // ��ѯ����4�����ݣ��������ݴ���get_data������
+    fifo_write_buffer(&uart_data_fifo, &get_data, 1); // ��get_data�е�����д�뻺����
 }
 
 /**
- * @brief 获取串口1和4的数据
- * @param 无
- * @return 无
- * @attention  1. 通过状态机实现数据的解析，首先判断是否为帧头，帧头为0xB7，如果是帧头则进入状态1。
- *             2. 在状态1下，判断接收到的数据是否为有效数据，有效数据范围为1-16，如果是有效数据，则将数据存入transform_counts变量中，进入状态2。
- *             3. 在状态2下，开始接收对应数据，直到接收到帧尾0x98，判断接收到的数据个数是否与transform_counts相等，如果相等则表示接收完整，进入状态0，否则进入状态0并清空数据。
+ * @brief ��ȡ����1��4������
+ * @param ��
+ * @return ��
+ * @attention  1. ͨ��״̬��ʵ�����ݵĽ����������ж��Ƿ�Ϊ֡ͷ��֡ͷΪ0xB7�������֡ͷ�����״̬1��
+ *             2. ��״̬1�£��жϽ��յ��������Ƿ�Ϊ��Ч���ݣ���Ч���ݷ�ΧΪ1-16���������Ч���ݣ������ݴ���transform_counts�����У�����״̬2��
+ *             3. ��״̬2�£���ʼ���ն�Ӧ���ݣ�ֱ�����յ�֡β0x98���жϽ��յ������ݸ����Ƿ���transform_counts��ȣ����������ʾ��������������״̬0���������״̬0��������ݡ�
  */
 void get_uartdata(void)
 {
-    fifo_data_count = fifo_used(&uart_data_fifo); // 获取缓冲区中的数据个数
+    fifo_data_count = fifo_used(&uart_data_fifo); // ��ȡ�������е����ݸ���
 
     if (fifo_data_count != 0)
     {
-        if (get_states == 0) // 判断状态
+        if (get_states == 0) // �ж�״̬
         {
-            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // 读取缓冲区中的数据并清空缓冲区
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // ��ȡ�������е����ݲ���ջ�����
             if (fifo_get_data[0] == 0xB7)
-                get_states = 1; // 判断是否为帧头，如果是帧头则进入状态1
+                get_states = 1; // �ж��Ƿ�Ϊ֡ͷ�������֡ͷ�����״̬1
             else
-                get_states = 0;   // 状态为0
-            fifo_get_data[0] = 0; // 清空数据
+                get_states = 0;   // ״̬Ϊ0
+            fifo_get_data[0] = 0; // �������
         }
-        else if (get_states == 1) // 状态为1
+        else if (get_states == 1) // ״̬Ϊ1
         {
-            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // 读取缓冲区中的数据并清空缓冲区
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // ��ȡ�������е����ݲ���ջ�����
             if (fifo_get_data[0] >= 1 && fifo_get_data[0] <= 16)
             {
-                transform_counts = fifo_get_data[0]; // 判断是否为有效数据，有效数据范围为1-16，将数据存入transform_counts变量中
-                fifo_get_data[0] = 0;                // 清空数据
-                get_states = 2;                      // 进入状态2
+                transform_counts = fifo_get_data[0]; // �ж��Ƿ�Ϊ��Ч���ݣ���Ч���ݷ�ΧΪ1-16�������ݴ���transform_counts������
+                fifo_get_data[0] = 0;                // �������
+                get_states = 2;                      // ����״̬2
             }
             else
             {
-                get_states = 0;       // 状态为0
-                fifo_get_data[0] = 0; // 清空数据
+                get_states = 0;       // ״̬Ϊ0
+                fifo_get_data[0] = 0; // �������
             }
         }
-        else if (get_states == 2) // 状态为2，开始接收对应数据
+        else if (get_states == 2) // ״̬Ϊ2����ʼ���ն�Ӧ����
         {
-            static uint8 i = 0;                                                                      // 静态变量用于记录数据的索引
-            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // 读取缓冲区中的数据并清空缓冲区
-            if (fifo_get_data[0] == 0x98)                                                            // 判断是否为帧尾
+            static uint8 i = 0;                                                                      // ��̬�������ڼ�¼���ݵ�����
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // ��ȡ�������е����ݲ���ջ�����
+            if (fifo_get_data[0] == 0x98)                                                            // �ж��Ƿ�Ϊ֡β
             {
-                if (transform_counts == i) // 判断实际接收到的数据个数与transform_counts是否一致
+                if (transform_counts == i) // �ж�ʵ�ʽ��յ������ݸ�����transform_counts�Ƿ�һ��
                 {
-                    data_length = i; // 数据长度为i
-                    i = 0;           // 重置索引
-                    get_states = 0;  // 状态为0
+                    data_length = i; // ���ݳ���Ϊi
+                    i = 0;           // ��������
+                    get_states = 0;  // ״̬Ϊ0
                     for (uint8 j = data_length; j < 64; j++)
                     {
-                        right_data[j] = 0; // 清空数据
+                        right_data[j] = 0; // �������
                     }
-                    uart_write_string(UART_1, str); // 向串口1发送字符串
-                    uart_data_handle();             // 数据处理函数
+                    uart_write_string(UART_1, str); // �򴮿�1�����ַ���
+                    uart_data_handle();             // ���ݴ�������
                 }
                 else
                 {
@@ -123,53 +123,53 @@ void get_uartdata(void)
             }
             else
             {
-                right_data[i] = fifo_get_data[0]; // 将接收到的数据存入right_data数组中
-                i++;                              // 索引加1
-                fifo_get_data[0] = 0;             // 清空数据
+                right_data[i] = fifo_get_data[0]; // �����յ������ݴ���right_data������
+                i++;                              // ������1
+                fifo_get_data[0] = 0;             // �������
             }
         }
         else
         {
-            get_states = 0;       // 状态为0
-            fifo_get_data[0] = 0; // 清空数据
+            get_states = 0;       // ״̬Ϊ0
+            fifo_get_data[0] = 0; // �������
         }
     }
 }
 
-int last_distance_x;          // 上一次算法得到的目标点x坐标
-unsigned int last_distance_y; // 上一次算法得到的目标点y坐标
-int now_distance_x;           // 当前算法得到的目标点x坐标
-unsigned int now_distance_y;  // 当前算法得到的目标点y坐标
-unsigned int card_count;      // 算法得到的目标点上的卡片数量
-float center_distance;        // 当前算法得到的目标点与原点的距离
-float last_center_distance;   // 上一次算法得到的目标点与原点的距离
-uint8 find_card_flag = 0;     // 是否找到卡片的标志位
+int last_distance_x;          // ��һ���㷨�õ���Ŀ���x����
+unsigned int last_distance_y; // ��һ���㷨�õ���Ŀ���y����
+int now_distance_x;           // ��ǰ�㷨�õ���Ŀ���x����
+unsigned int now_distance_y;  // ��ǰ�㷨�õ���Ŀ���y����
+unsigned int card_count;      // �㷨�õ���Ŀ����ϵĿ�Ƭ����
+float center_distance;        // ��ǰ�㷨�õ���Ŀ�����ԭ��ľ���
+float last_center_distance;   // ��һ���㷨�õ���Ŀ�����ԭ��ľ���
+uint8 find_card_flag = 0;     // �Ƿ��ҵ���Ƭ�ı�־λ
 
 /**
- * @brief 处理串口1和4接收到的数据
- * @param 无
- * @return 无
- * @attention 1. 通过状态机实现数据的解析，首先判断是否为帧头，帧头为0xB7，如果是帧头则进入状态1。
- *             2. 在状态1下，判断接收到的数据是否为有效数据，有效数据范围为1-16，如果是有效数据，则将数据存入transform_counts变量中，进入状态2。
- *             3. 在状态2下，开始接收对应数据，直到接收到帧尾0x98，判断接收到的数据个数是否与transform_counts相等，如果相等则表示接收完整，进入状态0，否则进入状态0并清空数据。
+ * @brief ��������1��4���յ�������
+ * @param ��
+ * @return ��
+ * @attention 1. ͨ��״̬��ʵ�����ݵĽ����������ж��Ƿ�Ϊ֡ͷ��֡ͷΪ0xB7�������֡ͷ�����״̬1��
+ *             2. ��״̬1�£��жϽ��յ��������Ƿ�Ϊ��Ч���ݣ���Ч���ݷ�ΧΪ1-16���������Ч���ݣ������ݴ���transform_counts�����У�����״̬2��
+ *             3. ��״̬2�£���ʼ���ն�Ӧ���ݣ�ֱ�����յ�֡β0x98���жϽ��յ������ݸ����Ƿ���transform_counts��ȣ����������ʾ��������������״̬0���������״̬0��������ݡ�
  */
 void uart_data_handle(void)
 {
-    if (data_length == 5) // 判断接收到的数据长度是否为5
+    if (data_length == 5) // �жϽ��յ������ݳ����Ƿ�Ϊ5
     {
-        /* 第一位为x坐标的高八位，第二位为x坐标的低八位，第三位为y坐标的高八位，第四位为y坐标的低八位 */
+        /* ��һλΪx����ĸ߰�λ���ڶ�λΪx����ĵͰ�λ������λΪy����ĸ߰�λ������λΪy����ĵͰ�λ */
         if (right_data[0] == 1)
         {
-            now_distance_x = (right_data[1] * 256 + right_data[2]); // x坐标为正值
+            now_distance_x = (right_data[1] * 256 + right_data[2]); // x����Ϊ��ֵ
         }
         else if (right_data[0] == 0)
         {
-            now_distance_x = -(right_data[1] * 256 + right_data[2]); // x坐标为负值
+            now_distance_x = -(right_data[1] * 256 + right_data[2]); // x����Ϊ��ֵ
         }
-        now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // y坐标
-        center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // 计算距离
+        now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // y����
+        center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // �������
         if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
-            card_count++; // 如果距离变化大于100.0，则默认为发现了新的卡片
-        /* 处理卡片的逻辑 */
+            card_count++; // �������仯����100.0����Ĭ��Ϊ�������µĿ�Ƭ
+        /* ������Ƭ���߼� */
     }
 }

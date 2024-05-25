@@ -115,7 +115,7 @@ void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count)
 函数功能：机械臂控制模式选择
 入口参数：mode
 返回值：无
-备注：1. 拾取模式 2. 收纳模式 3. 归中模式 4. 调试模式（按键） 5. 其他默认为归中
+备注：1. 拾取模式 2. 收纳模式 3. 归中模式 4. 360度舵机调参 5. 其他默认为归中
 调用示例：arm_control(1);
 **************************************************************************/
 void arm_control(uint8 mode)
@@ -145,9 +145,16 @@ void arm_control(uint8 mode)
    servo_slow_ctrl(50, 50, 100);//默认模式
    break;
 
- case 4: //调试模式（按键）
-   gpio_set_level(C9, 1);
-   servo_slow_ctrl(148, 110, 10);
+ case 4: //360度舵机调参
+  //  gpio_set_level(C9, 1);
+  //  servo_slow_ctrl(148, 110, 10);
+  servo3_duty = 30;
+  pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
+  system_delay_ms(1000);
+  servo3_duty = 90;
+  pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
+  system_delay_ms(1000);
+
    break;
 
  case 5: //调试模式（按键）
@@ -155,7 +162,7 @@ void arm_control(uint8 mode)
    {
      servo3_duty += 10;
      system_delay_ms(300);
-     pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
+     pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
    }
    //锟斤拷锟铰诧拷C27锟斤拷锟斤拷锟斤拷C26锟斤拷应锟斤拷C30锟斤拷锟斤拷嵌燃锟叫?
    if (!gpio_get_level(C26) && gpio_get_level(C27))
@@ -230,11 +237,12 @@ void arm_control(uint8 mode)
 //*******************************舵机测试函数******************************//
 void test_arm(void)
 {
-	if(arm_put_down==0)
-	{
-	  arm_control(2);//测试舵机模式
-		arm_put_down = 1;
-	}
-	system_delay_ms(1000);
-	arm_control(3);//测试舵机模式
+	// if(arm_put_down==0)
+	// {
+	//   arm_control(4);//测试舵机模式
+	// 	arm_put_down = 1;
+	// }
+	// system_delay_ms(1000);
+	// arm_control(3);//测试舵机模式
+  arm_control(4);//测试舵机模式
 }
