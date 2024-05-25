@@ -41,39 +41,41 @@ float loc_kp = 1.24;                 // 位置式pd，方便调参使用 1.35位
 float loc_kd = 0.72;                 // 0.80                     //0.72
 int test_count = 0;
 float dt = 0.005;
-float turn_error = 2; // 可接受的角度误差
-float Turn_KP = 0.5;  // 角度PID//
-float Turn_KD = 0.0;  // 角度PID//
+float turn_error = 2;      //可接受的角度误差
+float Turn_KP = 0.5;       // 角度PID//
+float Turn_KD = 0.0;       // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
 float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2;//对底盘坐标的cos，sin分解
-float Vx_world, Vy_world;//世界坐标上的x，y
-float Vx_card, Vy_card;//相对于车底盘的更新坐标
+float Vx_world, Vy_world;  //世界坐标上的x，y
+float Vx_card, Vy_card;    //相对于车底盘的更新坐标
 float Card_dis_car_x=0;
-float Card_dis_car_y=0;//相对于车的更新坐标
+float Card_dis_car_y=0;    //相对于车的更新坐标
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias;
-float dis_kp = 0.2; // 距离环kp
-float dis_kd = 0.1; // 距离环kd
+float dis_kp = 0.05;       //距离环kp
+float dis_kd = 0.0;       //距离环kd
 float dis_error;
-float dis_change[4]; // 存放距离环输出结果
-int card_y[10];      // 存放卡片y轴坐标
-int card_x[10];      // 存放卡片y轴坐标
-float card_distance; // 存放卡片的合成距离
+float dis_change[4];      //存放距离环输出结果
+double card_y[10];        //存放卡片y轴坐标
+double card_x[10];        //存放卡片y轴坐标
+float card_distance;      //存放卡片的合成距离
 int only_one = 1;
-int target_type = 0;//测试使用,观察模式
-int delta_x,delta_y;//总钻风识别的卡片中心坐标
-float speed_k = 1;//校正的速度
-int CSI_correct_flag = 0;//总钻风判断标志
-int Put_flag = 0;//图片放置标志位
-int test_csi;//延时计数
-int car_mode = 0;//车辆运动模式
-float card_angle = 0;//卡片的解算角度
-int catch_card_flag = 0;//捕获到卡片的标志位
-int find_car_flag = 0;//到达卡片位置的标志位
+int target_type = 0;      //测试使用,观察模式
+int delta_x,delta_y;      //总钻风识别的卡片中心坐标
+float speed_k = 1;        //校正的速度
+int CSI_correct_flag = 0; //总钻风判断标志
+int Put_flag = 0;         //图片放置标志位
+int test_csi;             //延时计数
+int car_mode = 0;         //车辆运动模式
+float card_angle = 0;     //卡片的解算角度
+int catch_card_flag = 0;  //捕获到卡片的标志位
+int find_car_flag = 0;    //到达卡片位置的标志位
 double delta_card_y,delta_card_x;//卡片x,y坐标与新y里程和x里程的差值
-double delta_angle;//计算出来的即时偏转角
+double delta_angle;       //计算出来的即时偏转角
+int correct_x_flag = 0;
+int correct_y_flag = 0;
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -211,10 +213,10 @@ void car_run(void)
 
   last_error1 = move_error; // 记录下上次误差
 
-  Speed[0].target_speed = 10 * (1 - angle);
-  Speed[1].target_speed = 10 * (1 - angle);
-  Speed[2].target_speed = 10 * (1 + angle);
-  Speed[3].target_speed = 10 * (1 + angle);
+  Speed[0].target_speed = 30 * (1 - angle);
+  Speed[1].target_speed = 30 * (1 - angle);
+  Speed[2].target_speed = 30 * (1 + angle);
+  Speed[3].target_speed = 30 * (1 + angle);
   // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
 }
 
@@ -557,13 +559,6 @@ void Turn_Angle_PD(float Tar_angle_Z)
     Vz = Turn;
     Last_Turn_bias = Turn_Bias;
   }
-  //  if ((abs((int)Turn_Bias) < turn_error + 2) && abs((int)Vz) < 5) //误差很小时的速度补偿，可能会导致转向成功后继续运动
-  //  {
-  //    if (Vz < 0)
-  //      Vz -= 2;
-  //    else if (Vz > 0)
-  //      Vz += 2;
-  //  }
   Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
 }
 /**
@@ -633,12 +628,12 @@ void Encoder_odometer(void)
     Vy_card = -Vx_1 + Vy_1;
   }
   Card_dis_car_x += Vx_card * 0.005;
-  Card_dis_car_y += Vy_card * 0.005;//分解出卡片所需的里程
+  Card_dis_car_y += Vy_card * 0.005;//分解出卡片所需的里程，用于找卡片
 }
-  Car_dis_x += Vx_world * 0.005;
+  Car_dis_x += Vx_world * 0.005;//用于全局坐标
   Car_dis_y += Vy_world * 0.005;
 
-  Car_dis_x2 += Vx_world * 0.005;
+  Car_dis_x2 += Vx_world * 0.005;//用于总钻风微调
   Car_dis_y2 += Vy_world * 0.005;
 }
 
@@ -668,85 +663,101 @@ float PIDInfo_Limit(float Value, float MaxValue)
  * @param delta_distance 实际距离
  * @return float
  */
-float Distance_pid(pid_info *pid, int target_distance, int actual_distance)
+float Distance_pid(pid_info *pid, int error)
 {
-  pid->error = target_distance - actual_distance;                               // Calculate the deviation //
+  pid->error = error;                               // Calculate the deviation //
   pid->output = pid->kp * pid->error + pid->kd * (pid->error - pid->lastError); // 距离闭环输出一个速度
   pid->output = PIDInfo_Limit(pid->output, Distance_output);                    // 输出速度限幅，mm/s
   pid->lastError = pid->error;                                                  // 记录下上次误差
 
   return pid->output;
 }
-/**
- * @brief 距离环处理
- * @param
- * @param
- * @return 无
- */
-void Distance_Motor(void)
-{
-
-  for (int i = 0; i < 4; i++)
-  {
-    dis_change[i] = Distance_pid(&distance_pid[i], card_y[0], (int)Car_dis_y); // 距离环输出速度 cm/s
-    if (dis_change[i] < 1 && dis_change[i] > -1)                               // 强制归零条件
-    {
-      dis_change[i] = 0; // 强制归零
-    }
-    Speed[i].target_speed = dis_change[i]; // 直接赋值给目标速度
-  }
-}
 /**************************************************************************
-函数功能：总钻风距离校正
+函数功能：总钻风距离校正(未调参) 旧版
 入口参数：cor_x，cor_y（要校正的x和y），art识别出来的坐标一般有偏差，所以要再次识别中心点的x,y坐标输入矫正函数
 返回值：
 **************************************************************************/
-void CSI_dis_correct(float cor_x, float cor_y)
+// void CSI_dis_correct(float cor_x, float cor_y)
+// {
+//   delta_x = cor_x; // 要换算，与现实坐标有差别(可能)
+//   delta_y = cor_y; // 要换算
+
+//   if (delta_x > 6 && delta_x < -6 && abs((int)delta_y) > 40) // 误差太大，需要校正(一般情况)
+//   {
+//     Vx = 7 * (cor_x / 10) * speed_k;
+//     Vy = 7 * (cor_y / 42) * speed_k;
+
+//     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
+//   }
+//   else if ((delta_x == 0 && delta_y == 0) || abs((int)delta_y) < 35) // 图片中无目标板，或者离目标板太近，往后退
+//   {
+//     Vx = 0;
+//     if (abs((int)delta_y) < 20)
+//       Vy = -10 * speed_k; // 
+//     else if (abs((int)delta_y) > 20)
+//       Vy = -8 * speed_k; // 降速
+
+//     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
+//   }
+//   else if (delta_x <= 6 && delta_x >= -6 && abs((int)delta_y) <= 40 && abs((int)delta_y) >= 35) // 不需要校正
+//   {
+//     delta_x = 0;
+//     delta_y = 0; // 清零x,y坐标
+//     Vx = 0;
+//     Vy = 0; // x，y速度归零
+
+//     CSI_correct_flag = CSI_CORRECT_DONE; // 校正完成
+//     Car_Inverse_kinematics_solution(Vx, Vy, Vz);
+//     if (Put_flag == 0)
+//     {
+//       arm_pick_flag = ARM_PICK_NOT_DONE;
+//       arm_state_flag = ARM_STATE_ON; // 打开机械臂拾取功能
+//     }
+//     test_csi = 0;
+//   }
+//   Car_Inverse_kinematics_solution(Vx, Vy, Vz);
+// }
+/**************************************************************************
+函数功能：总钻风距离校正(未调参) 新版
+入口参数：cor_x，cor_y（要校正的x和y），art识别出来的坐标一般有偏差，所以要再次识别中心点的x,y坐标输入矫正函数，新版加上距离闭环
+返回值：
+**************************************************************************/
+void CSI_dis_new_correct(float cor_x, float cor_y)
 {
-  Car_dis_x = 0;
-  Car_dis_y = 0;   // 里程计归零，没有用到
-  delta_x = cor_x; // 要换算，与现实坐标有差别(可能)
-  delta_y = cor_y; // 要换算
-
-  if (delta_x > 6 || delta_x < -6 || abs((int)delta_y) > 40) // 误差太大，需要校正(一般情况)
+  delta_x = cor_x; // 
+  delta_y = cor_y-35; //计算出中心坐标,y可能需要调整
+  //调整x方向
+  if(correct_x_flag==0 && correct_y_flag==0)
   {
-    Vx = 7 * (cor_x / 10) * speed_k;
-    Vy = 7 * (cor_y / 42) * speed_k;
-
-    Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
+     if(delta_x>4 && delta_x<-4)//x距离过大，需要矫正
+   {
+     Vx=Distance_pid(&distance_pid[0], delta_x);
+     Vy=0;
+   }
+     else//已调整完毕
+   {
+     Vx=0;
+     Vy=0;
+     correct_x_flag=1;//x方向调整完毕
+   }
   }
-  else if ((delta_x == 0 && delta_y == 0) || abs((int)delta_y) < 35) // 图片中无目标板，或者离目标板太近，往后退
+  if(correct_x_flag==1 && correct_y_flag==0)//y距离过大，需要矫正
   {
-    Vx = 0;
-    if (abs((int)delta_y) < 20)
-      Vy = -10 * speed_k; // 快速后退
-    else if (abs((int)delta_y) > 20)
-      Vy = -8 * speed_k; // 降速
-
-    Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
+    if(delta_y>5 && delta_y<-6)//x距离过大，需要矫正
+   {
+     Vy=Distance_pid(&distance_pid[0], delta_y);
+     Vx=0;
+   }
+     else//已调整完毕
+   {
+     Vx=0;
+     Vy=0;
+     correct_y_flag=1;//y方向调整完毕
+   }
   }
-  else if (delta_x <= 6 && delta_x >= -6 && abs((int)delta_y) <= 40 && abs((int)delta_y) >= 35) // 不需要校正
-  {
-    delta_x = 0;
-    delta_y = 0; // 清零x,y坐标
-    Vx = 0;
-    Vy = 0; // x，y速度归零
-
-    if (test_csi == 3) // 暂时写个3，但其实这里的作用是做一小段延时，需要修改！！
-    {
-      CSI_correct_flag = CSI_CORRECT_DONE; // 校正完成
-      Car_Inverse_kinematics_solution(Vx, Vy, Vz);
-      if (Put_flag == 0)
-      {
-        arm_pick_flag = ARM_PICK_NOT_DONE;
-        arm_state_flag = ARM_STATE_ON; // 打开机械臂拾取功能
-      }
-      test_csi = 0;
-    }
-    else
-      test_csi++;
-  }
-  Car_Inverse_kinematics_solution(Vx, Vy, Vz);
+  if(correct_y_flag==1 && correct_x_flag==1)
+    CSI_correct_flag=1;//总钻风调整完毕
+  Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
 }
 /**
  * @brief 小车模式切换，打包函数
@@ -756,6 +767,7 @@ void CSI_dis_correct(float cor_x, float cor_y)
  */
 void car_findcard(int *mode)
 {
+  //******************************正常循迹*****************************//
   if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
   {
     if (now_distance_y > 0 && now_distance_y < 800) // art识别到卡片，设定识别区间
@@ -779,7 +791,8 @@ void car_findcard(int *mode)
 			*mode=Car_go;
 		}
   }
-  if (*mode == Car_find_card_y) // 找卡片
+  //******************************找卡片*****************************//
+  if (*mode == Car_find_card_y) 
   {
     if (find_car_flag == 1) // 到达卡片附近，原本是4
     {
@@ -804,26 +817,38 @@ void car_findcard(int *mode)
 		{
 			only_one=1;//重新打开only_one
       car_run();//正常循迹跑
-      delta_card_y = card_y[0]-(int)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
-      delta_card_x = card_x[0]-(int)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
+      delta_card_y = card_y[0]-(double)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
+      delta_card_x = card_x[0]-(double)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
 			if(delta_card_x == 0)
-				delta_angle = 0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为0
+				delta_angle = 90.0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为90
 			else
-        delta_angle = atan((delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
-      if( delta_angle-Angle_z<15 || delta_angle-Angle_z>-20)//因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
+        delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
+        //因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
+      if(delta_angle-Angle_z<10 && delta_angle-Angle_z>-15 && fabsf(Angle_z)>10.0)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
 				system_delay_ms(1000);
         find_car_flag = 1;
+        *mode=Car_find_card_y;
       }
-			*mode=Car_find_card_y;
+      else if(delta_angle-Angle_z<3 && delta_angle-Angle_z>-3 && fabsf(Angle_z)<3.0)//当底盘坐标需要偏角较小的时候,一般在弯道
+      {
+        car_stop();//停车
+				system_delay_ms(1000);
+        find_car_flag = 1;
+        *mode=Car_find_card_y;
+      }
 		}
   }
-  if (*mode == Car_turn) // 向卡片方向转向
+//******************************向卡片方向转向*****************************//
+  if (*mode == Car_turn) 
   {
     if (fabsf(Angle_Z - turn_angle) < 1) // 陀螺仪转向识别
     {
       // Vz = 0;//清0Vz
+      Car_dis_x2 = 0;
+      Car_dis_y2 = 0;//用于总钻风微调，清0为下一步做准备
+      
       *mode = Car_find_card_cor; // 模式转变
       target_type = *mode;
     }
@@ -833,6 +858,7 @@ void car_findcard(int *mode)
       *mode = Car_turn;
     }
   }
+//******************************总钻风对正*****************************//
   if (*mode == Car_find_card_cor) // 总钻风微调识别
   {
     if (CSI_correct_flag == 1) // 总钻风坐标对正
@@ -842,7 +868,7 @@ void car_findcard(int *mode)
     }
 		else
 		{
-      CSI_dis_correct((float)center_x, (float)center_y);//总钻风坐标对正
+      CSI_dis_new_correct((float)center_x, (float)center_y);//总钻风坐标对正
 			*mode = Car_find_card_cor;
 		}
 	}

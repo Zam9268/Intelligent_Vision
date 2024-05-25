@@ -31,7 +31,7 @@ uint8 Last_Left_Up_Find = 0;
 uint8 Last_Right_Up_Find = 0; // the last time the right up point is found
 uint8 Right_Up_Find = 0;      // Finding the right top turning point
 uint8 flag_test = 0;
-uint8 pick_up_mode = 0;                    // when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
+uint8 pick_up_mode = 1;                    // when the value is 1, it is in the card picking state; when the value is 0, it is in the free patrol state
 uint8 card_left_up_find_flag = 0;          // the lef up corner of the card lying on the side of the road is found
 uint8 card_right_up_find_flag = 0;         // the right up corner of the card lying on the side of the road is found
 uint8 left_island_flag, right_island_flag; // the flag of the island on the left and right
@@ -2015,8 +2015,8 @@ void test2(void)
         type = 8;
     if (Road_Type == CROSSING)
         Cross_Detect();
-    if (left_island_flag || right_island_flag)
-        Island_Detect();
+    // if (left_island_flag || right_island_flag)
+    //     Island_Detect();
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);

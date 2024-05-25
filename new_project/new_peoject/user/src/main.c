@@ -146,12 +146,12 @@ int main(void)
     while(1)
     {   
 //**************************观察卡片坐标和里程计*********************//			
-  	   	 ips114_show_int(90,0,now_distance_y,4);
-         ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
-		// ips114_show_float(150,60,Car_dis_x,3,4);
-		// ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
-        ips114_show_float(90,60,Card_dis_car_x,3,4);
-		ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
+  	   	//  ips114_show_int(90,0,now_distance_y,4);
+        //  ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
+		// // ips114_show_float(150,60,Car_dis_x,3,4);
+		// // ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
+        // ips114_show_float(90,60,Card_dis_car_x,3,4);
+		// ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
 //*******************************************************************//	
 //**************************观察行进变量*****************************//
   	 		// ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
@@ -160,45 +160,45 @@ int main(void)
 			// ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
 //*******************************************************************//
 //**************************观察角度*********************************//
-  		ips114_show_float(0,0,Angle_Z,3,2);
-        ips114_show_float(0,20,Angle_z,3,2);
-        ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
+  		// ips114_show_float(0,0,Angle_Z,3,2);
+        // ips114_show_float(0,20,Angle_z,3,2);
+        // ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
   		// 	ips114_show_float(0,40,turn_angle,3,2);
  		// 	  ips114_show_float(0,60,Vz,3,2);
         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
 //*******************************************************************//
 
 //*********************测试弯道卡片坐标******************************//
- 			if(abs(now_distance_y)>0&&abs(now_distance_y)<800&&abs(now_distance_x)>0)//识别到卡片
- 			{
-				if(once)
-				{
-					Card_dis_car_x = 0;
-					Card_dis_car_y = 0;
-					zuobiao_x = 28;//卡片坐标x  now_distance_x/10
-					zuobiao_y = now_distance_y/10;//卡片坐标y，第一次捕获到的坐标 now_distance_y/10
-					Angle_z=0;//清零angle_z
-          catch_card_flag = 1;//捕获成功，记得要重新关闭,打开里程计的第二种模式
-					once = 0;
-				}
-			}
-           test_delta_card_x = zuobiao_x-(int)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
-           test_delta_card_y = zuobiao_y-(int)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
-			     test_tan = test_delta_card_y/test_delta_card_x*1.0;
-           test_delta_angle = atan((double)(test_delta_card_y/test_delta_card_x))/PI*180;//算出即时偏移角
-			ips114_show_float(150,0,zuobiao_x,3,4);
-		    ips114_show_float(150,20,zuobiao_y,3,4);//卡片里程计x,y
-            ips114_show_float(150,40,Card_dis_car_x,3,4);
-		    ips114_show_float(150,60,Card_dis_car_y,3,4);//卡片里程计x,y
-            ips114_show_int(150,80,test_delta_card_x,3);//卡片x坐标与里程计的差值
-            ips114_show_int(150,100,test_delta_card_y,3);//卡片y坐标与里程计的差值
-			      ips114_show_float(0,60,test_tan,3,2);
-            ips114_show_float(0,80,test_delta_angle,3,2);
-            ips114_show_float(0,100,test_delta_angle-Angle_z,3,2);
-        if((test_delta_angle-Angle_z<10 && test_delta_angle-Angle_z>-15)||(test_delta_angle-Angle_z<1.0 && test_delta_angle-Angle_z>-1.0))//因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间,前一个条件判断弯道
-        {
-             ips114_show_string( 90 , 100,   "SUCCESS");
-        }
+ 		// 	if(abs(now_distance_y)>0&&abs(now_distance_y)<800&&abs(now_distance_x)>0)//识别到卡片
+ 		// 	{
+		// 		if(once)
+		// 		{
+		// 			Card_dis_car_x = 0;
+		// 			Card_dis_car_y = 0;
+		// 			zuobiao_x = now_distance_x/10;//卡片坐标x  now_distance_x/10
+		// 			zuobiao_y = now_distance_y/10;//卡片坐标y，第一次捕获到的坐标 now_distance_y/10
+		// 			Angle_z=0;//清零angle_z
+        //   catch_card_flag = 1;//捕获成功，记得要重新关闭,打开里程计的第二种模式
+		// 			once = 0;
+		// 		}
+		// 	}
+        //    test_delta_card_x = zuobiao_x-(int)Card_dis_car_x;//算出在更新后的坐标轴下的x差值
+        //    test_delta_card_y = zuobiao_y-(int)Card_dis_car_y;//算出在更新后的坐标轴下的y差值
+		//    test_tan = test_delta_card_y/test_delta_card_x*1.0;
+        //    test_delta_angle = atan((double)(test_delta_card_y/test_delta_card_x))/PI*180;//算出即时偏移角
+		// 	ips114_show_float(150,0,zuobiao_x,3,4);
+		//     ips114_show_float(150,20,zuobiao_y,3,4);//卡片里程计x,y
+        //     ips114_show_float(150,40,Card_dis_car_x,3,4);
+		//     ips114_show_float(150,60,Card_dis_car_y,3,4);//卡片里程计x,y
+        //     ips114_show_int(150,80,test_delta_card_x,3);//卡片x坐标与里程计的差值
+        //     ips114_show_int(150,100,test_delta_card_y,3);//卡片y坐标与里程计的差值
+		// 	      ips114_show_float(0,60,test_tan,3,2);
+        //     ips114_show_float(0,80,test_delta_angle,3,2);
+        //     ips114_show_float(0,100,test_delta_angle-Angle_z,3,2);
+        // if((test_delta_angle-Angle_z<10 && test_delta_angle-Angle_z>-15)||(test_delta_angle-Angle_z<1.0 && test_delta_angle-Angle_z>-1.0))//因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间,前一个条件判断弯道
+        // {
+        //      ips114_show_string( 90 , 100,   "SUCCESS");
+        // }
 //*******************************************************************//
 
 //*********************测试总钻风微调********************************//
@@ -212,7 +212,7 @@ int main(void)
 //*********************测试总的车辆行进打包函数**********************//
         // car_findcard(&car_mode);//模式选择
 //*******************************************************************//
-			
+
 //		car_run();
         //  ips114_show_float(0,60,center_distance,3,2);
         //  ips114_show_int(188,80,right_data[3],3);
@@ -246,7 +246,7 @@ int main(void)
         //				 Turn_Angle_PD(90);
         //      }
         // car_findcard(1);
-
+         test();
         //   ips114_show_float(0,20,Speed[1].output,2,2);
         //        Vofa_JustFloat(&vofa1,other_data,5);
         //        uart_write_buffer(UART_1,other_data,5);
