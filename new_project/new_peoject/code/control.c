@@ -54,7 +54,7 @@ float Card_dis_car_y=0;    //相对于车的更新坐标
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias;
-float dis_kp = 0.05;       //距离环kp
+float dis_kp = 1.0;       //距离环kp
 float dis_kd = 0.0;       //距离环kd
 float dis_error;
 float dis_change[4];      //存放距离环输出结果
@@ -198,7 +198,7 @@ void car_run(void)
   err_watch = Err_Handle();
   move_error = err_watch / 94.0f; // 横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
 
-  float kp = 1.0f, kd = 0.2f;
+  float kp = 0.85f, kd = 0.2f;//1.0对应速度30
 
   angle = kp * move_error + kd * (move_error - last_error1); // 原本的+=，现在改成=      2024/3/26
 
@@ -213,10 +213,10 @@ void car_run(void)
 
   last_error1 = move_error; // 记录下上次误差
 
-  Speed[0].target_speed = 30 * (1 - angle);
-  Speed[1].target_speed = 30 * (1 - angle);
-  Speed[2].target_speed = 30 * (1 + angle);
-  Speed[3].target_speed = 30 * (1 + angle);
+  Speed[0].target_speed = 10 * (1 - angle);
+  Speed[1].target_speed = 10 * (1 - angle);
+  Speed[2].target_speed = 10 * (1 + angle);
+  Speed[3].target_speed = 10 * (1 + angle);
   // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
 }
 
@@ -669,7 +669,6 @@ float Distance_pid(pid_info *pid, int error)
   pid->output = pid->kp * pid->error + pid->kd * (pid->error - pid->lastError); // 距离闭环输出一个速度
   pid->output = PIDInfo_Limit(pid->output, Distance_output);                    // 输出速度限幅，mm/s
   pid->lastError = pid->error;                                                  // 记录下上次误差
-
   return pid->output;
 }
 /**************************************************************************
@@ -682,7 +681,7 @@ float Distance_pid(pid_info *pid, int error)
 //   delta_x = cor_x; // 要换算，与现实坐标有差别(可能)
 //   delta_y = cor_y; // 要换算
 
-//   if (delta_x > 6 && delta_x < -6 && abs((int)delta_y) > 40) // 误差太大，需要校正(一般情况)
+//   if (delta_x > 6 || delta_x < -6 && abs((int)delta_y) > 40) // 误差太大，需要校正(一般情况)
 //   {
 //     Vx = 7 * (cor_x / 10) * speed_k;
 //     Vy = 7 * (cor_y / 42) * speed_k;
@@ -722,41 +721,49 @@ float Distance_pid(pid_info *pid, int error)
 入口参数：cor_x，cor_y（要校正的x和y），art识别出来的坐标一般有偏差，所以要再次识别中心点的x,y坐标输入矫正函数，新版加上距离闭环
 返回值：
 **************************************************************************/
-void CSI_dis_new_correct(float cor_x, float cor_y)
+void CSI_dis_new_correct(int cor_x, int cor_y)
 {
-  delta_x = cor_x; // 
-  delta_y = cor_y-35; //计算出中心坐标,y可能需要调整
+  delta_x = (cor_x-23)/10; // 
+  delta_y = cor_y/10-21; //计算出中心坐标,y可能需要调整
   //调整x方向
   if(correct_x_flag==0 && correct_y_flag==0)
   {
-     if(delta_x>4 && delta_x<-4)//x距离过大，需要矫正
+     if(abs(delta_x)>1&&correct_x_flag==0)//x距离过大，需要矫正
    {
      Vx=Distance_pid(&distance_pid[0], delta_x);
      Vy=0;
+		 correct_x_flag=0;
+		 correct_y_flag=0;
    }
-     else//已调整完毕
+     else if(delta_x<1 && delta_x>-1)//已调整完毕 
    {
      Vx=0;
      Vy=0;
      correct_x_flag=1;//x方向调整完毕
    }
   }
+	//调整y方向
   if(correct_x_flag==1 && correct_y_flag==0)//y距离过大，需要矫正
   {
-    if(delta_y>5 && delta_y<-6)//x距离过大，需要矫正
+    if(delta_y>1&&correct_y_flag==0)//y距离过大，需要矫正
    {
      Vy=Distance_pid(&distance_pid[0], delta_y);
      Vx=0;
+		 correct_y_flag=0;
    }
-     else//已调整完毕
+    else if(delta_y<1 && delta_y>-1)//已调整完毕
    {
      Vx=0;
      Vy=0;
-     correct_y_flag=1;//y方向调整完毕
+    correct_y_flag=1;//y方向调整完毕
    }
   }
   if(correct_y_flag==1 && correct_x_flag==1)
+	{
     CSI_correct_flag=1;//总钻风调整完毕
+		correct_x_flag=0;//调整标志位清0
+		correct_y_flag=0;
+	}
   Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 输入至麦轮解算
 }
 /**
@@ -799,7 +806,7 @@ void car_findcard(int *mode)
 			if(only_one)
 			{
          now_angle = Angle_Z;//记录下转向前的角度
-			   if(delta_x<=0)//卡片相对于小车在左边时
+			   if(delta_card_x<=0)//卡片相对于小车在左边时
         {
           turn_angle=90+now_angle;//向左转90度 
         }
@@ -868,7 +875,7 @@ void car_findcard(int *mode)
     }
 		else
 		{
-      CSI_dis_new_correct((float)center_x, (float)center_y);//总钻风坐标对正
+      CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正
 			*mode = Car_find_card_cor;
 		}
 	}

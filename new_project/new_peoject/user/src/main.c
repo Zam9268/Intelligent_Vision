@@ -146,25 +146,25 @@ int main(void)
     while(1)
     {   
 //**************************观察卡片坐标和里程计*********************//			
-  	   	//  ips114_show_int(90,0,now_distance_y,4);
-        //  ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
+  	   	ips114_show_int(90,0,now_distance_y,4);
+        ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
 		// // ips114_show_float(150,60,Car_dis_x,3,4);
 		// // ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
-        // ips114_show_float(90,60,Card_dis_car_x,3,4);
-		// ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
+//       ips114_show_float(90,60,Card_dis_car_x,3,4);
+//		   ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
 //*******************************************************************//	
 //**************************观察行进变量*****************************//
-  	 		// ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
-  	 		// ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
-  	 		// ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
-			// ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
+  	 	ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
+  	 	ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
+  	 	ips114_show_int(90,80,delta_card_x,3);//卡片y坐标与里程计的差值
+		ips114_show_int(90,100,delta_card_y,3);//卡片x坐标与里程计的差值
 //*******************************************************************//
 //**************************观察角度*********************************//
-  		// ips114_show_float(0,0,Angle_Z,3,2);
-        // ips114_show_float(0,20,Angle_z,3,2);
-        // ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
+  		ips114_show_float(0,0,Angle_Z,3,2);
+        ips114_show_float(0,20,Angle_z,3,2);
+        ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
   		// 	ips114_show_float(0,40,turn_angle,3,2);
- 		// 	  ips114_show_float(0,60,Vz,3,2);
+ 		ips114_show_float(0,60,Vz,3,2);
         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
 //*******************************************************************//
 
@@ -209,8 +209,20 @@ int main(void)
 // arm_control(4);//测试舵机模式
 //*******************************************************************//
 
+//*********************测试总钻风校正********************************//
+//CSI_dis_new_correct(center_x, center_y);
+//ips114_show_int(0,0,center_x/10,4);
+//ips114_show_int(0,20,center_y/10,4);//显示卡片中心坐标
+//ips114_show_int(0,40,delta_x,4);
+//ips114_show_int(0,60,delta_y,4);//显示x，y差值
+//ips114_show_int(90,0,correct_x_flag,4);//显示x调整标志位
+//ips114_show_float(90,20,Vx,3,2);
+//ips114_show_int(90,40,correct_y_flag,4);//显示y调整标志位
+//ips114_show_float(90,80,Vy,3,2);//显示x,y速度
+//*******************************************************************//
+
 //*********************测试总的车辆行进打包函数**********************//
-        // car_findcard(&car_mode);//模式选择
+ car_findcard(&car_mode);//模式选择
 //*******************************************************************//
 
 //		car_run();
