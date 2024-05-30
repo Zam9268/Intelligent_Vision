@@ -96,8 +96,8 @@ void Motor_Init(void)
 {
   gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // gpio给高电平
   gpio_init(DIR_LB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
-  gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
-  gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
+  gpio_init(DIR_RF, GPO, GPIO_LOW, GPO_PUSH_PULL); //
+  gpio_init(DIR_RB, GPO, GPIO_LOW, GPO_PUSH_PULL); //
 
   pwm_init(motor_LF, 15000, 0); // PWM初始化
   pwm_init(motor_LB, 15000, 0); //
@@ -490,7 +490,7 @@ void motor_close_control(void)
     pid_motor[j] = Speed[j].output;
     // Speed[j].output=0;
   }
-  if (pid_motor[0] > 0) // 正转
+  if (pid_motor[0] > 0) // 左前轮正转
   {
     gpio_set_level(DIR_LF, 0);                 // DIR0
     pwm_set_duty(motor_LF, (int)pid_motor[0]); // 左前
@@ -501,7 +501,7 @@ void motor_close_control(void)
     pwm_set_duty(motor_LF, (int)-pid_motor[0]);
   }
 
-  if (pid_motor[1] > 0) //???
+  if (pid_motor[1] > 0) //左后轮
   {
     gpio_set_level(DIR_LB, 0);
     pwm_set_duty(motor_LB, (int)pid_motor[1]);
@@ -512,25 +512,25 @@ void motor_close_control(void)
     pwm_set_duty(motor_LB, (int)-pid_motor[1]);
   }
 
-  if (pid_motor[2] > 0) //???
+  if (pid_motor[2] > 0) //右前轮，正转
   {
-    gpio_set_level(DIR_RF, 1);
+    gpio_set_level(DIR_RF, 0);//0
     pwm_set_duty(motor_RF, (int)pid_motor[2]);
   }
-  else // ��ת
+  else // 反转
   {
-    gpio_set_level(DIR_RF, 0); //???
+    gpio_set_level(DIR_RF, 1); //1
     pwm_set_duty(motor_RF, (int)-pid_motor[2]);
   }
 
-  if (pid_motor[3] > 0) //???
+  if (pid_motor[3] > 0) //右后轮
   {
-    gpio_set_level(DIR_RB, 1);
+    gpio_set_level(DIR_RB, 0);//正转
     pwm_set_duty(motor_RB, (int)pid_motor[3]);
   }
   else //???
   {
-    gpio_set_level(DIR_RB, 0);
+    gpio_set_level(DIR_RB, 1);//反转
     pwm_set_duty(motor_RB, (int)-pid_motor[3]);
   }
 }
@@ -838,7 +838,7 @@ void car_findcard(int *mode)
         find_car_flag = 1;
         *mode=Car_find_card_y;
       }
-      else if(delta_angle-Angle_z<3 && delta_angle-Angle_z>-3 && fabsf(Angle_z)<3.0)//当底盘坐标需要偏角较小的时候,一般在弯道
+      else if(delta_angle-Angle_z<1 && delta_angle-Angle_z>-1 && fabsf(Angle_z)<3.0)//当底盘坐标需要偏角较小的时候,一般在直道
       {
         car_stop();//停车
 				system_delay_ms(1000);
