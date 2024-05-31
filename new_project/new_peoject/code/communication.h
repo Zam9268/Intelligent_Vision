@@ -32,8 +32,16 @@
 #define ARMOREDCAR 14
 #define MOTORCYCLE 15
 
+typedef struct{
+	int x_distance;	        //卡片x坐标
+	int y_distance;	        //卡片y坐标
+    float add_distance;	        //卡片y坐标
+    int pick_doen_flag;    //卡片拾取完成标志位
+}Card;
+
 extern int now_distance_x;
 extern unsigned long now_distance_y;
+extern Card card_position[100];  
 
 void My_Communication_Init(void);
 void uart1_rx_interrupt_handler(void);

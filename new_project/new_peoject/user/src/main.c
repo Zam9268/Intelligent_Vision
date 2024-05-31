@@ -100,8 +100,8 @@ int main(void)
 //----------pid初始化---------------------//    
 	//   uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//串口一初始化，用于art
 //	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-//	 My_Communication_Init();//通信初始化
-//   PidInit();//增量式pid初始化
+	 My_Communication_Init();//通信初始化
+   PidInit();//增量式pid初始化
 ////   Pos_PidInit();//位置式pid初始化，现已弃用
 //	 Distance_PidInit();//距离环初始化
 
@@ -110,12 +110,12 @@ int main(void)
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     //----------模块初始化--------------------//
-//    ips114_clear();     // 清屏
+    ips114_clear();     // 清屏
     Motor_Init();       // 电机初始化
-//    Encoder_Init();     // 编码器初始化
-//    Camera_Init();      // 摄像头初始化
-//    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
-//    my_pwm_gpio();      // 机械臂初始化
+    Encoder_Init();     // 编码器初始化
+    Camera_Init();      // 摄像头初始化
+    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
+    my_pwm_gpio();      // 机械臂初始化
     //------------中断初始化-------------------//
 //    pit_ms_init(PIT_CH0, 5);  // 5ms
 //    pit_ms_init(PIT_CH1, 5);  // 10ms
@@ -209,6 +209,8 @@ int main(void)
 // arm_control(4);//测试舵机模式
 //*******************************************************************//
 
+//*********************测试侧面舵机********************************//
+test_arm();
 //*********************测试总钻风校正********************************//
 //CSI_dis_new_correct(center_x, center_y);
 //ips114_show_int(0,0,center_x/10,4);

@@ -9,9 +9,13 @@ uint16 servo1_duty = 50;
 uint16 servo2_duty = 50;
 uint16 servo3_duty = 50;//初始电机
 
+uint16 servo4_duty = 50;//侧面舵机
+
 uint32 servo1_pwm = 0;
 uint32 servo2_pwm = 0;
 uint32 servo3_pwm = 0;//三个舵机的pwm值
+
+uint32 servo4_pwm = 0;//侧面舵机的pwm值
 
 uint8 step = 1;
 uint8 side_step = 1;
@@ -31,9 +35,11 @@ void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(35));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(79)); //云台舵机度数12  73  133
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(85)); //云台舵机度数12  73  133
+ pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
- gpio_init(C9, GPO, 0, GPO_PUSH_PULL);                                       //电磁铁                             
+ gpio_init(C9, GPO, 0, GPO_PUSH_PULL);
+ gpio_init(C10, GPO, 0, GPO_PUSH_PULL);	//电磁铁                             
 
  gpio_init(B14, GPO, 0, GPO_PUSH_PULL); //
  gpio_init(B16, GPO, 0, GPO_PUSH_PULL); //
@@ -85,28 +91,28 @@ void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_cou
 // 函数简介     侧面舵机连续控制函数
 // 参数说明     _servo3_angle               舵机3的目标角度
 // 返回参数     _step_count                 舵机连续控制间隔次数
-// 使用示例     servo_slow_ctrl(90, 90, 100);
+// 使用示例     side_servo_slow_ctrl(90, 100);
 // 备注信息     
 //-------------------------------------------------------------------------------------------------------------------
-void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count)
+void side_servo_slow_ctrl(uint16 _servo4_angle,float _step_count)
 {
- float servo3_start = (float)servo3_duty;//设置初始角度值
- float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count;//每一步需要执行的步数
+ float servo4_start = (float)servo4_duty;//设置初始角度值
+ float servo4_step = (float)(_servo4_angle - servo4_duty) / _step_count;//每一步需要执行的步数
  while (1)
  {
    system_delay_ms(5);
 		//fabsf()函数求浮点数绝对值
-   if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//执行角度比设定的单步角度要大
-     servo3_start += servo3_step;
+   if (fabsf(servo4_start - (float)_servo4_angle) >= servo4_step)//执行角度比设定的单步角度要大
+     servo4_start += servo4_step;
    else//角度比设定的单步角度要小
-     servo3_start = _servo3_angle;//直接更新为目标角度
+     servo4_start = _servo4_angle;//直接更新为目标角度
 		
-   servo3_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//pwm值
-   pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTY舵机角度转化成pwm值
+   servo4_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo4_start);//pwm值
+   pwm_set_duty(SERVO_MOTOR_PWM4, (uint32)SERVO_MOTOR_DUTY((uint16)servo4_start));//SERVO_MOTOR_DUTY舵机角度转化成pwm值
 
-   if (fabsf(servo3_start - (float)_servo3_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
+   if (fabsf(servo4_start - (float)_servo4_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
    {
-     servo3_duty = (uint16)_servo3_angle;//更新角度
+     servo4_duty = (uint16)_servo4_angle;//更新角度
      return;
    }
  }
@@ -157,41 +163,18 @@ void arm_control(uint8 mode)
 
    break;
 
- case 5: //调试模式（按键）
-   if (!gpio_get_level(C14) && gpio_get_level(C27))
-   {
-     servo3_duty += 10;
-     system_delay_ms(300);
-     pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
-   }
-   //
-   if (!gpio_get_level(C26) && gpio_get_level(C27))
-   {
-     servo3_duty -= 10;
-     system_delay_ms(300);
-     pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
-   }
-   //
-   if (!gpio_get_level(C14) && !gpio_get_level(C27))
-   {
-     servo2_duty += 10;
-     system_delay_ms(300);
-     pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));
-   }
-   //
-   if (!gpio_get_level(C26) && !gpio_get_level(C27))
-   {
-     servo2_duty -= 10;
-     system_delay_ms(300);
-     pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));//????????
-   }
-   if (!gpio_get_level(D4))
-     gpio_set_level(C9, 1); //?????????
-   else
-     gpio_set_level(C9, 0);
+ case 5: //侧面舵机关门
+   gpio_set_level(C10, 1);//侧面电磁铁上电
+   side_servo_slow_ctrl(157, 100);//侧面舵机控制
+   system_delay_ms(1000);
+ 	side_servo_slow_ctrl(30, 10);//侧面舵机控制，默认角度
+	system_delay_ms(1000);
    break;
-//  case 6: //模式6侧边舵机拾取
-//  gpio_set_level(C9, 1);//电磁铁给电
+  case 6: //模式6侧边舵机拾取
+  gpio_set_level(C10, 1);//电磁铁断电
+	side_servo_slow_ctrl(50, 10);//侧面舵机控制，默认角度
+	system_delay_ms(1000);
+	break;
 //    switch (side_step)
 //  {
 //    case 1:
@@ -237,12 +220,10 @@ void arm_control(uint8 mode)
 //*******************************舵机测试函数******************************//
 void test_arm(void)
 {
-	// if(arm_put_down==0)
-	// {
-	//   arm_control(4);//测试舵机模式
-	// 	arm_put_down = 1;
-	// }
-	// system_delay_ms(1000);
-	// arm_control(3);//测试舵机模式
-  arm_control(4);//测试舵机模式
+	if(arm_pick_flag==ARM_PICK_NOT_DONE)
+	{
+	  arm_control(5);//关门
+		arm_pick_flag=ARM_PICK_DONE;
+//    arm_control(6);//开门
+	}
 }
