@@ -66,11 +66,11 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH1))
     {
-		//��ȡ������
-		// Read_Encoder();
-		 Get_angle();
-		 Encoder_odometer();
-     pit_flag_clear(PIT_CH1);
+        // ��ȡ������
+        //  Read_Encoder();
+        Get_angle();
+        Encoder_odometer();
+        pit_flag_clear(PIT_CH1);
     }
 
     if (pit_flag_get(PIT_CH2))
@@ -136,8 +136,8 @@ void LPUART4_IRQHandler(void)
         //        flexio_camera_uart_handler();
         //
         //        gnss_uart_callback();
-        //		extern void UART4_handler(void);//?????????
-        //		UART4_handler();
+        extern void UART4_handler(void); //?????????
+        UART4_handler();
     }
 
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag); // ?????????

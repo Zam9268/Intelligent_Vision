@@ -72,15 +72,15 @@ while(True):
     while(True):
         img = sensor.snapshot()
         new_img_coordinate=[]
-        new_img_coordinate.append([-30,101])
-        new_img_coordinate.append([30,101])
-        new_img_coordinate.append([62,32])
-        new_img_coordinate.append([-62,32])
+        new_img_coordinate.append([-32,105])
+        new_img_coordinate.append([32,105])
+        new_img_coordinate.append([60,36])
+        new_img_coordinate.append([-60,36])
         new_world_coordinates=[]
-        new_world_coordinates.append([-210,590])
-        new_world_coordinates.append([210,590])
-        new_world_coordinates.append([210,80])
-        new_world_coordinates.append([-210,80])#偏移坐标210
+        new_world_coordinates.append([-200,490])
+        new_world_coordinates.append([200,490])
+        new_world_coordinates.append([200,90])
+        new_world_coordinates.append([-200,90])#偏移坐标210
         H= cal_mtx(new_img_coordinate,new_world_coordinates)
         pyb.mdelay(1000)
         print(H)
