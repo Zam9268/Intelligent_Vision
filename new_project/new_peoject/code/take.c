@@ -164,21 +164,21 @@ void arm_control(uint8 mode)
      system_delay_ms(300);
      pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
    }
-   //���²�C27������C26��Ӧ��C30����Ƕȼ��?
+   //
    if (!gpio_get_level(C26) && gpio_get_level(C27))
    {
      servo3_duty -= 10;
      system_delay_ms(300);
      pwm_set_duty(SERVO_MOTOR_PWM1, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
    }
-   //���ϲ�C27������C14��Ӧ��C31����Ƕ�����?
+   //
    if (!gpio_get_level(C14) && !gpio_get_level(C27))
    {
      servo2_duty += 10;
      system_delay_ms(300);
      pwm_set_duty(SERVO_MOTOR_PWM2, (uint32)SERVO_MOTOR_DUTY((uint16)servo2_duty));
    }
-   //���ϲ�C27������C26��Ӧ��C31����Ƕȼ��?
+   //
    if (!gpio_get_level(C26) && !gpio_get_level(C27))
    {
      servo2_duty -= 10;

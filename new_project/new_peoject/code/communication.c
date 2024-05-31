@@ -139,7 +139,7 @@ void get_uartdata(void)
 int last_distance_x;          // 上一次算法得到的目标点x坐标
 unsigned int last_distance_y; // 上一次算法得到的目标点y坐标
 int now_distance_x;           // 当前算法得到的目标点x坐标
-unsigned int now_distance_y;  // 当前算法得到的目标点y坐标
+unsigned long now_distance_y;  // 当前算法得到的目标点y坐标
 unsigned int card_count;      // 算法得到的目标点上的卡片数量
 float center_distance;        // 当前算法得到的目标点与原点的距离
 float last_center_distance;   // 上一次算法得到的目标点与原点的距离

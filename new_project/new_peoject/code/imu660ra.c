@@ -54,7 +54,7 @@ void IMU660ra_newValues()
 			 moto_flag=1;
 			 for(gyro_i=0;gyro_i<100;gyro_i++)
 			 {
-				 sum_gyro+=gyro[gyro_i];//
+				 sum_gyro+=gyro[gyro_i];//用于去零漂
 			 }
 			 gyro_flag=1;
                          start_flag=1;

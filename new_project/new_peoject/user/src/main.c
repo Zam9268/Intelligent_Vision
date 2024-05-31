@@ -111,17 +111,17 @@ int main(void)
     ips114_set_font(IPS114_6X8_FONT);
     ips114_set_color(RGB565_RED, RGB565_BLACK);
     //----------模块初始化--------------------//
-    ips114_clear();     // 清屏
+//    ips114_clear();     // 清屏
     Motor_Init();       // 电机初始化
-    Encoder_Init();     // 编码器初始化
-    Camera_Init();      // 摄像头初始化
-    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
-    my_pwm_gpio();      // 机械臂初始化
+//    Encoder_Init();     // 编码器初始化
+//    Camera_Init();      // 摄像头初始化
+//    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
+//    my_pwm_gpio();      // 机械臂初始化
     //------------中断初始化-------------------//
-    pit_ms_init(PIT_CH0, 5);  // 5ms
-    pit_ms_init(PIT_CH1, 5);  // 10ms
-    pit_ms_init(PIT_CH2, 15); // 15ms
-    pit_ms_init(PIT_CH3, 35); // 25ms
+//    pit_ms_init(PIT_CH0, 5);  // 5ms
+//    pit_ms_init(PIT_CH1, 5);  // 10ms
+//    pit_ms_init(PIT_CH2, 15); // 15ms
+//    pit_ms_init(PIT_CH3, 35); // 25ms
                               //
                               // target_motor[1]=1000;
                               // target_motor[3]=1000;
@@ -256,7 +256,7 @@ int main(void)
         //				 Turn_Angle_PD(90);
         //      }
         // car_findcard(1);
-
+         test();
         //   ips114_show_float(0,20,Speed[1].output,2,2);
         //        Vofa_JustFloat(&vofa1,other_data,5);
         //        uart_write_buffer(UART_1,other_data,5);
