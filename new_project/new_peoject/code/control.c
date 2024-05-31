@@ -114,7 +114,7 @@ void Encoder_Init(void)
   encoder_dir_init(ENCODER_LB, ENCODER_LB_LSB, ENCODER_LB_DIR); //
   encoder_dir_init(ENCODER_RF, ENCODER_RF_LSB, ENCODER_RF_DIR); //
   encoder_dir_init(ENCODER_RB, ENCODER_RB_LSB, ENCODER_RB_DIR); //
-
+ 
   for (uint8 i = 0; i < 4; i++)
   {
     encoder[i] = 0; // 编码器清零

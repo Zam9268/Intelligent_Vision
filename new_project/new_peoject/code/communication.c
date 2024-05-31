@@ -26,11 +26,11 @@ void My_Communication_Init(void)
 {
     fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化接收数据缓冲区
     uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化串口1通道模块
-    //    uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通道模块
-    uart_rx_interrupt(UART_1, 1); // 使能串口1接收中断
-    //    uart_rx_interrupt(UART_4,1);//使能串口2接收中断
-    NVIC_SetPriority(LPUART1_IRQn, 0); // 设置串口1中断优先级
-    //    NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
+    uart_init(UART_4, 115200, UART4_TX_C16, UART4_RX_C17);         // 初始化串口2通道模块
+    uart_rx_interrupt(UART_1, 1);                                  // 使能串口1接收中断
+    uart_rx_interrupt(UART_4, 1);                                  // 使能串口2接收中断
+    NVIC_SetPriority(LPUART1_IRQn, 0);                             // 设置串口1中断优先级
+    NVIC_SetPriority(LPUART4_IRQn, 1);                             // 设置串口2中断优先级
 }
 
 /**
@@ -109,7 +109,7 @@ void get_uartdata(void)
                     {
                         right_data[j] = 0; // 清空数据
                     }
-                    uart_write_string(UART_1, str); // 向串口1发送字符串
+                    
                     uart_data_handle();             // 数据处理函数
                 }
                 else
@@ -144,7 +144,7 @@ unsigned int card_count;      // 算法得到的目标点上的卡片数量
 float center_distance;        // 当前算法得到的目标点与原点的距离
 float last_center_distance;   // 上一次算法得到的目标点与原点的距离
 uint8 find_card_flag = 0;     // 是否找到卡片的标志位
-
+uint8 card_type = 0;          // 卡片类型，范围为1~15
 /**
  * @brief 处理串口1和4接收到的数据
  * @param 无
@@ -171,5 +171,14 @@ void uart_data_handle(void)
         if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
             card_count++; // 如果距离变化大于100.0，则默认为发现了新的卡片
         /* 处理卡片的逻辑 */
+        uart_write_string(UART_1, str); // 向串口1发送字符串
+    }
+    else if (data_length == 1) // 此时为发送分类模式
+    {
+        if (right_data[0] >= 1 && right_data[0] <= 15)
+        {
+            card_type = right_data[0];
+        }
+        uart_write_string(UART_4, str); // 向串口1发送字符串
     }
 }

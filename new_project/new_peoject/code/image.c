@@ -41,6 +41,7 @@ uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
 uint8 start_row = 0;                       // record the start row
 uint8 left_up_state3_point[2] = {0};       // 左上角顶点的坐标
+uint8 Island_surrond[IMAGE_WIDTH]={0};
 int center_x, center_y;
 int left_up_point[2] = {0};  // 左上角拐点坐标
 int right_up_point[2] = {0}; // 右下角拐点坐标
@@ -48,7 +49,7 @@ float Left_derivative[IMAGE_HEIGHT] = {0.0};
 float Right_derivative[IMAGE_HEIGHT] = {0.0};
 float err = 0.00;
 float last_err = 0.00;
-
+float island_err=0.00;//记录环岛时的误差
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];        // store the data received from the serial port,it only store 64 bytes
 extern uint32 fifo_data_count;      // the number of data lied in the buffer
@@ -1896,12 +1897,40 @@ uint8 Black_White_Dump(uint8 row, uint8 start_column, uint8 end_column)
     return 0;
 }
 
+float Island_Surround(void)
+{
+    uint8 target_row = 80;//目标行为80
+    uint8 Surround_Flag = 0;
+    for(uint8 i=0;i<IMAGE_WIDTH-1;i++)
+    {
+        for(uint8 j=IMAGE_HEIGHT-2;j>=IMAGE_HEIGHT/2;j--)
+        {
+            if(Image_Use[j][i]==BLACK_POINT&&Image_Use[j+1][i]==WHITE_POINT)
+            {
+                Island_surrond[i]=j+1;
+                break;
+            }
+            else if(j==IMAGE_HEIGHT/2)
+            {
+                Island_surrond[i]=0;//此时丢线
+            }
+        }
+    }
+    island_err=0.0;//使用前先清零
+    for(uint8 i=10;i<IMAGE_WIDTH-11;i++)//记录对应的误差
+    {
+        island_err +=abs(Island_surrond[i]-target_row);
+    }
+    island_err=island_err/(IMAGE_WIDTH-21);//取平均值，不加权重了
+    return island_err;
+}
+
+
 /**
  * @brief Island detection function
  * @param none
  * @return none
  */
-
 void Island_Detect(void)
 {
     static float k = 0;                  // 补线的斜率k
@@ -1918,7 +1947,7 @@ void Island_Detect(void)
     monotonicity_change_right_flag = Monotonicity_Change_Right(MT9V03X_H - 1 - 10, 10);
     monotonicity_change_left_flag = Monotonicity_Change_Left(MT9V03X_H - 1 - 10, 10);
 
-    ips114_show_uint(188, 40, Island_State, 3);
+    // ips114_show_uint(188, 40, Island_State, 3);
     // ips114_show_uint(188, 50, continuity_change_left_flag, 3);
     // ips114_show_uint(188, 60, Boundry_Start_Left, 3);
 
@@ -1945,8 +1974,8 @@ void Island_Detect(void)
         /*patching line first*/
         left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
         left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
-        ips114_show_uint(188, 70, left_down_guai[0], 3);
-        ips114_show_uint(188, 80, left_down_guai[1], 3);
+        // ips114_show_uint(188, 70, left_down_guai[0], 3);
+        // ips114_show_uint(188, 80, left_down_guai[1], 3);
         Left_Add_Line(Longest_White_Column_Left[1], 3, left_down_guai[1], left_down_guai[0]);
         if (Boundry_Start_Left < 50) // 当左边线起点小于60时，进入状态2
         {
@@ -1985,7 +2014,11 @@ void Island_Detect(void)
         {
             left_up_state3_point[1] = left_line[left_up_state3_point[0]];
         }
+        
+        /*下面这个补线是旧的方案*/
         Right_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], right_line[117], 117); // 拉死线
+        
+
         // else // 找不到的话启动planb，这个拐点一般都是能找到的
         // {
 
@@ -2017,9 +2050,9 @@ void Island_Detect(void)
         //         }
         //     }
         // }
-        ips114_show_uint(188, 90, state3_left_up_guai[0], 3);
-        ips114_show_uint(188, 100, state3_left_up_guai[0], 3);
-        ips114_show_uint(188, 110, start_row, 3);
+        // ips114_show_uint(188, 90, state3_left_up_guai[0], 3);
+        // ips114_show_uint(188, 100, state3_left_up_guai[0], 3);
+        // ips114_show_uint(188, 110, start_row, 3);
         // if (state3_left_up_guai[0] >= 0 && state3_left_up_guai[1] >= 0 && state3_left_up_guai[0] <= IMAGE_HEIGHT - 1 && state3_left_up_guai[1] <= IMAGE_WIDTH - 1)
         //     ips114_draw_line(94, 60, state3_left_up_guai[1], state3_left_up_guai[0], RGB565_BLUE);
         // if (state3_left_up_guai[0] != 0)
@@ -2102,10 +2135,10 @@ void test2(void)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
         Island_Detect();
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    {
-        ips114_draw_point(right_line[i], i, RGB565_RED);
-    }
+    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    // {
+    //     ips114_draw_point(right_line[i], i, RGB565_RED);
+    // }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
@@ -2135,7 +2168,12 @@ void test2(void)
     //    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
     //    ips114_show_int(0,30,now_distance_y,3);//显示卡片x坐标
     /*
-
+    66 16 131 15 39 84 158 85
+    偏移21
+    远点 72
+    近点y 30-
+    [[2.680653, 0.0, 7.629395e-06], [-5.036292e-08, 1.996892, 0.4895172], [2.452266e-10, -0.005439005, 1]]
+    20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
     // ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
@@ -2149,19 +2187,16 @@ void test2(void)
     // ips114_show_uint(188, 110, Both_Lost_Time, 3);
     //  ips114_show_int(188,90,now_distance_y,3);
     /*计算矩阵
-    61 18 126 20 30 87 155 89
-    左上右上y 80 21
-    左下右下 48 21
 
     */
-    // ips114_show_uint(188, 0, left_line[Left_Up_Find], 3);
-    // ips114_show_uint(188, 15, Left_Up_Find, 3);
-    // ips114_show_uint(188, 30, right_line[Right_Up_Find], 3);
-    // ips114_show_uint(188, 45, Right_Up_Find, 3);
-    // ips114_show_uint(188, 60, left_line[Left_Down_Find], 3);
-    // ips114_show_uint(188, 75, Left_Down_Find, 3);
-    // ips114_show_uint(188, 90, right_line[Right_Down_Find], 3);
-    // ips114_show_uint(188, 105, Right_Down_Find, 3);
+    ips114_show_uint(188, 0, left_line[Left_Up_Find], 3);
+    ips114_show_uint(188, 15, Left_Up_Find, 3);
+    ips114_show_uint(188, 30, right_line[Right_Up_Find], 3);
+    ips114_show_uint(188, 45, Right_Up_Find, 3);
+    ips114_show_uint(188, 60, left_line[Left_Down_Find], 3);
+    ips114_show_uint(188, 75, Left_Down_Find, 3);
+    ips114_show_uint(188, 90, right_line[Right_Down_Find], 3);
+    ips114_show_uint(188, 105, Right_Down_Find, 3);
     // ips114_show_uint(188,30,type,3);
     // ips114_show_uint(188,45,right_line[Boundry_Start_Right],3);
     // ips114_show_uint(188,80,left_line[Boundry_Start_Left],3);
