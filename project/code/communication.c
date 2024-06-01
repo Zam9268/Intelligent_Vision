@@ -24,11 +24,11 @@ void My_Communication_Init(void)
 {
     fifo_init(&uart_data_fifo,FIFO_DATA_8BIT,uart_get_data,64);//初始化缓冲区
     uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//初始化串口1通信模块
-    uart_init(UART_2,115200,UART2_TX_B18,UART2_RX_B19);//初始化串口2通信模块
+    // uart_init(UART_4,115200,UART4_TX_C16,UART4_RX_C17);//初始化串口2通信模块
     uart_rx_interrupt(UART_1,1);//串口1接收中断使能
-    // uart_rx_interrupt(UART_2,1);//串口2接收中断使能
+    // uart_rx_interrupt(UART_4,1);//串口2接收中断使能
     NVIC_SetPriority(LPUART1_IRQn,0);//设置串口1中断优先级
-    // NVIC_SetPriority(LPUART2_IRQn,1);//设置串口2中断优先级
+    // NVIC_SetPriority(LPUART4_IRQn,1);//设置串口2中断优先级
 }
 
 /**
@@ -44,21 +44,23 @@ void uart1_rx_interrupt_handler(void)
 }
 
 /**
- * @brief 串口2接收中断处理函数
+ * @brief 串口4接收中断处理函数
  * @param 无
  * @return 无
  */
 void uart4_rx_interrupt_handler(void)
 {
-    uart_query_byte(UART_2,&get_data);//查询串口2接收数据，将接收数据存入get_data中，注意get_data是一个全局变量
+    uart_query_byte(UART_4,&get_data);//查询串口2接收数据，将接收数据存入get_data中，注意get_data是一个全局变量
     fifo_write_buffer(&uart_data_fifo,&get_data,1);//将get_data中的数据存入缓冲区中
 }
 
 /**
- * @brief 串口1接收数据函数
+ * @brief 串口1,4接收数据函数
  * @param 无
  * @return 无
- * @attention  ?通过状态机来实现，和上一届师兄的有差别，改了一下，这个可以一次性多数据收发
+ * @attention  1.通过状态机来实现，和上一届师兄的有差别，改了一下，这个可以一次性多数据收发
+ *             2.串口1用于art1（15分类识别）    串口4用于art2（目标检测）
+ *              对于art1只需要发送一个数字，0~F，而对于art2需要发送两个数字为对应的坐标（发送的数目可以调整）
  */
 void get_uartdata(void)
 {
@@ -104,7 +106,7 @@ void get_uartdata(void)
                     {
                         right_data[j]=0;//清空数组
                     }
-                    uart_write_string(UART_1,str);//发送字符串get，注意如果main.c里面用了vofa的话，就要注释掉，否则也会发送给art，这样发送就会有问题
+                    uart_write_string(UART_1,str);//发送字符串get，注意如果main.c里面用了vofa的话，就要注释掉(while1的printf函数)，否则也会发送给art，这样发送就会有问题
                 }
                 else
                 {

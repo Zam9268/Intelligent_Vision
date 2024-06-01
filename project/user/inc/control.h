@@ -38,22 +38,22 @@ typedef struct{
 	float now_speed;	  //实际速度
 	float target_speed;	//目标速度
 	int target_pwm;		//目标Pwm
-	uint8 xuhao;		//编码器序号
+	uint8 xuhao;		//编码器序�?
 	float kp ;		        
 	float ki ;		        
 	float kd ;	          
 	float error;          //当前误差
 	float lastError;	    //上次误差
-	float lastlastError;  //上上次误差
-	float dError;         //本次误差与上次误差的偏差值
-	float output;         //输出值
-	float output_last;    //上次输出值
+	float lastlastError;  //上上次误�?
+	float dError;         //本次误差与上次误差的偏差�?
+	float output;         //输出�?
+	float output_last;    //上次输出�?
 }pid_info;
 
 
 extern float Car_H;//车长
 extern float Car_W;//车宽
-extern int encoder[4];//四个编码器读数
+extern int encoder[4];//四个编码器读�?
 extern int encoder_test[4];
 extern float encoder_sum[4];
 extern float target_encoder_sum[4];
@@ -88,7 +88,8 @@ void Drive_Motor();
 void turnloc_pid(void);
 void motor_close_control(void);
 void motor_control(void);
-void Speed_Control(float Vx_Speed, float Vy_Speed, float Vz_Speed);
+void Turn_Angle_PD(float Tar_angle_Z);
+void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 
 #endif

@@ -5,10 +5,19 @@
 #include "image.h"
 #include "math.h"
 #define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
+#define Turn_limiting  40//转向速度输出限幅
+#define Car_go         0 //寻迹
+#define Car_find_card  1 //找卡片
+#define Car_stop       2 //停车
 float Car_H = 0.8;//车长
 float Car_W = 0.6; // 车宽
+float Vx,Vy,Vz;
+float ahead_speed = 40.0;//直行速度
 int encoder[4];   // 编码器数据
-int encoder_test[4];//暂时代替的编码器数值
+float correct_x_speed;//x轴上的修正速度
+float correct_z_speed;//z轴上的修正速度
+float correct_move_speed = 5;//x轴修正速度
+float correct_turn_speed = 25;//x轴修正速度
 float encoder_sum[4];//编码器累加值
 float target_encoder_sum[4];//目标编码器累加值
 float loc_target[4];//位置式处理后的速度
@@ -19,17 +28,28 @@ int Location_pid_flag = 1;//位置式处理允许标志
 float loc_err;//位置式输入误差
 float abs_loc_err;//位置式输入误差绝对值
 int pid_motor[4]; // PID处理后的电机pwm
-float bili_act_turn = 1.4;
-float loc_kp = 1.20;//位置式pd，方便调参使用 1.26位置式暂时最优 24/4/18
-float loc_kd = 0.0;                         //0.80
+float bili_act_turn = 1.4;//1.28
+float loc_kp = 1.20;//位置式pd，方便调参使用 1.35位置式暂时最优 24/4/4     1.26
+float loc_kd = 0.72;                         //0.80                     //0.72
 int test_count=0;
 float dt=0.005;
+float turn_error = 2;//可接受的角度误差
+float Turn_KP = 0.2;   //角度PID//
+float Turn_KD = 0.0; //角度PID//
+// float Turn_KI[1] = {30};  //角度PID//5
 float final = 0.0F; //一阶低通滤波参数
 float a = 0.25F;    //一阶低通滤波
+float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
+float Vx_world, Vy_world;//世界坐标上的x，y
+float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
+float Car_dis_x2, Car_dis_y2;
+float Turn_Bias; 
 
 pid_info Pos_turn_pid[4];//位置式pid
 
 pid_info Speed[4]; // 增量式pid
+
+pid_info Angle_turn_pid;
 
 /**
  * @brief 电机初始化
@@ -97,15 +117,15 @@ void Read_Encoder(void)
 
 /**
  * @brief 麦轮速度解算1
- * @param 无
+ * @param 顺时针为正
  * @return 无
  */
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz)
 {
-  Speed[0].target_speed = -(+target_Vx + target_Vy + target_Vz); // 左前
-  Speed[1].target_speed = -(-target_Vx + target_Vy + target_Vz); // 左后
-  Speed[2].target_speed = -(-target_Vx + target_Vy - target_Vz); // 右前
-  Speed[3].target_speed = -(+target_Vx + target_Vy - target_Vz); // 右后
+  Speed[0].target_speed = target_Vx + target_Vy - target_Vz; // 左前
+  Speed[1].target_speed = -target_Vx + target_Vy - target_Vz; // 左后
+  Speed[2].target_speed = -target_Vx + target_Vy + target_Vz; // 右前
+  Speed[3].target_speed = target_Vx + target_Vy + target_Vz; // 右后
 }
 
 /**
@@ -123,7 +143,54 @@ void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz)
   Speed[2].target_speed = -target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2);//右前
   Speed[3].target_speed = target_Vx + target_Vy + target_Vz * (Car_H/2 + Car_W/2); //右后
 }
-         
+
+/**
+ * @brief 差速跑
+ * @param 无
+ * @return 无
+ */
+void car_run(float error)
+{
+	float move_error = (error/94)*(error/94); //横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
+  float turn_error = (error/94)*(error/94); //转向比例系数
+  if(fabsf(error)<4)//误差很小时不作调整
+  {
+    correct_x_speed = 0;
+    correct_z_speed = 0; 
+  }
+  if(fabsf(error)>4 && fabsd(error)<10)//误差不大的时候，认为它在直道上，仅做平移处理
+  {
+    for(int i=0; i<4; i++)
+    {
+      correct_x_speed = move_error * correct_move_speed;//平移的修正
+      if(error>0)//在中线右侧
+      {
+        correct_x_speed = -correct_x_speed;//向左移动
+      }
+      else//在中线右侧
+      {
+        correct_x_speed = correct_x_speed;//向右移动
+      }
+    }
+  }
+  else if(fabsf(error)>10)//误差大，认为有转弯
+  {
+    for(int i=0; i<4; i++)
+    {
+      correct_z_speed = turn_error * correct_turn_speed;//转弯的修正
+      if(error>0)//左转弯
+      {
+        correct_z_speed = -correct_z_speed;
+      }
+      else//右转弯
+      {
+        correct_z_speed = correct_z_speed;
+      }
+    }
+  }
+
+  Car_Inverse_kinematics_solution(correct_x_speed, ahead_speed, correct_z_speed);//速度解算赋值
+}   
 /**
  * @brief 位置式pid初始化
  * @param 无
@@ -180,7 +247,7 @@ void PidInit(void)
 
   // ???
   Speed[0].kp = -16.3;  //-16.3  -26
-  Speed[0].ki = -3.0;  //-3.0 -1.80
+  Speed[0].ki = -3.3;  //-3.0 -1.80
   // ???
   Speed[1].kp = -14.0;    //-14.0 -34.5
   Speed[1].ki = -2.5;   //-2.5  -0.98
@@ -190,7 +257,6 @@ void PidInit(void)
   //???
   Speed[3].kp = -16.3;    //-16.0  -28.75
   Speed[3].ki = -2.8; //PI赋值 -2.8  -1.0
-
 }
 /**
  * @brief 增量式pid(单环pid)速度环
@@ -201,8 +267,7 @@ void increment_pid(void)
 {
   for(uint8 i=0;i<4;i++)
   {
-      //
-     
+      //    
       Speed[i].error = Speed[i].target_speed - Speed[i].now_speed; //计算本次误差
       Speed[i].output += Speed[i].kp*(Speed[i].error-Speed[i].lastError)+Speed[i].ki*Speed[i].error; //增量式处理
 		
@@ -263,14 +328,14 @@ void Drive_Motor()
 	loc_err = Err_Handle();
 	abs_loc_err = fabsf(Err_Handle())*bili_act_turn;   //Err_Handle()
 
-   if(abs_loc_err < 5.0 )//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
+   if(abs_loc_err < 2.0 )//设置中线绝对值阈值，小于这个值时，位置式不再起调整作用
   {
     loc_Finish_flag = 1;//位置式完成标志
     clear_encoder_sum();//清空编码器累计值
     int i = 0;
     for(i = 0;i < 4; i++) 
     {
-			target_encoder_sum[i] = 0;//目标编码器累加值清零
+			target_encoder_sum[i] = 0;//目标
       loc_target[i] = 0;//各个轮子的位置式输出速度归零
     }
   }
@@ -292,7 +357,7 @@ void Drive_Motor()
     LF_Target = Location_pid(&Pos_turn_pid[0], encoder_sum[0], target_encoder_sum[0]);
     LB_Target = Location_pid(&Pos_turn_pid[1], encoder_sum[1], target_encoder_sum[1]);
     RF_Target = Location_pid(&Pos_turn_pid[2], encoder_sum[2], target_encoder_sum[2]);
-    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[3], target_encoder_sum[3]);//位置式处理
+    RB_Target = Location_pid(&Pos_turn_pid[3], encoder_sum[3], target_encoder_sum[3]);//位置式处理，尝试给同一个速度
             
     loc_target[0] = LF_Target* 0.2636719 *PI /100;//将脉冲数转换成编码器速度
     loc_target[1] = LB_Target* 0.2636719 *PI /100;
@@ -323,13 +388,18 @@ void Drive_Motor()
 	{
 	loc_target[i] = PIDInfo_Limit(loc_target[i], 40.0);//输出速度限幅
 	}
-  }  
+  }
 }
-	float first_order_filter(float data)
+/**
+ * @brief 对pwm的一阶低通滤波
+ * @param 无
+ * @return 无
+ */
+float first_order_filter(float data)
 	{
 		final = a*data + (1-a)*final;    //两次数据乘上各自的权重
 		return  (final);
-    }
+ }
 /**
  * @brief 串级pid 双环(位置环+速度环)
  * @param 无
@@ -337,7 +407,6 @@ void Drive_Motor()
  */
 void turnloc_pid(void)
 {
-//  Drive_Motor();//位置式处理
 
   for(uint8 i=0;i<4;i++)
   {
@@ -373,7 +442,7 @@ void motor_close_control(void)
       gpio_set_level(DIR_LF, 0);                 // DIR0
       pwm_set_duty(motor_LF, (int)pid_motor[0]); // 左前
     }
-    else //��ת
+    else //反转
     {
       gpio_set_level(DIR_LF, 1);
       pwm_set_duty(motor_LF, (int)-pid_motor[0]);
@@ -412,58 +481,89 @@ void motor_close_control(void)
       pwm_set_duty(motor_RB, (int)-pid_motor[3]);
     }
   }
-
 /**
- * @brief 18������������??�㺯�������ݱ��������������㳵����ʻ��??����λ��m
- * @param ??
- * @return ??
- * @attention ��ʻ��??����???? = (������������ / �������ֱ���) * (2 * �� * ????�뾶) / ????�ܳ�
+ * @brief 任意角度旋转(闭环)
+ * @param 输入：Tar_angle_Z
+ * @return 无
+ * @attention 
+ */
+void Turn_Angle_PD(float Tar_angle_Z)
+{
+  static float Last_Turn_bias = 0, Last_last_Turn_bias = 0, Turn = 0;
+  Turn_Bias = Tar_angle_Z - Angle_Z; //Angle_Z为当前角度偏差，由陀螺仪获取
+
+  if (abs((int)Turn_Bias) < turn_error)//当前角度和目标角度相差绝对值在这个范围内是认为转向成功
+  {
+    Vz = 0;
+  }
+  else
+  {
+    Turn = Turn_KP * Turn_Bias + Turn_KD * (Turn_Bias - Last_Turn_bias);//原来是增量式处理，现在变更为位置式PD输出速度
+    if (Turn > Turn_limiting)
+      Turn = Turn_limiting;
+    if (Turn < -Turn_limiting)
+      Turn = -Turn_limiting;
+    Vz = Turn;
+    Last_Turn_bias = Turn_Bias;
+    // Last_last_Turn_bias = Last_Turn_bias;
+  }
+
+  if ((abs((int)Turn_Bias) < turn_error + 2) && abs((int)Vz) < 10 && abs((int)Vz) > 0) //误差很小时的速度补偿,这里不确定要不要
+  {
+    if (Vz < 0)
+      Vz -= 5;
+    else if (Vz > 0)
+      Vz += 8;
+  }
+  Car_Inverse_kinematics_solution(Vx, Vy, Vz);   //麦轮控制，为target_speed赋值
+}
+/**
+ * @brief 里程计算距离
+ * @param 
+ * @return 
+ * @attention 
  */
 void Encoder_odometer(void)
 {
-  static float Angle_Bias = 0; //�Ƕ�ƫ��
+  static float Angle_Bias = 0;
   static float V_enco[4] = {0}, Vx_enco = 0, Vy_enco = 0;
 
-  // Angle_Bias = (90 - Angle_Z) * PI / 180; //����Ƕ�ƫ��
+  Angle_Bias = Angle_Z * PI / 180;//转换成弧度制，Angle_Z为转向角度
 
-/****���㳵���ٶ�******/
-  // V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637Ϊ�������ֱ�??
-  // V_enco[1] = 0.2636719 * PI * (float)encoder[1];
-  // V_enco[2] = 0.2636719 * PI * (float)encoder[2];
-  // V_enco[3] = 0.2636719 * PI * (float)encoder[3];
-  // Vx_enco=(V_enco[0]-V_enco[1]-V_enco[2]+V_enco[3])/4; //����X���ٶ�
-  // Vy_enco=(V_enco[0]+V_enco[1]+V_enco[2]+V_enco[3])/4; //����Y���ٶ�
-  // Vx_enco = -(V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //����X���ٶȣ�������
-  // Vy_enco = -(V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //����Y���ٶȣ�������
-  // Car_dis_x += Vx_enco * 0.01; //���㳵��X��??ʻ��??
-  // Car_dis_y += Vy_enco * 0.01; //���㳵��Y��??ʻ��??
+  V_enco[0] = 0.2636719 * PI * (float)encoder[0]; // 0.2637可以再精确多三位，计算车轮路程
+  V_enco[1] = 0.2636719 * PI * (float)encoder[1];
+  V_enco[2] = 0.2636719 * PI * (float)encoder[2];
+  V_enco[3] = 0.2636719 * PI * (float)encoder[3];
 
-// #if 1
-//  if (Angle_Bias >= 0)
-//  {
-//    Vx_1 = Vx_enco * sin(Angle_Bias);
-//    Vx_2 = Vx_enco * cos(Angle_Bias);
-//    Vy_1 = Vy_enco * cos(Angle_Bias);
-//    Vy_2 = Vy_enco * sin(Angle_Bias); //���㳵���ٶ�����������ϵ�µķ���
-//    Vx_world = Vx_2 - Vy_2;
-//    Vy_world = Vx_1 + Vy_1;
-//  }
-//  if (Angle_Bias < 0)
-//  {
-//    Angle_Bias = -Angle_Bias;
-//    Vx_1 = Vx_enco * sin(Angle_Bias);
-//    Vx_2 = Vx_enco * cos(Angle_Bias);
-//    Vy_1 = Vy_enco * cos(Angle_Bias);
-//    Vy_2 = Vy_enco * sin(Angle_Bias); //���㳵���ٶ�����������ϵ�µķ���
-//    Vx_world = Vx_2 + Vy_2;
-//    Vy_world = -Vx_1 + Vy_1;
-//  }
-// #endif
-//  Car_dis_x += Vx_world * 0.01; //���㳵��X��??ʻ���루?????
-//  Car_dis_y += Vy_world * 0.01; //���㳵��Y��??ʻ���루?????
+  Vx_enco = (V_enco[0] - V_enco[1] - V_enco[2] + V_enco[3]) / 4; //前进为正，根据麦轮速度解算公式得出的底盘x轴位移量
+  Vy_enco = (V_enco[0] + V_enco[1] + V_enco[2] + V_enco[3]) / 4; //左移为正，根据麦轮速度解算公式得出的底盘y轴位移量
 
-//  Car_dis_x2 += Vx_world * 0.01;
-//  Car_dis_y2 += Vy_world * 0.01;
+#if 1
+  if (Angle_Bias >= 0)//旋转角度(参照x轴)大于0时
+  {
+    Vx_1 = Vx_enco * sin(Angle_Bias);
+    Vx_2 = Vx_enco * cos(Angle_Bias);
+    Vy_1 = Vy_enco * cos(Angle_Bias);
+    Vy_2 = Vy_enco * sin(Angle_Bias); //分解到世界坐标上
+    Vx_world = Vx_2 - Vy_2;//简单的分解计算
+    Vy_world = Vx_1 + Vy_1;
+  }
+  if (Angle_Bias < 0)
+  {
+    Angle_Bias = -Angle_Bias;
+    Vx_1 = Vx_enco * sin(Angle_Bias);
+    Vx_2 = Vx_enco * cos(Angle_Bias);
+    Vy_1 = Vy_enco * cos(Angle_Bias);
+    Vy_2 = Vy_enco * sin(Angle_Bias); //分解到世界坐标上
+    Vx_world = Vx_2 + Vy_2;//简单的分解计算
+    Vy_world = -Vx_1 + Vy_1;
+  }
+#endif
+  Car_dis_x += Vx_world * 0.005;
+  Car_dis_y += Vy_world * 0.005;
+
+  Car_dis_x2 += Vx_world * 0.005;
+  Car_dis_y2 += Vy_world * 0.005;
 }
 
 /**
