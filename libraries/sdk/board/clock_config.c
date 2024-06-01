@@ -195,6 +195,8 @@ void BOARD_BootClockRUN(void)
     /* Init System pfd3. */
     CLOCK_InitSysPfd(kCLOCK_Pfd3, 16);
 #endif
+    
+    //CLOCK_InitSysPfd(kCLOCK_Pfd2, 30);
     /* In SDK projects, external flash (configured by FLEXSPI2) will be initialized by dcd.
      * With this macro XIP_EXTERNAL_FLASH, usb1 pll (selected to be FLEXSPI2 clock source in SDK projects) will be left unchanged.
      * Note: If another clock source is selected for FLEXSPI2, user may want to avoid changing that clock as well.*/

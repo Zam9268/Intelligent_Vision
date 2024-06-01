@@ -1,40 +1,41 @@
-#include "math.h"
+#include"math.h"
+#include"imu660ra.h"
 #include "zf_common_headfile.h"
-#define dt 0.005;		  //ÂË²¨ÖÜÆÚ£¬Ã¿5ms½øĞĞÒ»´ÎÂË²¨
-#define LED1                        (B9 )  
-#define PIT_CH                         (PIT_CH0 )                                 // Ê¹ÓÃµÄÖÜÆÚÖĞ¶Ï±àºÅ Èç¹ûĞŞ¸Ä ĞèÒªÍ¬²½¶ÔÓ¦ĞŞ¸ÄÖÜÆÚÖĞ¶Ï±àºÅÓë isr.c ÖĞµÄµ÷ÓÃ
 
-float Angle_z,Angle_Z=90;//Ä¿±ê½Ç¶È
-float acc_y , acc_x;//yÖá£¬xÖá¼ÓËÙ¶È£¬ÓÃÓÚ½âËã×ËÌ¬½Ç
+#define dt 0.005;		  //æ‰§è¡Œå‘¨æœŸä¸º10ms
+#define LED1                        (B9 )  
+
+float Angle_z,Angle_Z;//
+float acc_y , acc_x;//xï¼Œyè½´åŠ é€Ÿåº¦
 float Gyro_z=0;
-float fil_Acc_x,fil_Acc_y,fil_Gyro_z;
+float fil_Gyro_z;//é™€èºä»ªè§’é€Ÿåº¦
 float Angle_z=0;
+float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
 int moto_flag=0;
 int gyro_i=0;
 int start_flag;
 
-void my_imu660ra_init()
+void my_imu660ra_init()//é™€èºä»ªåˆå§‹åŒ–
 {
 	
-    gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL);                             // ³õÊ¼»¯ LED1 Êä³ö Ä¬ÈÏ¸ßµçÆ½ ÍÆÍìÊä³öÄ£Ê½ 
+    gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL);                             //LED1ç»™é«˜ç”µå¹³ 
     while(1)
     {
         if(imu660ra_init())
         {
-            printf("IMU660RA init error.\r\n");                                 // IMU660RA ³õÊ¼»¯Ê§°Ü
+           ips114_show_string( 0 , 40,   "ERROR");                          // æµ‹è¯•é€šè¿‡ï¼Œç¡®å®ä¼šè¿›å…¥åˆ¤æ–­æ¡ä»¶æ¥ä¿®æ”¹æ•°å€¼                                 // IMU660RAåˆå§‹åŒ–å¤±è´¥
         }
         else
         {
             break;
         }
-        gpio_toggle_level(LED1);                                                // ·­×ª LED Òı½ÅÊä³öµçÆ½ ¿ØÖÆ LED ÁÁÃğ ³õÊ¼»¯³ö´íÕâ¸öµÆ»áÉÁµÄºÜÂı
+        gpio_toggle_level(LED1);                                                // ledç”µå¹³ç¿»è½¬
     }
-    pit_ms_init(PIT_CH, 5);
-    interrupt_global_enable(0);
 }
 
+/*******************å¹³å‡é€’æ¨æ»¤æ³¢****************/
 void IMU660ra_newValues()
 {
 	 float sum=0;
@@ -47,41 +48,40 @@ void IMU660ra_newValues()
 		  gyro[gyro_i]= imu660ra_gyro_z;
 		  fil_Gyro_z=0.0;
 		  gyro_i++;
-		 if(gyro_i==99)//gyroÊı×é´æ´¢µ½´ïÉÏÏŞ
+		 if(gyro_i==99)//gyroè·å–å®Œæ¯•
 		 {
-			 moto_flag=1;
 			 for(gyro_i=0;gyro_i<100;gyro_i++)
 			 {
-				 sum_gyro+=gyro[gyro_i];//
+				sum_gyro+=gyro[gyro_i];//è·å–æ€»é›¶æ¼‚å€¼
 			 }
-			 gyro_flag=1;
-                         start_flag=1;
+			gyro_flag=1;//å®Œæˆè·å–é›¶æ¼‚å€¼ï¼Œè¿›å…¥ä¸‹ä¸€æ­¥
 		 }
 	 } 
 	 if(gyro_flag==1)
 	 {
-   Gyro_z = (float)(imu660ra_gyro_z-sum_gyro/100)/16.3835;
-	  if(abs((int)Gyro_z)<3)//½ÇËÙ¶ÈĞ¡ÓÚ3Ê±  Ä¬ÈÏÎªĞ¡³µ¾²Ö¹  
+      Gyro_z = (float)(imu660ra_gyro_z-sum_gyro/100)/16.3835;
+	  if(abs((int)Gyro_z)<3)//
 	  {
 		  Gyro_z=0;
 	  }
 	  for(Gyro_flag=1;Gyro_flag<10;Gyro_flag++)
 		{	
-		  IMU660ra_FIFO[Gyro_flag-1]=IMU660ra_FIFO[Gyro_flag];//FIFO ²Ù×÷
+		  IMU660ra_FIFO[Gyro_flag-1]=IMU660ra_FIFO[Gyro_flag];//FIFO ï¿½ï¿½ï¿½ï¿½
 		}
 	  IMU660ra_FIFO[9]=Gyro_z;
 	  for(Gyro_flag=0;Gyro_flag<10;Gyro_flag++)
 		{	            
-			sum+=IMU660ra_FIFO[Gyro_flag];//Çóµ±Ç°Êı×éµÄºÏ£¬ÔÙÈ¡Æ½¾ùÖµ
+			sum+=IMU660ra_FIFO[Gyro_flag];//ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ÄºÏ£ï¿½ï¿½ï¿½È¡Æ½ï¿½ï¿½Öµ
 		}
 	  fil_Gyro_z=sum/10;
 	}
 }		
-/**************************************************************************
-º¯Êı¹¦ÄÜ£º¶Ô½ÇËÙ¶È»ı·Ö µÃµ½½Ç¶È
-Èë¿Ú²ÎÊı£ºÎŞ
-·µ»Ø  Öµ£ºÎŞ
-**************************************************************************/
+/**
+ * @brief è·å–å½“å‰è§’åº¦å€¼
+ * @param è¾“å…¥ï¼šTar_angle_Z
+ * @return æ— 
+ * @attention 
+ */
 void Get_angle()
 {
     IMU660ra_newValues();
@@ -91,38 +91,37 @@ void Get_angle()
 }
 /****************************** BEFIN ********************************
 **@Name       : Kalman_Filter_x
-**@Brief      : »ñÈ¡zÖá½Ç¶È¼òÒ×¿¨¶ûÂüÂË²¨  
-**@Param Accel: ¼ÓËÙ¶ÈËã³öµÄ½Ç¶È
-**		  Gyro: ÍÓÂİÒÇµÄ½ÇËÙ¶È
+**@Brief      : å¡å°”æ›¼æ»¤æ³¢ 
+**@Param Accel: è§’åº¦
+**		  Gyro: è§’é€Ÿåº¦
 **@Return     : None
 **@Author     : @mayuxin
-**@Data	      : 2022-06-04
 ******************************** END *********************************/    
 float Kalman_Filter_x(float Accel,float Gyro)		
 {
 	static float angle_dot;
 	static float angle;
-	float Q_angle=0.001; // ¹ı³ÌÔëÉùµÄĞ­·½²î
-	float Q_gyro=0.003;	//0.003 ¹ı³ÌÔëÉùµÄĞ­·½²î ¹ı³ÌÔëÉùµÄĞ­·½²îÎªÒ»¸öÒ»ĞĞÁ½ÁĞ¾ØÕó
-	float R_angle=0.5;		// ²âÁ¿ÔëÉùµÄĞ­·½²î ¼È²âÁ¿Æ«²î
+	float Q_angle=0.001; // 
+	float Q_gyro=0.003;	//0.003 
+	float R_angle=0.5;		// 
 	char  C_0 = 1;
 	static float Q_bias, Angle_err;
 	static float PCt_0, PCt_1, E;
 	static float K_0, K_1, t_0, t_1;
 	static float Pdot[4] ={0,0,0,0};
 	static float PP[2][2] = { { 1, 0 },{ 0, 1 } };
-	angle+=(Gyro - Q_bias) * dt; //ÏÈÑé¹À¼Æ
-	Pdot[0]=Q_angle - PP[0][1] - PP[1][0]; // Pk-ÏÈÑé¹À¼ÆÎó²îĞ­·½²îµÄÎ¢·Ö
+	angle+=(Gyro - Q_bias) * dt; //
+	Pdot[0]=Q_angle - PP[0][1] - PP[1][0]; // 
 
 	Pdot[1]=-PP[1][1];
 	Pdot[2]=-PP[1][1];
 	Pdot[3]=Q_gyro;
-	PP[0][0] += Pdot[0] * dt;   // Pk-ÏÈÑé¹À¼ÆÎó²îĞ­·½²îÎ¢·ÖµÄ»ı·Ö
-	PP[0][1] += Pdot[1] * dt;   // =ÏÈÑé¹À¼ÆÎó²îĞ­·½²î
+	PP[0][0] += Pdot[0] * dt;   // 
+	PP[0][1] += Pdot[1] * dt;   // 
 	PP[1][0] += Pdot[2] * dt;
 	PP[1][1] += Pdot[3] * dt;
 		
-	Angle_err = Accel - angle;	//zk-ÏÈÑé¹À¼Æ
+	Angle_err = Accel - angle;	//
 	
 	PCt_0 = C_0 * PP[0][0];
 	PCt_1 = C_0 * PP[1][0];
@@ -135,13 +134,18 @@ float Kalman_Filter_x(float Accel,float Gyro)
 	t_0 = PCt_0;
 	t_1 = C_0 * PP[0][1];
 
-	PP[0][0] -= K_0 * t_0;		 //ºóÑé¹À¼ÆÎó²îĞ­·½²î
+	PP[0][0] -= K_0 * t_0;		 //
 	PP[0][1] -= K_0 * t_1;
 	PP[1][0] -= K_1 * t_0;
 	PP[1][1] -= K_1 * t_1;
 		
-	angle	+= K_0 * Angle_err;	 //ºóÑé¹À¼Æ
-	Q_bias	+= K_1 * Angle_err;	 //ºóÑé¹À¼Æ
-	angle_dot   = Gyro - Q_bias;	 //Êä³öÖµ(ºóÑé¹À¼Æ)µÄÎ¢·Ö=½ÇËÙ¶È
+	angle	+= K_0 * Angle_err;	 //
+	Q_bias	+= K_1 * Angle_err;	 //
+	angle_dot   = Gyro - Q_bias;	 //
 	return angle;
+}
+void test_imu()
+{
+    imu660ra_get_acc();                                                         // è·å– IMU660RA çš„åŠ é€Ÿåº¦æµ‹é‡æ•°å€¼
+    imu660ra_get_gyro();                                                        // è·å– IMU660RA çš„è§’é€Ÿåº¦æµ‹é‡æ•°å€¼
 }

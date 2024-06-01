@@ -37,9 +37,14 @@
 #include "zf_common_debug.h"
 #include "isr.h"
 #include "control.h"
+#include "image.h"
+#include "imu660ra.h"
 
-extern pid_info Speed[4];//外部声明
+extern pid_info Speed[4]; //串级pid处理结果pid
+extern float loc_target[4]; //串级pid处理结果pid
 extern uint8 step;
+extern uint8 flag_test;
+extern float loc_target[4];//位置环外环输出速度
 int count = 0;
 
 void CSI_IRQHandler(void)
@@ -50,44 +55,45 @@ void CSI_IRQHandler(void)
 
 void PIT_IRQHandler(void)
 {
-    if(pit_flag_get(PIT_CH0))//
+    if(pit_flag_get(PIT_CH0))
     {
-        increment_pid();
+    //   turnloc_pid();//串级pid
+		increment_pid();//增量式pid
         motor_close_control();
         pit_flag_clear(PIT_CH0);
-    // if(pit_flag_get(PIT_CH0))
-    // {
-    //     void Read_imu (void);
-    //     Read_imu;
-    //     pit_flag_clear(PIT_CH0);
-    // }
+
     }
     if(pit_flag_get(PIT_CH1))
     {
-       Read_Encoder();//周期读取编码器数值，解算出当前速度值
-       
+     //读取编码器
+       Read_Encoder();
+       Get_angle();//周期为5ms
        pit_flag_clear(PIT_CH1);
     }
     
     if(pit_flag_get(PIT_CH2))
     {
-        extern uint8 arm_flag;
+        extern uint8 arm_flag;//????????????????????????????
         count++;
-        if(count>100)
+        if(count>1000)
         {
+					  count = 0;//
             arm_flag = 1;
-            pit_disable(PIT_CH2);//中断禁止，停止计时
+			//  ips114_show_string( 0 , 40,   "SUCCESS");                          // 测试通过，确实会进入判断条件来修改数值
+            pit_disable(PIT_CH2);//中断禁止函数
         }
         pit_flag_clear(PIT_CH2);
     }
     
     if(pit_flag_get(PIT_CH3))
     {
+        // Drive_Motor();//位置式处理，改为外环
+			
         pit_flag_clear(PIT_CH3);
+        
     }
 
     __DSB();
-    
 }
 
 void LPUART1_IRQHandler(void)
@@ -95,19 +101,26 @@ void LPUART1_IRQHandler(void)
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART1))
     {
         // 接收中断
-    #if DEBUG_UART_USE_INTERRUPT                        // 如果开启 debug 串口中断
-        debug_interrupr_handler();                      // 调用 debug 串口接收处理函数 数据会被 debug 环形缓冲区读取
-    #endif                                              // 如果修改了 DEBUG_UART_INDEX 那这段代码需要放到对应的串口中断去
+//    #if DEBUG_UART_USE_INTERRUPT                        // 如果开启 debug 串口中断
+//        debug_interrupr_handler();                      // 调用 debug 串口接收处理函数 数据会被 debug 环形缓冲区读取
+//    #endif                                              // 如果修改了 DEBUG_UART_INDEX 那这段代码需要放到对应的串口中断去
+		extern void UART1_handler(void);//?????????
+		UART1_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag);    // 不允许删除
 }
 
+/**
+ * @brief 串口2中断函数
+ * @param 无
+ * @return 无
+ */
 void LPUART2_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // 接收中断
+        
         
     }
         
@@ -129,10 +142,11 @@ void LPUART4_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
-        // 接收中断 
-        flexio_camera_uart_handler();
-        
-        gps_uart_callback();
+        // ????
+        // flexio_camera_uart_handler();
+        // gps_uart_callback();
+       extern void UART4_handler(void);//?????????
+       UART4_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);    // 不允许删除
@@ -142,8 +156,8 @@ void LPUART5_IRQHandler(void)
 {
     if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
-        // 接收中断
-        camera_uart_handler();
+        // ????
+        // camera_uart_handler();
     }
         
     LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag);    // 不允许删除

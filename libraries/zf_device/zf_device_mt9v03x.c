@@ -61,13 +61,13 @@
 #include "zf_device_mt9v03x.h"
 
 vuint8 mt9v03x_finish_flag = 0;                                                  // 一场图像采集完成标志位
-// 图像缓冲区  如果用户需要访问图像数据 最好通过mt9v03x_csi_image来访问数据，最好不要直接访问缓冲区
+// 图像缓冲区  如果用户需要访问图像数据 最好通过mt9v03x_image来访问数据，最好不要直接访问缓冲区
 AT_DTCM_SECTION_ALIGN(uint8 mt9v03x_image1[MT9V03X_H][MT9V03X_W], 64);
 AT_DTCM_SECTION_ALIGN(uint8 mt9v03x_image2[MT9V03X_H][MT9V03X_W], 64);
 
 // 用户访问图像数据直接访问这个指针变量就可以
 // 访问方式非常简单，可以直接使用下标的方式访问
-// 例如访问第10行 50列的点，mt9v03x_csi_image[10][50]就可以了
+// 例如访问第10行 50列的点，mt9v03x_image[10][50]就可以了
 uint8 (*mt9v03x_image)[MT9V03X_W];
 
 static m9v03x_type_enum     mt9v03x_type = MT9V03X_SCCB;

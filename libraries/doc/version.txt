@@ -1,3 +1,30 @@
+V3.7.6
+	更正GNSS库的注释
+	WIFI-SPI增加发送字符串的函数
+V3.7.5
+	修复在低版本MDK（例如5.33）编译后无法运行的问题
+	修改IAR的复位选项为hardware
+	
+V3.7.4
+	修复在高版本IAR无法使用printf的问题
+V3.7.3
+	修改摄像头的类型参数
+V3.7.2
+	将gps驱动文件改名为zf_device_gnss
+	陀螺仪转换实际物理数据宏定义增加括号
+V3.7.1
+	更新wifi_spi驱动
+	更新逐飞助手驱动，增加seekfree_assistant_interface.h文件
+	修改flexspiclkfreq从120Mhz改为133Mhz
+	修改SDRAM时钟频率，避免干扰2.4G
+V3.7.0
+	增加wifi_spi模块驱动
+	删除zf_device_detector文件
+V3.6.0
+	增加逐飞助手上位机的驱动
+	修复读取 FIFO 时 FIFO 没有数据未能直接退出导致的异常 并修改互斥操作 添加对应的注释
+	修复flash写入函数buf不生效的问题
+	更新摄像头和虚拟示波器的注释
 V3.5.7	
 	删除屏幕驱动中的无效指针
 	IAR启动VLA的设置

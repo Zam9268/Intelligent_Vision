@@ -63,7 +63,7 @@
 
 vuint8 scc8660_finish_flag = 0;                                                 // 一场图像采集完成标志位
 
-// 定义图像缓冲区  如果用户需要访问图像数据 最好通过scc8660_csi_image来访问数据，最好不要直接访问缓冲区
+// 定义图像缓冲区  如果用户需要访问图像数据 最好通过scc8660_image来访问数据，最好不要直接访问缓冲区
 // 由于默认分辨率160*120数据量较小，所以默认将图像数组放置于DTCM区域，访问速度更快。
 // 以下注释的两句是将图像数组定义在SDRAM内，如果图像分辨率超过160*120，请将这两句解注并注释掉位于DTCM的两句。
 // AT_SDRAM_SECTION_ALIGN(uint16 scc8660_image1[SCC8660_H][SCC8660_W],64);
@@ -73,7 +73,7 @@ AT_DTCM_SECTION_ALIGN(uint16 scc8660_image2[SCC8660_H][SCC8660_W],64);
 
 // 用户访问图像数据直接访问这个指针变量就可以
 // 访问方式非常简单，可以直接使用下标的方式访问
-// 例如访问第10行 50列的点，scc8660_csi_image[10][50]就可以了
+// 例如访问第10行 50列的点，scc8660_image[10][50]就可以了
 uint16 (*scc8660_image)[SCC8660_W];
 
 static scc8660_type_enum scc8660_type;  
@@ -540,7 +540,7 @@ uint8 scc8660_init (void)
             // SCCB通讯失败，尝试串口通讯
             scc8660_type = SCC8660_UART;
             camera_fifo_init();
-            set_camera_type(CAMERA_GRAYSCALE, NULL, NULL, &scc8660_uart_callback);  // 设置连接摄像头类型
+            set_camera_type(CAMERA_COLOR, NULL, NULL, &scc8660_uart_callback);  // 设置连接摄像头类型
             uart_init (SCC8660_COF_UART, SCC8660_COF_BAUR, SCC8660_COF_UART_RX, SCC8660_COF_UART_TX);	//初始换串口 配置摄像头    
             uart_rx_interrupt(SCC8660_COF_UART, 1);
             fifo_clear(&camera_receiver_fifo);

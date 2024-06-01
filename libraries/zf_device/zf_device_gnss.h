@@ -43,21 +43,28 @@
 *                   ------------------------------------
 ********************************************************************************************************************/
 
-#ifndef _zf_device_gps_tau1201_h_
-#define _zf_device_gps_tau1201_h_
+#ifndef _zf_device_gnss_h_
+#define _zf_device_gnss_h_
 
 #include "zf_common_typedef.h"
 
 //--------------------------------------------------------------------------------------------------
 //引脚配置
 //--------------------------------------------------------------------------------------------------
-#define GPS_TAU1201_UART    (UART_4)
-#define GPS_TAU1201_RX      (UART4_TX_C16)                                      // GPS RX引脚连接到单片机此
-#define GPS_TAU1201_TX      (UART4_RX_C17)                                      // GPS TX串口引脚
+#define GNSS_UART           (UART_4)
+#define GNSS_RX             (UART4_TX_C16)                                      // GPS RX引脚连接到单片机此
+#define GNSS_TX             (UART4_RX_C17)                                      // GPS TX串口引脚
 
 #define ANGLE_TO_RAD(x)     ( (x) * PI / 180.0 )                                // 角度转换为弧度
 #define RAD_TO_ANGLE(x)     ( (x) * 180.0 / PI )                                // 弧度转换为角度
 #define PI                  ( 3.1415926535898 )
+
+typedef enum
+{
+    TAU1201 = 1,                                                                // 逐飞科技双频GPS模块
+    GN42A   = 1,                                                                // 逐飞科技双频GPS模块 与TAU1201是一样的
+    GN43RFA = 2,                                                                // 逐飞科技三频RTK模块
+}gps_device_enum;
 
 typedef struct
 {
@@ -89,12 +96,14 @@ typedef struct
     int8        ew;                                                             // 经度半球 E（东经）或 W（西经）
     
     float       speed;                                                          // 速度（公里/每小时）
-    float       direction;                                                      // 地面航向（000.0~359.9 度，以真北方为参考基准）
+    float       direction;                                                      // 地面航向（000.0~359.9 度，以真北方为参考基准）+
+    uint8       antenna_direction_state;                                        // 双天线测向有效状态 1：测向有效  0：测向无效，无效时antenna_direction数据是无效的
+    float       antenna_direction;                                              // 主天线指向从天线与真北构成的夹角（000.0~359.9 度）
     
     // 下面两个个信息从GNGGA语句中获取
     uint8       satellite_used;                                                 // 用于定位的卫星数量
-    float       height;                                                         // 高度   
-}gps_info_struct;
+    float       height;                                                         // 高度
+}gnss_info_struct;
 
 typedef enum
 {
@@ -103,17 +112,14 @@ typedef enum
     GPS_STATE_PARSING,                                                          // 正在解析
 }gps_state_enum;
 
-extern gps_info_struct  gps_tau1201;
-extern uint8            gps_tau1201_flag;
+extern gnss_info_struct gnss;
+extern uint8            gnss_flag;
 
 
 double      get_two_points_distance     (double lat1, double lng1, double lat2, double lng2);
 double      get_two_points_azimuth      (double lat1, double lon1, double lat2, double lon2);
-
-uint8       gps_data_parse              (void);
-
-void        gps_uart_callback           (void);
-
-void        gps_init                    (void);
+uint8       gnss_data_parse             (void);
+void        gnss_uart_callback          (void);
+void        gnss_init                   (gps_device_enum gps_device);
 
 #endif

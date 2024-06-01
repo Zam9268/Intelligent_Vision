@@ -7,24 +7,28 @@
 
 
 #define CENTER_LINE_START   0
-#define LONG_WHITE_COLUMN  100//长白列长度阈值
+#define LONG_WHITE_COLUMN  100//长白列长度阈�?
 #define WHITE_POINT 255
 #define BLACK_POINT 0
 
+extern int center[IMAGE_HEIGHT];//��������
 typedef enum{
     STRAIGHT_ROAD,
     LEFT_TURN,
     RIGHT_TURN,
     CROSSING,
-    HUANDAO,
-    PODAO,
+    LEFT_HUANDAO,
+    RIGHT_HUANDAO,
+    RAMP,
     BANMAXIAN
 }RoadType;//定义赛道元素类型枚举
 
-float Err_Handle(uint8 height);
+float Err_Handle(void);
 void Outer_Analyse(void);
 void Center_line_deal(uint8 start_column,uint8 end_column);
 void Image_denoising(uint8 *bin_image);
 void test(void);
+void Zebra_Stripes_Detect(void);
+void Ramp_Detect(void);
 
 #endif

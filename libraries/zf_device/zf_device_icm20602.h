@@ -185,7 +185,7 @@ void    icm20602_get_gyro           (void);
 // 使用示例     float data = icm20602_acc_transition(icm20602_acc_x);           // 单位为 g(m/s^2)
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-#define icm20602_acc_transition(acc_value)      ((float)acc_value / icm20602_transition_factor[0])
+#define icm20602_acc_transition(acc_value)      ((float)(acc_value) / icm20602_transition_factor[0])
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     将 ICM20602 陀螺仪数据转换为实际物理数据
@@ -194,7 +194,7 @@ void    icm20602_get_gyro           (void);
 // 使用示例     float data = icm20602_gyro_transition(icm20602_gyro_x);         // 单位为 °/s
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-#define icm20602_gyro_transition(gyro_value)    ((float)gyro_value / icm20602_transition_factor[1])
+#define icm20602_gyro_transition(gyro_value)    ((float)(gyro_value) / icm20602_transition_factor[1])
 
 uint8   icm20602_init               (void);
 

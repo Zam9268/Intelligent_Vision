@@ -37,8 +37,6 @@ fixed_deta_y=410  #y坐标上的偏差
 while(True):
     clock.tick()
     img = sensor.snapshot()
-    while(1):
-        send_data([0x01,0x03],2)
     #部分图像点的坐标测试
     #while(1):
     #   point=np.array([[20],[0],[1]])#创建3*1矩阵

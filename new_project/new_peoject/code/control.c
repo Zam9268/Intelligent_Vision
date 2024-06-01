@@ -41,17 +41,17 @@ float loc_kp = 1.24;                 // 位置式pd，方便调参使用 1.35位
 float loc_kd = 0.72;                 // 0.80                     //0.72
 int test_count = 0;
 float dt = 0.005;
-float turn_error = 2;      			//可接受的角度误差
-float Turn_KP = 0.5;       			// 角度PID//
-float Turn_KD = 0.0;       			// 角度PID//
-// float Turn_KI[1] = {30};  		//角度PID//5
-float Vx_1, Vx_2, Vy_1, Vy_2;		//对里程的cos，sin分解
+float turn_error = 2;      //可接受的角度误差
+float Turn_KP = 0.5;       // 角度PID//
+float Turn_KD = 0.0;       // 角度PID//
+// float Turn_KI[1] = {30};  //角度PID//5
+float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2;//对底盘坐标的cos，sin分解
-float Vx_world, Vy_world;  			//世界坐标上的x，y
-float Vx_card, Vy_card;    			//相对于车底盘的更新坐标
+float Vx_world, Vy_world;  //世界坐标上的x，y
+float Vx_card, Vy_card;    //相对于车底盘的更新坐标
 float Card_dis_car_x=0;
-float Card_dis_car_y=0;    			//相对于车的更新坐标
-float Car_dis_x, Car_dis_y;			//x轴，y轴行走距离
+float Card_dis_car_y=0;    //相对于车的更新坐标
+float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias;
 float dis_kp = 1.0;       //距离环kp
@@ -76,12 +76,6 @@ double delta_card_y,delta_card_x;//卡片x,y坐标与新y里程和x里程的差�
 double delta_angle;       //计算出来的即时偏转角
 int correct_x_flag = 0;
 int correct_y_flag = 0;
-/***********寻上边线变量**********/
-int err_up=0;//上边线与目标行数的误差
-int target_line=0;//目标行，待调参
-float move_y_error=0.0;//归一化后的误差
-/*********************************/
-
 
 pid_info Pos_turn_pid[4];//位置式pid
 
@@ -102,8 +96,8 @@ void Motor_Init(void)
 {
   gpio_init(DIR_LF, GPO, GPIO_HIGH, GPO_PUSH_PULL); // gpio给高电平
   gpio_init(DIR_LB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
-  gpio_init(DIR_RF, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
-  gpio_init(DIR_RB, GPO, GPIO_HIGH, GPO_PUSH_PULL); //
+  gpio_init(DIR_RF, GPO, GPIO_LOW, GPO_PUSH_PULL); //
+  gpio_init(DIR_RB, GPO, GPIO_LOW, GPO_PUSH_PULL); //
 
   pwm_init(motor_LF, 15000, 0); // PWM初始化
   pwm_init(motor_LB, 15000, 0); //
@@ -195,7 +189,7 @@ void car_stop(void)
   Speed[3].target_speed = 0;
 }
 /**
- * @brief 对速度预处理,新串级，正常巡线模式
+ * @brief 对速度预处理
  * @param 中线误差
  * @return 无
  */
@@ -224,31 +218,6 @@ void car_run(void)
   Speed[2].target_speed = 10 * (1 + angle);
   Speed[3].target_speed = 10 * (1 + angle);
   // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
-}
-/**
- * @brief 对速度预处理,巡上边线线模式
- * @param 上边线误差，可能会改成增量式pid来作动态调整
- * @return 无
- */
-void car_other_run(void)
-{
-  err_up=0;//待赋值，上边线误差，要取40列左右算平均误差
-  move_y_error = err_up/120; // 归一化，可能不需要
-  float kp_y = 0.85f, kd_y = 0.2f;//1.0对应速度30
-
-  Vy = kp_y * move_error + kd_y * (move_error - last_error1); //上边线与目标行作差，得出所需的vy
-
-  if (Vy > 10.0f)
-  {
-    Vy = 10.0f;
-  }
-  else if (Vy < -10.0f)
-  {
-    Vy = -10.0f;
-  }
-  Vx=20.0;//水平上给恒定的速度
-
- Car_Inverse_kinematics_solution(Vx, Vy, 0);//速度解算赋值
 }
 
 /**
@@ -346,11 +315,11 @@ void PidInit(void)
   Speed[1].kp = -14.0; //-14.0 -34.5
   Speed[1].ki = -2.5;  //-2.5  -0.98
   // ???
-  Speed[2].kp = 15; //-15 -28.75
-  Speed[2].ki = 3.0;  //-3.0   -0.6
+  Speed[2].kp = -15.0; //-15 -28.75
+  Speed[2].ki = -3.0;  //-3.0   -0.6
   //???
-  Speed[3].kp = 0; //-16.0  -28.75
-  Speed[3].ki = 0;  // PI赋值 -2.8  -1.0
+  Speed[3].kp = -16.3; //-16.0  -28.75
+  Speed[3].ki = -2.8;  // PI赋值 -2.8  -1.0
 }
 /**
  * @brief 增量式pid(单环pid)速度环

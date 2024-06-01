@@ -122,7 +122,6 @@ void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void car_run(void);
-void car_other_run(void);
 void PidInit(void);
 void Pos_PidInit(void);
 void Distance_PidInit(void);

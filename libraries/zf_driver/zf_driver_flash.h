@@ -39,29 +39,27 @@
 #include "zf_common_typedef.h"
 
 #define FLASH_BASE_ADDR             (0x70000000)
-#define FLASH_PAGE_SIZE             (0x00001000)                                // 4K (实际是芯片的Sector大小)
-#define FLASH_PAGE_NUM              (8)                                         // 一个块8个扇区
-#define FLASH_SECTOR_SIZE           (FLASH_PAGE_SIZE * FLASH_PAGE_NUM)          // 32K (实际是芯片Block大小)
+#define FLASH_PAGE_SIZE             (0x00001000)                                    // 4K (实际是芯片的扇区大小)
+#define FLASH_PAGE_NUM              (8)                                             // 一个扇区8个页
+#define FLASH_SECTOR_SIZE           (FLASH_PAGE_SIZE * FLASH_PAGE_NUM)              // 32K (实际是芯片块大小)
 #define FLASH_OPERATION_TIME_OUT    (0x0FFF)
 
 #define FLASH_PAGE_NUM_DRIVER       (16)
+#define FLASH_DATA_BUFFER_SIZE      (FLASH_PAGE_SIZE / sizeof(flash_data_union))    // 自动计算每个页能够存下多少个数据
 
-#define FLASH_DATA_BUFFER_SIZE      (FLASH_PAGE_SIZE / sizeof(flash_data_union))// 自动计算每个页能够存下多少个数据
-
-typedef union                                                                   // 固定的数据缓冲单元格式
-{
-    float   float_type;                                                         // float  类型
-    uint32  uint32_type;                                                        // uint32 类型
-    int32   int32_type;                                                         // int32  类型
-    uint16  uint16_type;                                                        // uint16 类型
-    int16   int16_type;                                                         // int16  类型
-    uint8   uint8_type;                                                         // uint8  类型
-    int8    int8_type;                                                          // int8   类型
-}flash_data_union;                                                              // 所有类型数据共用同一个 32bit 地址
-
-
-
-typedef enum                                                                    // 枚举 Flash 页索引 此枚举定义不允许用户修改
+typedef union                                                                       // 固定的数据缓冲单元格式
+{   
+    float   float_type;                                                             // float  类型
+    uint32  uint32_type;                                                            // uint32 类型
+    int32   int32_type;                                                             // int32  类型
+    uint16  uint16_type;                                                            // uint16 类型
+    int16   int16_type;                                                             // int16  类型
+    uint8   uint8_type;                                                             // uint8  类型
+    int8    int8_type;                                                              // int8   类型
+}flash_data_union;                                                                  // 所有类型数据共用同一个 32bit 地址
+    
+    
+typedef enum                                                                        // 枚举 Flash 页索引 此枚举定义不允许用户修改
 {
     FLASH_PAGE_0,
     FLASH_PAGE_1,
@@ -71,7 +69,6 @@ typedef enum                                                                    
     FLASH_PAGE_5,
     FLASH_PAGE_6,
     FLASH_PAGE_7,
-
 }flash_page_enum;
 
 extern flash_data_union flash_union_buffer[FLASH_DATA_BUFFER_SIZE];

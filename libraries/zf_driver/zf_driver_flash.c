@@ -127,21 +127,24 @@ void flash_read_page (uint32 sector_num, flash_page_enum page_num, uint32 *buf, 
 //-------------------------------------------------------------------------------------------------------------------
 uint8 flash_write_page (uint32 sector_num, flash_page_enum page_num, const uint32 *buf, uint16 len)
 {
-    uint8 i;
+#define PAGE_BUFFER_SIZE 64                                                     // 定义写入缓冲区的大小
+    uint8 i = 0;
     uint32 primask;
     status_t state = kStatus_Success;
+    flash_data_union block[PAGE_BUFFER_SIZE] = {0};                             // 每次写入需要写入64个uint32数据
     
-    zf_assert(len <= FLASH_PAGE_SIZE);                                                      
+    zf_assert(len <= FLASH_DATA_BUFFER_SIZE);                                   // 判断是否大于一页的大小 1024个uint32数据         
     
     if(flash_check(sector_num, page_num))                                       // 判断是否有数据 这里是冗余的保护 防止有人没擦除就写入
     {
         flash_erase_page(sector_num, page_num);                                 // 擦除这一页
     }
     
-    for(i=0; i<FLASH_PAGE_NUM_DRIVER; i++)
+    for(i=0; i < (len / PAGE_BUFFER_SIZE); i++)                                 // 写入用户数据
     {
         primask = interrupt_global_disable();
-        state = rom_api_flexspi_nor_flash_page_program(flash_instance, &config, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE + (i * (FLASH_PAGE_SIZE/FLASH_PAGE_NUM_DRIVER)),(uint32 *)&flash_union_buffer[i*64]);
+                                                                                // 循环写入用户数据
+        state = rom_api_flexspi_nor_flash_page_program(flash_instance, &config, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE + (i * (FLASH_PAGE_SIZE / FLASH_PAGE_NUM_DRIVER)),(uint32 *)(buf+i * PAGE_BUFFER_SIZE));
         interrupt_global_enable(primask);
         if(state != kStatus_Success)
         {
@@ -149,7 +152,20 @@ uint8 flash_write_page (uint32 sector_num, flash_page_enum page_num, const uint3
             break;
         }
     }
-    
+    if(0 != len % PAGE_BUFFER_SIZE)                                             // 判断长度如果不是缓冲区大小的整数倍
+    {
+        memset(block, 0, sizeof(block));                                        // 清空缓冲区
+                                                                                // 将用户数据超过缓冲区整数倍部分的最后数据传入缓冲区，并补0
+        memcpy(block, (uint32 *)(buf + (i * PAGE_BUFFER_SIZE)), (len - (i * PAGE_BUFFER_SIZE)) * 4);
+        primask = interrupt_global_disable();
+                                                                                // 写入缓冲区数据
+        state = rom_api_flexspi_nor_flash_page_program(flash_instance, &config, sector_num * FLASH_SECTOR_SIZE + page_num * FLASH_PAGE_SIZE + (i * (FLASH_PAGE_SIZE / FLASH_PAGE_NUM_DRIVER)),(uint32 *)block);
+        interrupt_global_enable(primask);
+        if(state != kStatus_Success)
+        {
+            state = kStatus_Fail;
+        }
+    }
     return state;
 }
 
@@ -181,7 +197,7 @@ uint8 flash_write_page_from_buffer (uint32 sector_num, flash_page_enum page_num)
     uint32 primask;
     status_t state = kStatus_Success;
     primask = interrupt_global_disable();
-    flash_write_page(sector_num, page_num, (const uint32 *)&flash_union_buffer[0], FLASH_PAGE_SIZE);
+    flash_write_page(sector_num, page_num, (const uint32 *)&flash_union_buffer[0], FLASH_DATA_BUFFER_SIZE);
     interrupt_global_enable(primask);
     return state;
 }

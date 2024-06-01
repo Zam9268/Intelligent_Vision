@@ -297,14 +297,20 @@ void debug_interrupr_handler (void)
 
 //-------------------------------------------------------------------------     // printf 重定向 此部分不允许用户更改
 #if defined(__ICCARM__)
+#if (__VER__ < 8050000)                                                         // IAR版本小于8.5
 #define PUTCHAR_PROTOTYPE int32_t fputc (int32_t ch, FILE *f)
 #define GETCHAR_PROTOTYPE int32_t fgetc (FILE *f)
+#else
+#define PUTCHAR_PROTOTYPE int __write(int handle, const unsigned char *buf, int size)
+#define GETCHAR_PROTOTYPE int __read(int fd, void *buffer, unsigned int count)
+#endif
 #elif defined(__GNUC__)
 #define PUTCHAR_PROTOTYPE int32_t __io_putchar (int32_t ch)
 #define GETCHAR_PROTOTYPE int32_t __io_getchar ()
 #endif
 
 #if defined(__ICCARM__)
+#if (__VER__ < 8050000)                                                         // IAR版本小于8.5
 PUTCHAR_PROTOTYPE
 {
     if(zf_debug_init_flag)
@@ -323,6 +329,26 @@ GETCHAR_PROTOTYPE
     }
     return data;
 }
+#else
+PUTCHAR_PROTOTYPE
+{
+    uart_write_buffer(DEBUG_UART_INDEX, buf, (char)size);
+    return size;
+}
+
+GETCHAR_PROTOTYPE
+{
+    uint8_t *uint8_Buffer = (uint8_t*)buffer;
+    do
+    {
+        *uint8_Buffer = uart_read_byte(DEBUG_UART_INDEX);
+        uint8_Buffer ++;
+        count --;
+    } while (count > 0);
+  
+    return count;
+}
+#endif
 #else
 int32_t fputc (int32_t ch, FILE* f)
 {

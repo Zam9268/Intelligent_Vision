@@ -254,7 +254,7 @@ void    imu963ra_get_mag            (void);
 // 使用示例     float data = imu963ra_acc_transition(imu963ra_acc_x);           // 单位为 g(m/s^2)
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-#define imu963ra_acc_transition(acc_value)      ((float)acc_value / imu963ra_transition_factor[0])
+#define imu963ra_acc_transition(acc_value)      ((float)(acc_value) / imu963ra_transition_factor[0])
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     将 IMU963RA 陀螺仪数据转换为实际物理数据
@@ -263,7 +263,7 @@ void    imu963ra_get_mag            (void);
 // 使用示例     float data = imu963ra_gyro_transition(imu963ra_gyro_x);         // 单位为 °/s
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-#define imu963ra_gyro_transition(gyro_value)    ((float)gyro_value / imu963ra_transition_factor[1])
+#define imu963ra_gyro_transition(gyro_value)    ((float)(gyro_value) / imu963ra_transition_factor[1])
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     将 IMU963RA 磁力计数据转换为实际物理数据
@@ -272,7 +272,7 @@ void    imu963ra_get_mag            (void);
 // 使用示例     float data = imu963ra_mag_transition(imu963ra_mag_x);           // 单位为 G
 // 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-#define imu963ra_mag_transition(mag_value)    ((float)mag_value / imu963ra_transition_factor[2])
+#define imu963ra_mag_transition(mag_value)    ((float)(mag_value) / imu963ra_transition_factor[2])
 
 uint8   imu963ra_init               (void);
 

@@ -77,7 +77,7 @@ static uint16 crc_check (uint8 *buff, uint8 crc_cnt)
 // 参数说明     data4           要发送的第四个数据
 // 返回参数     void
 // 使用示例     uint8 data_buffer[10];
-//              virtual_oscilloscope_data_conversion(100, 200, 300, 400, data_buffer);
+//              virtual_oscilloscope_data_conversion(100, 200, 300, 400);
 //              wireless_uart_send_buff(data_buffer, 10);
 // 备注信息     这个函数不带发送 他只是处理数据
 //-------------------------------------------------------------------------------------------------------------------

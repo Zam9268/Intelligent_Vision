@@ -49,27 +49,29 @@
 #include "zf_driver_delay.h"
 #include "zf_driver_uart.h"
 
-#include "zf_device_gps_tau1201.h"
+#include "zf_device_gnss.h"
 
-#define GPS_TAU1201_BUFFER_SIZE     ( 128 )
+#define GNSS_BUFFER_SIZE    ( 128 )
 
-uint8                       gps_tau1201_flag = 0;                                   // 1：采集完成等待处理数据 0：没有采集完成
-gps_info_struct             gps_tau1201;                                            // GPS解析之后的数据
+uint8                       gnss_flag = 0;                                  // 1：采集完成等待处理数据 0：没有采集完成
+gnss_info_struct            gnss;                                           // GPS解析之后的数据
+    
+static  uint8               gnss_state = 0;                                 // 1：GPS初始化完成
+static  fifo_struct         gnss_receiver_fifo;                             //
+static  uint8               gnss_receiver_buffer[GNSS_BUFFER_SIZE];         // 数据存放数组
 
-static  uint8               gps_tau1201_state = 0;                                  // 1：GPS初始化完成
-static  fifo_struct         gps_tau1201_receiver_fifo;                              // 
-static  uint8               gps_tau1201_receiver_buffer[GPS_TAU1201_BUFFER_SIZE];   // 数据存放数组
+static  gps_state_enum      gnss_gga_state = GPS_STATE_RECEIVING;           // gga 语句状态
+static  gps_state_enum      gnss_rmc_state = GPS_STATE_RECEIVING;           // rmc 语句状态
+static  gps_state_enum      gnss_ths_state = GPS_STATE_RECEIVING;           // rmc 语句状态
 
-gps_state_enum              gps_gga_state = GPS_STATE_RECEIVING;                    // gga 语句状态
-gps_state_enum              gps_rmc_state = GPS_STATE_RECEIVING;                    // rmc 语句状态
-
-static  uint8               gps_gga_buffer[GPS_TAU1201_BUFFER_SIZE];
-static  uint8               gps_rmc_buffer[GPS_TAU1201_BUFFER_SIZE];
+static  uint8               gps_gga_buffer[GNSS_BUFFER_SIZE];
+static  uint8               gps_rmc_buffer[GNSS_BUFFER_SIZE];
+static  uint8               gps_ths_buffer[GNSS_BUFFER_SIZE];
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     获取指定 ',' 后面的索引
 // 参数说明     num             第几个逗号
-// 参数说明     *str            字符串           
+// 参数说明     *str            字符串
 // 返回参数     uint8           返回索引
 // 使用示例     get_parameter_index(1, s);
 // 备注信息     内部使用
@@ -143,7 +145,7 @@ static float get_float_number (char *s)
 }
                                     
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     给定字符串第一个 ',' 之前的数据转换为double 
+// 函数简介     给定字符串第一个 ',' 之前的数据转换为double
 // 参数说明     *s              字符串
 // 返回参数     double          返回数值
 // 使用示例     get_double_number(&buf[get_parameter_index(3, buf)]);
@@ -164,10 +166,10 @@ static double get_double_number (char *s)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     世界时间转换为北京时间 
+// 函数简介     世界时间转换为北京时间
 // 参数说明     *time           保存的时间
-// 返回参数     void           
-// 使用示例     utc_to_btc(&gps->time);
+// 返回参数     void
+// 使用示例     utc_to_btc(&gnss->time);
 // 备注信息     内部使用
 //-------------------------------------------------------------------------------------------------------------------
 static void utc_to_btc (gps_time_struct *time)
@@ -183,7 +185,7 @@ static void utc_to_btc (gps_time_struct *time)
         if(2 == time->month)
         {
             day_num = 28;
-            if((0 == time->year % 4 && 0 != time->year % 100) || 0 == time->year % 400) // 判断是否为闰年 
+            if((0 == time->year % 4 && 0 != time->year % 100) || 0 == time->year % 400) // 判断是否为闰年
             {
                 day_num ++;                                                     // 闰月 2月为29天
             }
@@ -212,13 +214,13 @@ static void utc_to_btc (gps_time_struct *time)
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     RMC语句解析
-// 参数说明     *line           接收到的语句信息        
-// 参数说明     *gps            保存解析后的数据
+// 参数说明     *line           接收到的语句信息
+// 参数说明     *gnss            保存解析后的数据
 // 返回参数     uint8           1：解析成功 0：数据有问题不能解析
-// 使用示例     gps_gnrmc_parse((char *)data_buffer, &gps_tau1201);
+// 使用示例     gps_gnrmc_parse((char *)data_buffer, &gnss);
 // 备注信息     内部使用
 //-------------------------------------------------------------------------------------------------------------------
-static uint8 gps_gnrmc_parse (char *line, gps_info_struct *gps)
+static uint8 gps_gnrmc_parse (char *line, gnss_info_struct *gnss)
 {
     uint8 state = 0, temp = 0;
     
@@ -233,60 +235,63 @@ static uint8 gps_gnrmc_parse (char *line, gps_info_struct *gps)
 
     state = buf[get_parameter_index(2, buf)];
 
-    gps->state = 0;
-    if('A' == state)                                                            // 如果数据有效 则解析数据
+    if('A' == state || 'D' == state)                                                            // 如果数据有效 则解析数据
     {
         return_state = 1;
-        gps->state = 1;
-        gps -> ns               = buf[get_parameter_index(4, buf)];
-        gps -> ew               = buf[get_parameter_index(6, buf)];
+        gnss->state = 1;
+        gnss -> ns               = buf[get_parameter_index(4, buf)];
+        gnss -> ew               = buf[get_parameter_index(6, buf)];
 
         latitude                = get_double_number(&buf[get_parameter_index(3, buf)]);
         longitude               = get_double_number(&buf[get_parameter_index(5, buf)]);
 
-        gps->latitude_degree    = (int)latitude / 100;                          // 纬度转换为度分秒
-        lati_cent_tmp           = (latitude - gps->latitude_degree * 100);
-        gps->latitude_cent      = (int)lati_cent_tmp;
-        lati_second_tmp         = (lati_cent_tmp - gps->latitude_cent) * 6000;
-        gps->latitude_second    = (int)lati_second_tmp;
+        gnss->latitude_degree    = (int)latitude / 100;                         // 纬度转换为度分秒
+        lati_cent_tmp           = (latitude - gnss->latitude_degree * 100);
+        gnss->latitude_cent      = (int)lati_cent_tmp;
+        lati_second_tmp         = (lati_cent_tmp - gnss->latitude_cent) * 6000;
+        gnss->latitude_second    = (int)lati_second_tmp;
 
-        gps->longitude_degree   = (int)longitude / 100;                         // 经度转换为度分秒
-        long_cent_tmp           = (longitude - gps->longitude_degree * 100);
-        gps->longitude_cent     = (int)long_cent_tmp;
-        long_second_tmp         = (long_cent_tmp - gps->longitude_cent) * 6000;
-        gps->longitude_second   = (int)long_second_tmp;
+        gnss->longitude_degree   = (int)longitude / 100;                        // 经度转换为度分秒
+        long_cent_tmp           = (longitude - gnss->longitude_degree * 100);
+        gnss->longitude_cent     = (int)long_cent_tmp;
+        long_second_tmp         = (long_cent_tmp - gnss->longitude_cent) * 6000;
+        gnss->longitude_second   = (int)long_second_tmp;
 
-        gps->latitude   = gps->latitude_degree + lati_cent_tmp / 60;
-        gps->longitude  = gps->longitude_degree + long_cent_tmp / 60;
+        gnss->latitude   = gnss->latitude_degree + lati_cent_tmp / 60;
+        gnss->longitude  = gnss->longitude_degree + long_cent_tmp / 60;
 
         speed_tmp       = get_float_number(&buf[get_parameter_index(7, buf)]);  // 速度(海里/小时)
-        gps->speed      = speed_tmp * 1.85f;                                    // 转换为公里/小时
-        gps->direction  = get_float_number(&buf[get_parameter_index(8, buf)]);  // 角度           
+        gnss->speed      = speed_tmp * 1.85f;                                   // 转换为公里/小时
+        gnss->direction  = get_float_number(&buf[get_parameter_index(8, buf)]); // 角度
+    }
+    else
+    {
+        gnss->state = 0;
     }
 
     // 在定位没有生效前也是有时间数据的，可以直接解析
-    gps->time.hour    = (buf[7] - '0') * 10 + (buf[8] - '0');                   // 时间
-    gps->time.minute  = (buf[9] - '0') * 10 + (buf[10] - '0');
-    gps->time.second  = (buf[11] - '0') * 10 + (buf[12] - '0');
+    gnss->time.hour    = (buf[7] - '0') * 10 + (buf[8] - '0');                  // 时间
+    gnss->time.minute  = (buf[9] - '0') * 10 + (buf[10] - '0');
+    gnss->time.second  = (buf[11] - '0') * 10 + (buf[12] - '0');
     temp = get_parameter_index(9, buf);
-    gps->time.day     = (buf[temp + 0] - '0') * 10 + (buf[temp + 1] - '0');     // 日期
-    gps->time.month   = (buf[temp + 2] - '0') * 10 + (buf[temp + 3] - '0');
-    gps->time.year    = (buf[temp + 4] - '0') * 10 + (buf[temp + 5] - '0') + 2000;
+    gnss->time.day     = (buf[temp + 0] - '0') * 10 + (buf[temp + 1] - '0');    // 日期
+    gnss->time.month   = (buf[temp + 2] - '0') * 10 + (buf[temp + 3] - '0');
+    gnss->time.year    = (buf[temp + 4] - '0') * 10 + (buf[temp + 5] - '0') + 2000;
 
-    utc_to_btc(&gps->time);
+    utc_to_btc(&gnss->time);
 
     return return_state;
 }
 
 //-------------------------------------------------------------------------------------------------------------------
 // 函数简介     GGA语句解析
-// 参数说明     *line           接收到的语句信息        
-// 参数说明     *gps            保存解析后的数据
+// 参数说明     *line           接收到的语句信息
+// 参数说明     *gnss            保存解析后的数据
 // 返回参数     uint8           1：解析成功 0：数据有问题不能解析
-// 使用示例     gps_gngga_parse((char *)data_buffer, &gps_tau1201);
+// 使用示例     gps_gngga_parse((char *)data_buffer, &gnss);
 // 备注信息     内部使用
 //-------------------------------------------------------------------------------------------------------------------
-static uint8 gps_gngga_parse (char *line, gps_info_struct *gps)
+static uint8 gps_gngga_parse (char *line, gnss_info_struct *gnss)
 {
     uint8 state = 0;
     char *buf = line;
@@ -296,9 +301,39 @@ static uint8 gps_gngga_parse (char *line, gps_info_struct *gps)
 
     if(',' != state)
     {
-        gps->satellite_used = (uint8)get_int_number(&buf[get_parameter_index(7, buf)]);
-        gps->height         = get_float_number(&buf[get_parameter_index(9, buf)]) + get_float_number(&buf[get_parameter_index(11, buf)]);  // 高度 = 海拔高度 + 地球椭球面相对大地水准面的高度 
+        gnss->satellite_used = (uint8)get_int_number(&buf[get_parameter_index(7, buf)]);
+        gnss->height         = get_float_number(&buf[get_parameter_index(9, buf)]) + get_float_number(&buf[get_parameter_index(11, buf)]);  // 高度 = 海拔高度 + 地球椭球面相对大地水准面的高度
         return_state = 1;
+    }
+    
+    return return_state;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     THS语句解析
+// 参数说明     *line           接收到的语句信息
+// 参数说明     *gnss            保存解析后的数据
+// 返回参数     uint8           1：解析成功 0：数据有问题不能解析
+// 使用示例     gps_gnths_parse((char *)data_buffer, &gnss);
+// 备注信息     内部使用
+//-------------------------------------------------------------------------------------------------------------------
+static uint8 gps_gnths_parse (char *line, gnss_info_struct *gnss)
+{
+    uint8 state = 0;
+    char *buf = line;
+    uint8 return_state = 0;
+
+    state = buf[get_parameter_index(2, buf)];
+
+    if('A' == state)
+    {
+        gnss->antenna_direction_state = 1;
+        gnss->antenna_direction = get_float_number(&buf[get_parameter_index(1, buf)]);
+        return_state = 1;
+    }
+    else
+    {
+        gnss->antenna_direction_state = 0;
     }
     
     return return_state;
@@ -312,7 +347,7 @@ static uint8 gps_gngga_parse (char *line, gps_info_struct *gps)
 // 参数说明     longitude2      第二个点的经度
 // 返回参数     double          返回两点距离
 // 使用示例     get_two_points_distance(latitude1_1, longitude1, latitude2, longitude2);
-// 备注信息     
+// 备注信息
 //-------------------------------------------------------------------------------------------------------------------
 double get_two_points_distance (double latitude1, double longitude1, double latitude2, double longitude2)
 {  
@@ -347,7 +382,7 @@ double get_two_points_distance (double latitude1, double longitude1, double lati
 // 参数说明     longitude2      第二个点的经度
 // 返回参数     double          返回方位角（0至360）
 // 使用示例     get_two_points_azimuth(latitude1_1, longitude1, latitude2, longitude2);
-// 备注信息     
+// 备注信息
 //-------------------------------------------------------------------------------------------------------------------
 double get_two_points_azimuth (double latitude1, double longitude1, double latitude2, double longitude2)
 {
@@ -363,13 +398,13 @@ double get_two_points_azimuth (double latitude1, double longitude1, double latit
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     解析GPS数据
+// 函数简介     解析gnss数据
 // 参数说明     void
 // 返回参数     uint8           0-解析成功 1-解析失败 可能数据包错误
-// 使用示例     gps_data_parse();
-// 备注信息     
+// 使用示例     gnss_data_parse();
+// 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-uint8 gps_data_parse (void)
+uint8 gnss_data_parse (void)
 {
     uint8 return_state = 0;
     uint8 check_buffer[5] = {'0', 'x', 0x00, 0x00, 0x00};
@@ -379,9 +414,9 @@ uint8 gps_data_parse (void)
 
     do
     {
-        if(GPS_STATE_RECEIVED == gps_rmc_state)
+        if(GPS_STATE_RECEIVED == gnss_rmc_state)
         {
-            gps_rmc_state = GPS_STATE_PARSING;
+            gnss_rmc_state = GPS_STATE_PARSING;
             strncpy((char *)&check_buffer[2], strchr((const char *)gps_rmc_buffer, '*') + 1, 2);
             bbc_xor_origin = (uint8)func_str_to_hex((char *)check_buffer);
             for(bbc_xor_calculation = gps_rmc_buffer[1], data_len = 2; '*' != gps_rmc_buffer[data_len]; data_len ++)
@@ -395,13 +430,13 @@ uint8 gps_data_parse (void)
                 break;
             }
             
-            gps_gnrmc_parse((char *)gps_rmc_buffer, &gps_tau1201);
+            gps_gnrmc_parse((char *)gps_rmc_buffer, &gnss);
         }
-        gps_rmc_state = GPS_STATE_RECEIVING;
+        gnss_rmc_state = GPS_STATE_RECEIVING;
         
-        if(GPS_STATE_RECEIVED == gps_gga_state)
+        if(GPS_STATE_RECEIVED == gnss_gga_state)
         {
-            gps_gga_state = GPS_STATE_PARSING;
+            gnss_gga_state = GPS_STATE_PARSING;
             strncpy((char *)&check_buffer[2], strchr((const char *)gps_gga_buffer, '*') + 1, 2);
             bbc_xor_origin = (uint8)func_str_to_hex((char *)check_buffer);
             
@@ -416,9 +451,30 @@ uint8 gps_data_parse (void)
                 break;
             }
             
-            gps_gngga_parse((char *)gps_gga_buffer, &gps_tau1201);
+            gps_gngga_parse((char *)gps_gga_buffer, &gnss);
         }
-        gps_gga_state = GPS_STATE_RECEIVING;
+        gnss_gga_state = GPS_STATE_RECEIVING;
+        
+        if(GPS_STATE_RECEIVED == gnss_ths_state)
+        {
+            gnss_ths_state = GPS_STATE_PARSING;
+            strncpy((char *)&check_buffer[2], strchr((const char *)gps_ths_buffer, '*') + 1, 2);
+            bbc_xor_origin = (uint8)func_str_to_hex((char *)check_buffer);
+            
+            for(bbc_xor_calculation = gps_ths_buffer[1], data_len = 2; '*' != gps_ths_buffer[data_len]; data_len ++)
+            {
+                bbc_xor_calculation ^= gps_ths_buffer[data_len];
+            }
+            if(bbc_xor_calculation != bbc_xor_origin)
+            {
+                // 数据校验失败
+                return_state = 1;
+                break;
+            }
+            
+            gps_gnths_parse((char *)gps_ths_buffer, &gnss);
+        }
+        gnss_ths_state = GPS_STATE_RECEIVING;
         
     }while(0);
     return return_state;
@@ -426,69 +482,82 @@ uint8 gps_data_parse (void)
 
 
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     GPS串口回调函数
-// 参数说明     void            
-// 返回参数     void            
-// 使用示例     gps_uart_callback();
+// 函数简介     gnss串口回调函数
+// 参数说明     void
+// 返回参数     void
+// 使用示例     gnss_uart_callback();
 // 备注信息     此函数需要在串口接收中断内进行调用
 //-------------------------------------------------------------------------------------------------------------------
-void gps_uart_callback (void)
+void gnss_uart_callback (void)
 {
     uint8 temp_gps[6];
     uint32 temp_length = 0;
 
-    if(gps_tau1201_state)
+
+
+
+    if(gnss_state)
     {
         uint8 dat;
-        while(uart_query_byte(GPS_TAU1201_UART, &dat))
+        while(uart_query_byte(GNSS_UART, &dat))
         {
-            fifo_write_buffer(&gps_tau1201_receiver_fifo, &dat, 1);
+            fifo_write_buffer(&gnss_receiver_fifo, &dat, 1);
         }
         
         if('\n' == dat)
         {
             // 读取前6个数据 用于判断语句类型
             temp_length = 6;
-            fifo_read_buffer(&gps_tau1201_receiver_fifo, temp_gps, &temp_length, FIFO_READ_ONLY);
+            fifo_read_buffer(&gnss_receiver_fifo, temp_gps, &temp_length, FIFO_READ_ONLY);
             
             // 根据不同类型将数据拷贝到不同的缓冲区
             if(0 == strncmp((char *)&temp_gps[3], "RMC", 3))
             {
                 // 如果没有在解析数据则更新缓冲区的数据
-                if(GPS_STATE_PARSING != gps_rmc_state)
+                if(GPS_STATE_PARSING != gnss_rmc_state)
                 {
-                    gps_rmc_state = GPS_STATE_RECEIVED;
-                    temp_length = fifo_used(&gps_tau1201_receiver_fifo);
-                    fifo_read_buffer(&gps_tau1201_receiver_fifo, gps_rmc_buffer, &temp_length, FIFO_READ_AND_CLEAN);
+                    gnss_rmc_state = GPS_STATE_RECEIVED;
+                    temp_length = fifo_used(&gnss_receiver_fifo);
+                    fifo_read_buffer(&gnss_receiver_fifo, gps_rmc_buffer, &temp_length, FIFO_READ_AND_CLEAN);
                 }
             }
             else if(0 == strncmp((char *)&temp_gps[3], "GGA", 3))
             {
                 // 如果没有在解析数据则更新缓冲区的数据
-                if(GPS_STATE_PARSING != gps_gga_state)
+                if(GPS_STATE_PARSING != gnss_gga_state)
                 {
-                    gps_gga_state = GPS_STATE_RECEIVED;
-                    temp_length = fifo_used(&gps_tau1201_receiver_fifo);
-                    fifo_read_buffer(&gps_tau1201_receiver_fifo, gps_gga_buffer, &temp_length, FIFO_READ_AND_CLEAN);
+                    gnss_gga_state = GPS_STATE_RECEIVED;
+                    temp_length = fifo_used(&gnss_receiver_fifo);
+                    fifo_read_buffer(&gnss_receiver_fifo, gps_gga_buffer, &temp_length, FIFO_READ_AND_CLEAN);
+                }
+            }
+            else if(0 == strncmp((char *)&temp_gps[3], "THS", 3))
+            {
+                // 如果没有在解析数据则更新缓冲区的数据
+                if(GPS_STATE_PARSING != gnss_ths_state)
+                {
+                    gnss_ths_state = GPS_STATE_RECEIVED;
+                    temp_length = fifo_used(&gnss_receiver_fifo);
+                    fifo_read_buffer(&gnss_receiver_fifo, gps_ths_buffer, &temp_length, FIFO_READ_AND_CLEAN);
                 }
             }
             
             // 统一将FIFO清空
-            fifo_clear(&gps_tau1201_receiver_fifo);
+            fifo_clear(&gnss_receiver_fifo);
 
-            gps_tau1201_flag = 1;
+            gnss_flag = 1;
         }
     }
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     GPS初始化
+// 函数简介     gnss初始化
 // 参数说明     void
 // 返回参数     void
-// 使用示例     gps_init();
-// 备注信息     
+// 使用示例     gnss_init();
+// 备注信息
 //-------------------------------------------------------------------------------------------------------------------
-void gps_init (void)
+void gnss_init (gps_device_enum gps_device)
 {
     const uint8 set_rate[]      = {0xF1, 0xD9, 0x06, 0x42, 0x14, 0x00, 0x00, 0x0A, 0x05, 0x00, 0x64, 0x00, 0x00, 0x00, 0x60, 0xEA, 0x00, 0x00, 0xD0, 0x07, 0x00, 0x00, 0xC8, 0x00, 0x00, 0x00, 0xB8, 0xED};
     const uint8 open_gga[]      = {0xF1, 0xD9, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x00, 0x01, 0xFB, 0x10};
@@ -503,37 +572,49 @@ void gps_init (void)
     const uint8 close_gst[]     = {0xF1, 0xD9, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x08, 0x00, 0x02, 0x1F};
     const uint8 close_txt[]     = {0xF1, 0xD9, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x40, 0x00, 0x3A, 0x8F};
     const uint8 close_txt_ant[] = {0xF1, 0xD9, 0x06, 0x01, 0x03, 0x00, 0xF0, 0x20, 0x00, 0x1A, 0x4F};
-
-    fifo_init(&gps_tau1201_receiver_fifo, FIFO_DATA_8BIT, gps_tau1201_receiver_buffer, GPS_TAU1201_BUFFER_SIZE);
-    system_delay_ms(500);                                                           // 等待GPS启动后开始初始化
-    uart_init(GPS_TAU1201_UART, 115200, GPS_TAU1201_RX, GPS_TAU1201_TX);
-
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)set_rate, sizeof(set_rate));       // 设置GPS更新速率为10hz 如果不调用此语句则默认为1hz
-    system_delay_ms(200);
     
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)open_rmc, sizeof(open_rmc));       // 开启rmc语句
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)open_gga, sizeof(open_gga));       // 开启gga语句
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_gll, sizeof(close_gll));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_gsa, sizeof(close_gsa));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_grs, sizeof(close_grs));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_gsv, sizeof(close_gsv));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_vtg, sizeof(close_vtg));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_zda, sizeof(close_zda));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_gst, sizeof(close_gst));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_txt, sizeof(close_txt));
-    system_delay_ms(50);
-    uart_write_buffer(GPS_TAU1201_UART, (uint8 *)close_txt_ant, sizeof(close_txt_ant));
-    system_delay_ms(50);
+    if((GN42A == gps_device))                                                   // GN42A与TAU1201为同一设备 
+    {
+        fifo_init(&gnss_receiver_fifo, FIFO_DATA_8BIT, gnss_receiver_buffer, GNSS_BUFFER_SIZE);
+        system_delay_ms(500);                                                   // 等待GPS启动后开始初始化
+        uart_init(GNSS_UART, 115200, GNSS_RX, GNSS_TX);
 
-    gps_tau1201_state = 1;
-    uart_rx_interrupt(GPS_TAU1201_UART, 1);
+        uart_write_buffer(GNSS_UART, (uint8 *)set_rate, sizeof(set_rate));      // 设置GPS更新速率为10hz 如果不调用此语句则默认为1hz
+        system_delay_ms(200);   
+            
+        uart_write_buffer(GNSS_UART, (uint8 *)open_rmc, sizeof(open_rmc));      // 开启rmc语句
+        system_delay_ms(50);    
+        uart_write_buffer(GNSS_UART, (uint8 *)open_gga, sizeof(open_gga));      // 开启gga语句
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_gll, sizeof(close_gll));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_gsa, sizeof(close_gsa));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_grs, sizeof(close_grs));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_gsv, sizeof(close_gsv));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_vtg, sizeof(close_vtg));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_zda, sizeof(close_zda));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_gst, sizeof(close_gst));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_txt, sizeof(close_txt));
+        system_delay_ms(50);
+        uart_write_buffer(GNSS_UART, (uint8 *)close_txt_ant, sizeof(close_txt_ant));
+        system_delay_ms(50);
+
+        gnss_state = 1;
+        uart_rx_interrupt(GNSS_UART, 1);
+    }
+    else if(GN43RFA == gps_device)
+    {
+        // GN43RFA RTK模块不需要进行参数设置，如果需要修改参数应该使用专用的上位机修改参数
+        fifo_init(&gnss_receiver_fifo, FIFO_DATA_8BIT, gnss_receiver_buffer, GNSS_BUFFER_SIZE);
+        uart_init(GNSS_UART, 115200, GNSS_RX, GNSS_TX);
+        gnss_state = 1;
+        uart_rx_interrupt(GNSS_UART, 1);
+    }
+    
 }
