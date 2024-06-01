@@ -40,7 +40,7 @@ typedef struct{
 }Card;
 
 extern int now_distance_x;
-extern unsigned long now_distance_y;
+extern unsigned int now_distance_y;
 extern Card card_position[100];  
 
 void My_Communication_Init(void);

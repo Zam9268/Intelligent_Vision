@@ -101,10 +101,10 @@ int main(void)
     //     }
     // }
     //----------pid初始化---------------------//
-    //   uart_init(UART_1,115200,UART1_TX_B12,UART1_RX_B13);//串口一初始化，用于art
-    //	  Vofa_Init(&vofa1,VOFA_MODE_SKIP);
-    My_Communication_Init(); // 通信初始化
-    PidInit();               // 增量式pid初始化
+    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
+    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
+    // My_Communication_Init(); // 通信初始化
+    PidInit(); // 增量式pid初始化
     //   Pos_PidInit();//位置式pid初始化，现已弃用
     Distance_PidInit(); // 距离环初始化
 
@@ -118,7 +118,7 @@ int main(void)
     Encoder_Init();     // 编码器初始化
     Camera_Init();      // 摄像头初始化
     my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
-    my_pwm_gpio();      // 机械臂初始化
+                        //    my_pwm_gpio();      // 机械臂初始化
     //    ips114_clear();     // 清屏
     Motor_Init(); // 电机初始化
                   //    Encoder_Init();     // 编码器初始化
@@ -155,9 +155,9 @@ int main(void)
     //		float start_angle = 100.0;
     while (1)
     {
-        ips114_show_uint(0, 0, card_abc, 3);
-        ips114_show_uint(0, 20, card_num, 3);
-        //        test();
+        // ips114_show_uint(0, 0, card_abc, 3);
+        // ips114_show_uint(0, 20, card_num, 3);
+        // test();
         //**************************观察卡片坐标和里程计*********************//
         //   	   	 ips114_show_int(90,0,now_distance_y,4);
         //          ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
@@ -218,23 +218,23 @@ int main(void)
         // CSI_dis_correct((float)center_x, (float)center_y);//总钻风坐标对正
         //*******************************************************************//
 
-//*********************测试360舵机********************************//
-// arm_control(4);//测试舵机模式
-//*******************************************************************//
+        //*********************测试360舵机********************************//
+        // arm_control(4);//测试舵机模式
+        //*******************************************************************//
 
-//*********************测试侧面舵机********************************//
-test_arm();
-//*********************测试总钻风校正********************************//
-//CSI_dis_new_correct(center_x, center_y);
-//ips114_show_int(0,0,center_x/10,4);
-//ips114_show_int(0,20,center_y/10,4);//显示卡片中心坐标
-//ips114_show_int(0,40,delta_x,4);
-//ips114_show_int(0,60,delta_y,4);//显示x，y差值
-//ips114_show_int(90,0,correct_x_flag,4);//显示x调整标志位
-//ips114_show_float(90,20,Vx,3,2);
-//ips114_show_int(90,40,correct_y_flag,4);//显示y调整标志位
-//ips114_show_float(90,80,Vy,3,2);//显示x,y速度
-//*******************************************************************//
+        //*********************测试侧面舵机********************************//
+        // test_arm();
+        //*********************测试总钻风校正********************************//
+        // CSI_dis_new_correct(center_x, center_y);
+        // ips114_show_int(0,0,center_x/10,4);
+        // ips114_show_int(0,20,center_y/10,4);//显示卡片中心坐标
+        // ips114_show_int(0,40,delta_x,4);
+        // ips114_show_int(0,60,delta_y,4);//显示x，y差值
+        // ips114_show_int(90,0,correct_x_flag,4);//显示x调整标志位
+        // ips114_show_float(90,20,Vx,3,2);
+        // ips114_show_int(90,40,correct_y_flag,4);//显示y调整标志位
+        // ips114_show_float(90,80,Vy,3,2);//显示x,y速度
+        //*******************************************************************//
 
         //*********************测试总的车辆行进打包函数**********************//
         // car_findcard(&car_mode);//模式选择
@@ -282,7 +282,7 @@ test_arm();
         //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
         //      printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
-        // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[1].now_speed,Speed[2].now_speed,Speed[3].now_speed);
+        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed, Speed[1].now_speed, Speed[2].now_speed, Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         //        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
         //       printf("test");

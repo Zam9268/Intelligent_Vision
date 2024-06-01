@@ -26,7 +26,7 @@ typedef enum
 
 // W矩阵（相机坐标转换为现实坐标）[[2.640546, 0.1814489, 11.4467], [-1.812613e-07, 2.469554, 1.842148], [1.007809e-09, -0.005289703, 1]]
 // 最新的矩阵[[2.732931, 3.576279e-07, -4.196167e-05], [-5.576886e-08, 2.402867, -12.3425], [-2.187227e-09, -0.006035459, 1]] 210
-// [[2.680653, 0.0, 7.629395e-06], [-5.036292e-08, 1.996892, 0.4895172], [2.452266e-10, -0.005439005, 1]]
+//  [[2.680653, 0.0, 7.629395e-06], [-5.036292e-08, 1.996892, 0.4895172], [2.452266e-10, -0.005439005, 1]]
 // 注意要加上y的坐标平移
 #define a11 2.680653
 #define a12 0.0
@@ -41,15 +41,15 @@ typedef enum
 #define gety(u, v) (a21 * (u) + a22 * (v) + a23)
 #define getw(u, v) (a31 * (u) + a32 * (v) + a33)
 // V矩阵（现实坐标转换为相机坐标）
-#define b11 1
-#define b12 0
-#define b13 0
-#define b21 0
-#define b22 1
-#define b23 0
-#define b31 0
-#define b32 0
-#define b33 1
+#define b11 0.3730
+#define b12 0.0000
+#define b13 0.0000
+#define b21 0.0000
+#define b22 0.5001
+#define b23 -0.2448
+#define b31 0.0000
+#define b32 0.0027
+#define b33 0.9987
 #define getx_b(u, v) (b11 * (u) + b12 * (v) + b13)
 #define gety_b(u, v) (b21 * (u) + b22 * (v) + b23)
 #define getw_b(u, v) (b31 * (u) + b32 * (v) + b33)
@@ -65,5 +65,7 @@ void Zebra_Stripes_Detect(void);
 void Ramp_Detect(void);
 void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 end_column, uint8 threshold);
 void Get_Card_Center_coordinate(int left_up_camera_x, int left_up_camera_y, int right_up_camera_x, int right_up_camera_y, int *real_x, int *real_y);
+void Pespective_point(int camera_x, int camera_y, int *real_x, int *real_y);
+void Top_Add_Line(int x1, int y1, int x2, int y2);
 
 #endif
