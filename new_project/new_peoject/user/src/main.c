@@ -65,6 +65,8 @@ extern uint8 uart_send_flag;
 extern RoadType Road_Type;
 extern uint8 card_type; // 卡片类型，范围为1~15
 char str1[] = "begin";
+extern uint8 card_abc; // 卡片字母数字，值的范围为1~15
+extern uint8 card_num; // 卡片数字，值的范围为1~3
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -117,14 +119,20 @@ int main(void)
     Camera_Init();      // 摄像头初始化
     my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
     my_pwm_gpio();      // 机械臂初始化
+    //    ips114_clear();     // 清屏
+    Motor_Init(); // 电机初始化
+                  //    Encoder_Init();     // 编码器初始化
+                  //    Camera_Init();      // 摄像头初始化
+                  //    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
+                  //    my_pwm_gpio();      // 机械臂初始化
     //------------中断初始化-------------------//
-//    pit_ms_init(PIT_CH0, 5);  // 5ms
-//    pit_ms_init(PIT_CH1, 5);  // 10ms
-//    pit_ms_init(PIT_CH2, 15); // 15ms
-//    pit_ms_init(PIT_CH3, 35); // 25ms
-                              //
-                              // target_motor[1]=1000;
-                              // target_motor[3]=1000;
+    //    pit_ms_init(PIT_CH0, 5);  // 5ms
+    //    pit_ms_init(PIT_CH1, 5);  // 10ms
+    //    pit_ms_init(PIT_CH2, 15); // 15ms
+    pit_ms_init(PIT_CH3, 500); // 25ms
+                               //
+                               // target_motor[1]=1000;
+                               // target_motor[3]=1000;
 
     //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     /*视觉处理部分代码初始化*/
@@ -137,7 +145,7 @@ int main(void)
     //    Speed[0].target_speed=40.0;//?????
 
     int once = 1;
-    uint8 temp=0;
+    uint8 temp = 0;
     //    float zuobiao_x=0;
     //	  float zuobiao_y=0;
     //    int test_delta_card_x,test_delta_card_y;
@@ -147,13 +155,8 @@ int main(void)
     //		float start_angle = 100.0;
     while (1)
     {
-        ips114_show_uint(0, 0, right_data[0], 3);
-        if(temp==0)
-        {
-            uart_write_string(UART_4,"begin");
-            temp=1;
-        }
-		
+        ips114_show_uint(0, 0, card_abc, 3);
+        ips114_show_uint(0, 20, card_num, 3);
         //        test();
         //**************************观察卡片坐标和里程计*********************//
         //   	   	 ips114_show_int(90,0,now_distance_y,4);
@@ -270,7 +273,7 @@ test_arm();
         //				 Turn_Angle_PD(90);
         //      }
         // car_findcard(1);
-         test();
+        //  test();
         //   ips114_show_float(0,20,Speed[1].output,2,2);
         //        Vofa_JustFloat(&vofa1,other_data,5);
         //        uart_write_buffer(UART_1,other_data,5);

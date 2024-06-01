@@ -43,6 +43,8 @@
 extern pid_info Speed[4];   //????pid???????pid
 extern float loc_target[4]; //????pid???????pid
 extern uint8 step;
+extern char uart_4_begin[];
+extern char uart_4_begin_abc[];
 int count = 0;
 int arm_flag = 0;
 unsigned int init_count = 0;
