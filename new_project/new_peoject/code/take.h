@@ -3,9 +3,11 @@
 
 #include "zf_common_headfile.h"
 
-#define SERVO_MOTOR_PWM1                (PWM4_MODULE2_CHA_C30)                      // ����������ǰ�۶����Ӧ����
-#define SERVO_MOTOR_PWM2                (PWM4_MODULE3_CHA_C31)                       // ���������Ϻ�۶����Ӧ���� 
-#define SERVO_MOTOR_PWM3                (PWM2_MODULE0_CHA_C6)                       // ���������϶����Ӧ���� 
+#define SERVO_MOTOR_PWM1                (PWM4_MODULE2_CHA_C30)                      // 前臂舵机
+#define SERVO_MOTOR_PWM2                (PWM4_MODULE3_CHA_C31)                       // 后臂舵机
+#define SERVO_MOTOR_PWM3                (PWM2_MODULE0_CHA_C6)                       //  360度舵机
+#define SERVO_MOTOR_PWM4                (PWM2_MODULE1_CHA_C8)                       //侧面舵机
+
 #define SERVO_MOTOR_FREQ                (50)                                       // 舵机频率
 #define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //舵机角度转换成对应的pwm值
 
