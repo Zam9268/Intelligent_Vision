@@ -1,10 +1,3 @@
-#放一段我们比赛前写的代码，最新的找不到了哈哈
-#地图识别部分没有什么参考价值，通信部分和找色块分类图片可以参考一下。
-#我们当时art没有做太复杂的任务，所以代码量比较小
-#写于2023年11月27日
-#思路总结：传统赛道（没有遇到环岛十字，就yolo目标检测图片+路边的识别分类检测）；如果是特殊赛道就是yolo目标先检测环岛中心图片位置+然后yolo检测环岛周围黑框图片+环岛周边的ABCDE识别分类检测
-# 导入需要的库
-
 # IO口接线：接TFT液晶显示屏的
 # 蓝线：GND->GND   黄线：VCC->VCC     灰线：SCL->B0      黑线：SDA->B1      紫线：RES->B12     绿色：DC->B13  橙色：CS->B3   白色：BL->B16
 import seekfree, pyb
@@ -13,6 +6,19 @@ import ustruct
 import os, tf
 from pyb import LED
 from machine import UART
+
+def send_data(data,num):
+   data_packet = []
+   data_packet.append(0xB7) #发送包头，这里的append是增长数组的数据
+   data_packet.append(num)#本次发送数据的数量
+   if isinstance(data, list): # 如果data是列表，将其元素添加到data_packet
+       data_packet.extend(data)
+   else:
+       data_packet.append(data) #发送数据
+   data_packet.append(0x98) #发送包尾
+   uart.write(bytearray(data_packet))#发送数据
+   print(data_packet)#打印发送的数据
+   time.sleep_ms(400)#发送数据后延时100ms,保证发送完成
 
 k=0
 map_flag=0
@@ -54,7 +60,7 @@ while(1):
     img = sensor.snapshot()
     #这个是通过色块来找图片
     for blobs in img.find_blobs([black_threshold]):
-        if blobs.h() < 70 or blobs.w() < 70:#当找到的色块大于一定值才会进行识别
+        if blobs.h() < 50 or blobs.w() < 50:#当找到的色块大于一定值才会进行识别
             continue#小于的话会进行不断识别
         img = img.draw_rectangle(blobs.rect(),color = (255, 0, 0))    # 绘制矩形外框，便于在IDE上查看识别到的矩形位置，
         #img = img.draw_string(10,10, "%s = %f" % (sorted_list[i][0], sorted_list[i][1]),color=(255, 0, 0), scale=3)
@@ -68,40 +74,58 @@ while(1):
             #对概率最高的进行匹配，选择最恰当的那一个进行发送数据
             if sorted_list[i][0]=='A':
                print('A')
+               send_data([0x01,0x01],2)#发送数据
             elif sorted_list[i][0]=='B':
                print('B')
+               send_data([0x01,0x02],2)
             elif sorted_list[i][0]=='C':
                print('C')
+               send_data([0x01,0x03],2)
             elif sorted_list[i][0]=='D':
                print('D')
+               send_data([0x01,0x04],2)
             elif sorted_list[i][0]=='E':
                print('E')
+               send_data([0x01,0x05],2)
             elif sorted_list[i][0]=='F':
                print('F')
+               send_data([0x01,0x06],2)
             elif sorted_list[i][0]=='G':
                print('G')
+               send_data([0x01,0x07],2)
             elif sorted_list[i][0]=='H':
                print('H')
+               send_data([0x01,0x08],2)
             elif sorted_list[i][0]=='I':
                print('I')
+               send_data([0x01,0x09],2)
             elif sorted_list[i][0]=='J':
                print('J')
+               send_data(0x01,[0x0A],2)
             elif sorted_list[i][0]=='K':
                print('K')
+               send_data([0x01,0x0B],2)
             elif sorted_list[i][0]=='L':
                print('L')
+               send_data([0x01,0x0C],2)
             elif sorted_list[i][0]=='M':
                print('M')
+               send_data([0x01,0x0D],2)
             elif sorted_list[i][0]=='N':
                print('N')
+               send_data([0x01,0x0E],2)
             elif sorted_list[i][0]=='O':
                print('O')
+               send_data([0x01,0x0F],2)
             elif sorted_list[i][0]=='one':
-                print('one')
+               print('one')
+               send_data([0x02,0x01],2) 
             elif sorted_list[i][0]=='two':
-                print('two')
+               print('two')
+               send_data([0x02,0x02],2)
             elif sorted_list[i][0]=='three':
-                print('three')
+               print('three')
+               send_data([0x02,0x03],2)
 
 #2023年5月10日22:50:11
 #直接用.decode来解码应该是可以的，之所以会出现乱码的情况应该是因为：openART通过uart串口与MCU通信，如果
