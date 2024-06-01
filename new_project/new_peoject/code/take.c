@@ -33,12 +33,12 @@ extern int arm_flag;
 
 void my_pwm_gpio(void)
 {
- pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(35));
+ pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(85)); //云台舵机度数12  73  133
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(131)); //云台舵机度数12  85  131
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
- gpio_init(C9, GPO, 0, GPO_PUSH_PULL);
+ gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
  gpio_init(C10, GPO, 0, GPO_PUSH_PULL);	//电磁铁                             
 
  gpio_init(B14, GPO, 0, GPO_PUSH_PULL); //
@@ -138,17 +138,21 @@ void arm_control(uint8 mode)
    break;
 
  case 2: //模式2收纳模式
-   gpio_set_level(C9, 1);
-   servo_slow_ctrl(165, 148, 50);
+   gpio_set_level(C11, 1);
+   servo_slow_ctrl(173, 50, 50);//下前臂
    system_delay_ms(1000);
-   servo_slow_ctrl(22, 141, 50); // 58 110   58  34//动前臂
+   servo_slow_ctrl(173, 148, 50);
    system_delay_ms(1000);
-//   servo_slow_ctrl(22, 38, 100); //收后臂
+   servo_slow_ctrl(55, 100, 50); //动后臂
+   system_delay_ms(1000);
+   servo_slow_ctrl(55, 45, 100); //收前臂
+   system_delay_ms(1000);
+   gpio_set_level(C11, 0);
    break;
 
  case 3: //归中模式(默认)
-   gpio_set_level(C9, 0);
-   servo_slow_ctrl(50, 50, 100);//默认模式
+   gpio_set_level(C11, 0);
+   servo_slow_ctrl(60, 50, 100);//默认模式
    break;
 
  case 4: //360度舵机调参
@@ -164,14 +168,17 @@ void arm_control(uint8 mode)
    break;
 
  case 5: //侧面舵机关门
-   gpio_set_level(C10, 1);//侧面电磁铁上电
-   side_servo_slow_ctrl(157, 100);//侧面舵机控制
+	 gpio_set_level(C10, 1);//侧面电磁铁上电
+	 servo3_duty = 85;
+   pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
+   system_delay_ms(1000);
+   side_servo_slow_ctrl(160, 100);//侧面舵机控制
    system_delay_ms(1000);
  	side_servo_slow_ctrl(30, 10);//侧面舵机控制，默认角度
 	system_delay_ms(1000);
    break;
   case 6: //模式6侧边舵机拾取
-  gpio_set_level(C10, 1);//电磁铁断电
+  gpio_set_level(C10, 0);//电磁铁断电
 	side_servo_slow_ctrl(50, 10);//侧面舵机控制，默认角度
 	system_delay_ms(1000);
 	break;
@@ -222,8 +229,15 @@ void test_arm(void)
 {
 	if(arm_pick_flag==ARM_PICK_NOT_DONE)
 	{
-	  arm_control(5);//关门
+		arm_control(2);//捡卡片
+	  arm_control(3);//默认模式
 		arm_pick_flag=ARM_PICK_DONE;
 //    arm_control(6);//开门
+	}
+	if(arm_pick_flag==ARM_PICK_DONE)
+	{
+		arm_control(5);//开门
+//		arm_control(6);//恢复默认
+		arm_pick_flag=2;
 	}
 }
