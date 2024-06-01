@@ -789,8 +789,7 @@ void car_findcard(int *mode)
         only_one = 0;//测试使用
         *mode = Car_find_card_y;//转变小车运动模式
 				target_type = *mode;//测试变量使用
-      }
-    			
+      }			
      }
 		else
 		{
@@ -816,7 +815,7 @@ void car_findcard(int *mode)
         }
         only_one = 0;     // 只执行一次
         *mode = Car_turn; // 模式转变
-        pick_up_mode = 1;
+        pick_up_mode = 1; //摄像头模式变为总钻风识别
         target_type = *mode;
       }
     }
@@ -879,4 +878,38 @@ void car_findcard(int *mode)
 			*mode = Car_find_card_cor;
 		}
 	}
+  //******************************卡片拾取*****************************//
+    if (*mode == Pick_up_card) // 捡卡片
+    {
+     if(arm_pick_flag==ARM_PICK_DONE)//卡片已被拾取
+	   {
+       catch_card_flag=0;//退出里程计第二种模式
+       card_x[0]=0;//卡片坐标清空
+       card_y[0]=0;
+       *mode = Car_turn_again;//模式转变为转向回正
+	   }
+      else//卡片未被拾取
+	   {
+		  arm_control(2);//捡卡片
+	    arm_control(3);//默认模式
+		  arm_pick_flag=ARM_PICK_DONE;
+      *mode = Pick_up_card;
+	   }
+    }
+  //******************************车头回正*****************************//
+    if (*mode == Car_turn_again) 
+    {
+    if (fabsf(Angle_Z - now_angle) < 1) // 陀螺仪转向识别
+    {
+    // Vz = 0;//清0Vz
+     *mode = Car_go; //重新变为寻迹
+     pick_up_mode=1; //摄像头变为寻迹模式
+     target_type = *mode;
+    }
+    else
+    {
+     Turn_Angle_PD(now_angle);//向原先的角度转向回正
+     *mode = Car_turn_again;
+    }
+   }
 }

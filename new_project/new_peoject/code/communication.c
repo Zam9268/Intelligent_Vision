@@ -76,38 +76,38 @@ void get_uartdata(void)
             if (fifo_get_data[0] == 0xB7)
                 get_states = 1; // 判断是否为帧头1，如果是
             else
-                get_states = 0;   // ???0
-            fifo_get_data[0] = 0; // ???????
+                get_states = 0;   // 状态为0
+            fifo_get_data[0] = 0; // 清空数据
         }
-        else if (get_states == 1) // ???1
+        else if (get_states == 1) // 状态为1
         {
-            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // ??????????е??????????????
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // 读取缓冲区数据并清空缓冲区
             if (fifo_get_data[0] >= 1 && fifo_get_data[0] <= 16)
             {
-                transform_counts = fifo_get_data[0]; // ?ж???????Ч???????Ч?????Χ?1-16???????????transform_counts??????
-                fifo_get_data[0] = 0;                // ???????
-                get_states = 2;                      // ??????2
+                transform_counts = fifo_get_data[0]; // 判断是否为有效数据，有效数据范围为1-16，将数据存入transform——counts变量中
+                fifo_get_data[0] = 0;                // 清空数据
+                get_states = 2;                      // 进入状态2
             }
             else
             {
-                get_states = 0;       // ???0
-                fifo_get_data[0] = 0; // ???????
+                get_states = 0;       // 状态为0
+                fifo_get_data[0] = 0; // 清空数据
             }
         }
-        else if (get_states == 2) // ???2???????????????
+        else if (get_states == 2) // 状态为2，开始接收对应数据
         {
-            static uint8 i = 0;                                                                      // ??????????????????????
-            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // ??????????е??????????????
-            if (fifo_get_data[0] == 0x98)                                                            // ?ж??????β
+            static uint8 i = 0;                                                                      // 静态变量用于记录数据的索引
+            fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN); // 读取缓冲区的数据并清空缓冲区
+            if (fifo_get_data[0] == 0x98)                                                            // 判断是否为帧尾
             {
-                if (transform_counts == i) // ?ж???????????????????transform_counts??????
+                if (transform_counts == i) // 判断实际接收到的数据个数和transform_counts是否一致
                 {
-                    data_length = i; // ????????i
-                    i = 0;           // ????????
-                    get_states = 0;  // ???0
+                    data_length = i; // 数据长度为i
+                    i = 0;           // 重置索引
+                    get_states = 0;  // 状态为0
                     for (uint8 j = data_length; j < 64; j++)
                     {
-                        right_data[j] = 0; // ???????
+                        right_data[j] = 0; // 清空数据
                     }
                     
                     uart_data_handle();             // 数据处理函数
@@ -145,6 +145,7 @@ float center_distance;        // 当前算法得到的目标点与原点的距离
 float last_center_distance;   // 上一次算法得到的目标点与原点的距离
 uint8 find_card_flag = 0;     // 是否找到卡片的标志位
 uint8 card_type = 0;          // 卡片类型，范围为1~15
+Card card_position[100];  
 /**
  * @brief ????????1??4???????????
  * @param ??
@@ -155,25 +156,46 @@ uint8 card_type = 0;          // 卡片类型，范围为1~15
  */
 void uart_data_handle(void)
 {
-    if (data_length == 5) // ?ж??????????????????5
+    if (data_length == 5) // 数据长度为5
     {
-        /* ???λ?x???????λ?????λ?x???????λ??????λ?y???????λ??????λ?y???????λ */
+        /* 判断x坐标正负并读取 */
         if (right_data[0] == 1)
         {
-            now_distance_x = (right_data[1] * 256 + right_data[2]); // x????????
+            now_distance_x = (right_data[1] * 256 + right_data[2]); // x坐标为负，左方
         }
         else if (right_data[0] == 0)
         {
-            now_distance_x = -(right_data[1] * 256 + right_data[2]); // x????????
+            now_distance_x = -(right_data[1] * 256 + right_data[2]); // x坐标未正，右方
         }
-        now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // y????
-        center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // ???????
+        now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // y坐标读取
+        center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // 合成的直线距离
         if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
-            card_count++; // 如果距离变化大于100.0，则默认为发现了新的卡片
+        {
+            for(uint8 i=0;i<card_count;i++)
+            {
+                if(card_position[i].pick_doen_flag==1)//该卡片已被拾取不再遍历对比
+                   continue;
+                else                                  //卡片未被拾取
+                {
+                   if(center_distance>card_position[card_count].add_distance)//比以前记录过但未拾取的任意一张卡片的直线距离大
+                   {
+                    card_position[card_count].x_distance=now_distance_x;//记录整个赛道识别到的第几张卡片
+                    card_position[card_count].y_distance=now_distance_y;
+                    card_position[card_count].add_distance=sqrt(card_position[card_count].x_distance * card_position[card_count].x_distance + card_position[card_count].y_distance * card_position[card_count].y_distance); // 计算距离
+                    card_count++; // 如果距离变化大于100.0，则默认为发现了新的卡片,用于多张卡片的判断
+                   }
+                }
+            }
+            // card_count++; // 如果距离变化大于100.0，则默认为发现了新的卡片,用于多张卡片的判断
+            // card_position[card_count-1].x_distance=now_distance_x;//记录整个赛道识别到的第几张卡片
+            // card_position[card_count-1].y_distance=now_distance_y;
+        }
+        last_center_distance = center_distance;//记录上一次传入的卡片距离值
+    }
+        /* 处理卡片的逻辑: 找到的新卡片的坐标，*/
         /* 处理卡片的逻辑 */
         uart_write_string(UART_1, str); // 向串口1发送字符串
-    }
-    else if (data_length == 1) // 此时为发送分类模式
+     if (data_length == 1) // 此时为发送分类模式，原本是else if
     {
         if (right_data[0] >= 1 && right_data[0] <= 15)
         {
