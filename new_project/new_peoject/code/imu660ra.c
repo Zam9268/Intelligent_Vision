@@ -11,6 +11,7 @@ float acc_y, acc_x; // y轴、x轴加速度，用于静态平衡
 float Gyro_z=0;
 float fil_Gyro_z; // 滤波后的陀螺仪角速度
 float Angle_z=0;
+float Angle_world;//用于计算卡片全局坐标的车辆角度
 float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
@@ -89,6 +90,7 @@ void Get_angle()
     IMU660ra_newValues();
 	 Angle_Z+=fil_Gyro_z*dt;
 	 Angle_z+=fil_Gyro_z*dt;//用作拾取卡片时
+	 Angle_world=-Angle_Z;//顺时针角度为正
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
 }

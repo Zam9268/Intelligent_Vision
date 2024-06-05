@@ -40,8 +40,11 @@ typedef struct{
 }Card;
 
 extern int now_distance_x;
-extern unsigned int now_distance_y;
+extern unsigned long now_distance_y;
 extern Card card_position[100];  
+
+extern float last_card_world_x,last_card_world_y;//卡片世界坐标
+extern float card_world_x,card_world_y;//上次卡片世界坐标
 
 void My_Communication_Init(void);
 void uart1_rx_interrupt_handler(void);

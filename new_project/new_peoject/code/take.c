@@ -33,9 +33,9 @@ extern int arm_flag;
 
 void my_pwm_gpio(void)
 {
- pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50));
- pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(50)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(131)); //云台舵机度数12  85  131
+ pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
+ pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(1)); //云台舵机度数15  75  135(侧面) 0 60 120(正面)
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
  gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
@@ -130,49 +130,51 @@ void arm_control(uint8 mode)
  switch (mode)
  {
 
- case 1:                  //模式1拾取模式
+ case 1:                  //模式1单拾取模式
     gpio_set_level(C9, 1); //电磁铁给电
 //	  ips114_show_string( 0 , 40,   "SUCCESS");                          //测试用
     servo_slow_ctrl(165, 148, 50);
 	  ips114_show_string( 0 , 40,   "SUCCESS");                          //测试用
    break;
 
- case 2: //模式2收纳模式
+ case 2: //模式2收纳模式，减第一张卡片时的角度
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(173, 50, 50);//下前臂
+   servo_slow_ctrl(173, 80, 50);
    system_delay_ms(1000);
    servo_slow_ctrl(173, 148, 50);
    system_delay_ms(1000);
-   servo_slow_ctrl(55, 100, 50); //动后臂
+   servo_slow_ctrl(173, 100, 50);
    system_delay_ms(1000);
-   servo_slow_ctrl(55, 45, 100); //收前臂
+   servo_slow_ctrl(30, 58, 50); //?????
    system_delay_ms(1000);
    gpio_set_level(C11, 0);
    break;
 
- case 3: //归中模式(默认)
+ case 3: //捡后续卡片所用的模式
+   gpio_set_level(C11, 1);
+   servo_slow_ctrl(173, 148, 20);//下双臂
+   system_delay_ms(1000);
+   servo_slow_ctrl(173, 80, 50); //动后臂
+   system_delay_ms(1000);
+   servo_slow_ctrl(25, 75, 100); //收前臂 25 75
+   system_delay_ms(1000);
    gpio_set_level(C11, 0);
-   servo_slow_ctrl(60, 50, 100);//默认模式
+
    break;
 
- case 4: //360度舵机调参
-  //  gpio_set_level(C9, 1);
-  //  servo_slow_ctrl(148, 110, 10);
-  servo3_duty = 30;
-  pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
-  system_delay_ms(1000);
-  servo3_duty = 90;
-  pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
-  system_delay_ms(1000);
+ case 4: //机械臂默认模式
+   gpio_set_level(C11, 0);
+   servo_slow_ctrl(60, 70, 100);//默认模式
+   break;
 
    break;
 
  case 5: //侧面舵机关门
 	 gpio_set_level(C10, 1);//侧面电磁铁上电
-	 servo3_duty = 85;
+	 servo3_duty = 135;
    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
    system_delay_ms(1000);
-   side_servo_slow_ctrl(160, 100);//侧面舵机控制
+   side_servo_slow_ctrl(20, 100);//侧面舵机控制
    system_delay_ms(1000);
  	side_servo_slow_ctrl(30, 10);//侧面舵机控制，默认角度
 	system_delay_ms(1000);
@@ -230,14 +232,14 @@ void test_arm(void)
 	if(arm_pick_flag==ARM_PICK_NOT_DONE)
 	{
 		arm_control(2);//捡卡片
-	  arm_control(3);//默认模式
+//	  arm_control(3);//默认模式
 		arm_pick_flag=ARM_PICK_DONE;
 //    arm_control(6);//开门
 	}
-	if(arm_pick_flag==ARM_PICK_DONE)
-	{
-		arm_control(5);//开门
-//		arm_control(6);//恢复默认
-		arm_pick_flag=2;
-	}
+//	if(arm_pick_flag==ARM_PICK_DONE)
+//	{
+//		arm_control(5);//开门
+////		arm_control(6);//恢复默认
+//		arm_pick_flag=2;
+//	}
 }

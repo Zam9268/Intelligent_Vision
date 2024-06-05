@@ -105,6 +105,7 @@ extern float turn_angle;
 extern int catch_card_flag;
 extern int delta_x,delta_y; //总钻风识别的卡片中心坐标
 extern int correct_x_flag,correct_y_flag;
+extern int correct_step;
 
 extern int pid_motor[4];
 
