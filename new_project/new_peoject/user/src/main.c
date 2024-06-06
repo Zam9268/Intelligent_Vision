@@ -43,7 +43,7 @@
 #include "control.h"
 #include "communication.h"
 #include "imu660ra.h"
-
+char send_str[30] = {0};
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern int pid_motor[4];  //???pid?????????
 extern pid_info Speed[4]; //???pid????
@@ -56,7 +56,7 @@ extern char str[];                   //?????????????why
 extern int last_distance_x;          //?????????????????x????
 extern unsigned int last_distance_y; //?????y????
 extern int now_distance_x;
-extern unsigned long now_distance_y;
+extern unsigned int now_distance_y;
 extern unsigned int card_count;    //?????????????????????????
 extern float center_distance;      //????????????????????????
 extern float last_center_distance; //?????????????????????????????'
@@ -64,6 +64,7 @@ extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern uint8 uart_send_flag;
 extern RoadType Road_Type;
 extern uint8 card_type; // 卡片类型，范围为1~15
+extern uint8 init_flag;
 char str1[] = "begin";
 extern uint8 card_abc; // 卡片字母数字，值的范围为1~15
 extern uint8 card_num; // 卡片数字，值的范围为1~3
@@ -77,6 +78,7 @@ float zuobiao_x = 0;
 float zuobiao_y = 0;
 double test_delta_card_x, test_delta_card_y;
 double test_tan, test_delta_angle;
+
 int main(void)
 {
     clock_init(SYSTEM_CLOCK_600M); //??????????
@@ -101,44 +103,53 @@ int main(void)
     //     }
     // }
     //----------pid初始化---------------------//
-    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
-    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
-    // My_Communication_Init(); // 通信初始化
-    PidInit(); // 增量式pid初始化
-    //   Pos_PidInit();//位置式pid初始化，现已弃用
-    Distance_PidInit(); // 距离环初始化
+    //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
+    //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
+    wireless_uart_init(); // 无线串口初始化
+    seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+    seekfree_assistant_oscilloscope_struct oscilloscope_data;
 
-    ips114_init(); // 屏幕初始化
-    ips114_set_dir(IPS114_PORTAIT);
-    ips114_set_font(IPS114_6X8_FONT);
-    ips114_set_color(RGB565_RED, RGB565_BLACK);
-    //----------模块初始化--------------------//
-    ips114_clear();     // 清屏
-    Motor_Init();       // 电机初始化
-    Encoder_Init();     // 编码器初始化
-    Camera_Init();      // 摄像头初始化
-    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
-                        //    my_pwm_gpio();      // 机械臂初始化
+    oscilloscope_data.data[0] = 0.1111 + 2;
+    oscilloscope_data.data[1] = 0.3333 - 1;
+    oscilloscope_data.data[2] = 4.222;
+    oscilloscope_data.data[3] = 5.222;
+    oscilloscope_data.channel_num = 4;
+    // 设置为4个通道，通道数量最大为8个
+    // My_Communication_Init(); // 通信初始化
+    // PidInit(); // 增量式pid初始化
+    //   Pos_PidInit();//位置式pid初始化，现已弃用
+    // Distance_PidInit(); // 距离环初始化
+
+    //    ips114_init(); // 屏幕初始化
+    //    ips114_set_dir(IPS114_PORTAIT);
+    //    ips114_set_font(IPS114_6X8_FONT);
+    //    ips114_set_color(RGB565_RED, RGB565_BLACK);
+    //    //----------模块初始化--------------------//
     //    ips114_clear();     // 清屏
-    Motor_Init(); // 电机初始化
-                  //    Encoder_Init();     // 编码器初始化
-                  //    Camera_Init();      // 摄像头初始化
-                  //    my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
-                  //    my_pwm_gpio();      // 机械臂初始化
-    //------------中断初始化-------------------//
-    //    pit_ms_init(PIT_CH0, 5);  // 5ms
-    //    pit_ms_init(PIT_CH1, 5);  // 10ms
-    //    pit_ms_init(PIT_CH2, 15); // 15ms
-    pit_ms_init(PIT_CH3, 500); // 25ms
-                               //
-                               // target_motor[1]=1000;
-                               // target_motor[3]=1000;
+    //    Motor_Init();                                           // 电机初始化
+    Encoder_Init();          // 编码器初始化
+                             //    Camera_Init();                                          // 摄像头初始化
+                             //    my_imu660ra_init();                                     // 陀螺仪初始化，开机需静置一段时间
+                             //    my_pwm_gpio();                                          // 机械臂初始化
+                             //    ips114_clear();                                         // 清屏
+                             //    Encoder_Init();                                         // 编码器初始化
+                             //    Camera_Init();                                          // 摄像头初始化
+                             //    my_imu660ra_init();                                     // 陀螺仪初始化，开机需静置一段时间
+                             //    my_pwm_gpio();                                          // 机械臂初始化
+                             //-- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
+                             // pit_ms_init(PIT_CH0, 5); // 5ms
+    pit_ms_init(PIT_CH1, 5); // 10ms
+    //    pit_ms_init(PIT_CH2, 15);                               // 15ms
+    //    pit_ms_init(PIT_CH3, 500);                              // 25ms
+    //
+    // target_motor[1]=1000;
+    // target_motor[3]=1000;
 
     //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
     /*视觉处理部分代码初始化*/
-    Last_Longest_White_Column_Left[1] = 94;
-    Longest_White_Column_Left[1] = 94;
-    Road_Type = STRAIGHT_ROAD;
+    //    Last_Longest_White_Column_Left[1] = 94;
+    //    Longest_White_Column_Left[1] = 94;
+    //    Road_Type = STRAIGHT_ROAD;
     //	  Speed[3].target_speed=40.0;
     //    Speed[2].target_speed=40.0;
     //    Speed[1].target_speed=40.0;
@@ -155,6 +166,11 @@ int main(void)
     //		float start_angle = 100.0;
     while (1)
     {
+        seekfree_assistant_oscilloscope_send(&oscilloscope_data);
+        oscilloscope_data.data[0] = encoder[0];
+        oscilloscope_data.data[1] = encoder[1];
+        oscilloscope_data.data[2] = encoder[2];
+        oscilloscope_data.data[3] = encoder[3];
         // ips114_show_uint(0, 0, card_abc, 3);
         // ips114_show_uint(0, 20, card_num, 3);
         // test();
@@ -281,8 +297,10 @@ int main(void)
         //        uart_write_buffer(UART_8,other_data,5);
         //		printf("test!\n");
         // Vofa_SendData(&vofa1,other_data,5);
-        //      printf("%d,%d,%d,%d\r\n",encoder[0],encoder[1],encoder[2],encoder[3]);
-        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed, Speed[1].now_speed, Speed[2].now_speed, Speed[3].now_speed);
+        //		printf("abcd\r\n");
+        //        sprintf(send_str, "my_name");
+        //        printf("%d,%d,%d,%d\r\n", encoder[0], encoder[1], encoder[2], encoder[3]);
+        // printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed, Speed[1].now_speed, Speed[2].now_speed, Speed[3].now_speed);
         // // printf("%.2f,%.2f,%.2f,%.2f\r\n",Speed[0].now_speed,Speed[0].target_speed,Speed[0].error,Speed[0].output);
         //        printf("%.2f,%.2f,%.2f,%.2f\r\n", Speed[0].now_speed,Speed[1].now_speed, Speed[2].now_speed,Speed[3].now_speed);
         //       printf("test");

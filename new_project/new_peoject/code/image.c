@@ -5,7 +5,7 @@
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 uint8 type = 0;
-
+uint8 init_flag=0;
 /*The following are the global variables used, but there may be some that are not used*/
 uint8 left_line[IMAGE_HEIGHT], right_line[IMAGE_HEIGHT]; // record the left line's column and the right line's column
 int center[IMAGE_HEIGHT];                                // record the center line's column
