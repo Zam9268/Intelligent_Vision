@@ -2238,12 +2238,12 @@ void test2(void)
         type = 6;
     else if (Road_Type == RIGHT_HUANDAO)
         type = 7;
-    else if (Road_Type == RAMP)
-        type = 8;
-    if (Road_Type == CROSSING)
-        Cross_Detect();
-    if (left_island_flag || right_island_flag)
-        Island_Detect();
+//    else if (Road_Type == RAMP)
+//        type = 8;
+//    if (Road_Type == CROSSING)
+//        Cross_Detect();
+//    if (left_island_flag || right_island_flag)
+//        Island_Detect();
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);

@@ -1,8 +1,9 @@
-extern float Angle_z,Angle_Z;//Ä¿±ê½Ç¶È
-extern float acc_y , acc_x;//yÖá£¬xÖá¼ÓËÙ¶È£¬ÓÃÓÚ½âËã×ËÌ¬½Ç
+extern float Angle_z,Angle_Z;//Ä¿ï¿½ï¿½Ç¶ï¿½
+extern float acc_y , acc_x;//yï¿½á£¬xï¿½ï¿½ï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½Ú½ï¿½ï¿½ï¿½ï¿½ï¿½Ì¬ï¿½ï¿½
 extern float Gyro_z;
-extern float fil_Gyro_z;//ÍÓÂİÒÇ½ÇËÙ¶È
+extern float fil_Gyro_z;//ï¿½ï¿½ï¿½ï¿½ï¿½Ç½ï¿½ï¿½Ù¶ï¿½
 extern float Angle_z;
+extern float Angle_world;//ç”¨äºè®¡ç®—å¡ç‰‡å…¨å±€åæ ‡çš„è½¦è¾†è§’åº¦
 extern float kal_angle;
 extern float coe_Gyro_z;
 extern float IMU660ra_FIFO[11];

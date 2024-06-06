@@ -52,6 +52,8 @@ void PIT_IRQHandler(void)
 {
     if (pit_flag_get(PIT_CH0)) //
     {
+        // 读取编码器
+        Read_Encoder();
         increment_pid();
         motor_close_control();
         pit_flag_clear(PIT_CH0);
