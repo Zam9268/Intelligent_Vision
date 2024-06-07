@@ -58,7 +58,7 @@ extern unsigned int last_distance_y; //?????y????
 extern int now_distance_x;
 extern unsigned long now_distance_y;
 extern unsigned int card_count;    //?????????????????????????
-extern float center_distance;      //????????????????????????
+extern int center_distance;      //????????????????????????
 extern float last_center_distance; //?????????????????????????????'
 extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern uint8 uart_send_flag;
@@ -72,7 +72,7 @@ extern uint8 card_num; // 卡片数字，值的范围为1~3
 // ????? project->clean  ?????????????????
 
 // ?????????????????????
-
+float test_card_angle;
 float zuobiao_x = 0;
 float zuobiao_y = 0;
 double test_delta_card_x, test_delta_card_y;
@@ -103,7 +103,17 @@ int main(void)
     //----------pid初始化---------------------//
 //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
 //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
-    My_Communication_Init(); // 通信初始化
+/**********无线串口模块***********/
+//        wireless_uart_init();
+//        seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+//        seekfree_assistant_oscilloscope_struct oscilloscope_data;
+//        oscilloscope_data.data[0] = 0.1111 + 2;
+//        oscilloscope_data.data[1] = 0.3333 - 1;
+//        oscilloscope_data.data[2] = 4.222;
+//        oscilloscope_data.data[3] = 5.222;
+//        oscilloscope_data.channel_num = 4;
+//***************************************//				
+     My_Communication_Init(); // 通信初始化
     PidInit(); // 增量式pid初始化
     //   Pos_PidInit();//位置式pid初始化，现已弃用
     Distance_PidInit(); // 距离环初始化
@@ -134,10 +144,10 @@ int main(void)
     Last_Longest_White_Column_Left[1] = 94;
     Longest_White_Column_Left[1] = 94;
     Road_Type = STRAIGHT_ROAD;
-    // Speed[3].target_speed=40.0;
-    // Speed[2].target_speed=40.0;
-    // Speed[1].target_speed=40.0;
-    // Speed[0].target_speed=40.0;//?????
+//     Speed[3].target_speed=40.0;
+//     Speed[2].target_speed=40.0;
+//     Speed[1].target_speed=40.0;
+//     Speed[0].target_speed=40.0;//?????
 
     int once = 1;
     uint8 temp = 0;
@@ -150,26 +160,32 @@ int main(void)
     //		float start_angle = 100.0;
     while (1)
     {
+//			seekfree_assistant_oscilloscope_send(&oscilloscope_data);
+//        oscilloscope_data.data[0]=Speed[0].now_speed;
+//        oscilloscope_data.data[1]=Speed[1].now_speed;
+//			  oscilloscope_data.data[2]=Speed[2].now_speed;
+//			  oscilloscope_data.data[3]=Speed[3].now_speed;
         // ips114_show_uint(0, 0, card_abc, 3);
         // ips114_show_uint(0, 20, card_num, 3);
-                test();
-        //**************************观察卡片坐标和里程计*********************//
-//           	   	 ips114_show_int(90,0,now_distance_x,4);
-//                 ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
-        // 		// ips114_show_float(150,60,Car_dis_x,3,4);
-        // 		// ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
+                 test();
+        // //**************************观察卡片坐标和里程计*********************//
+			
+           	  ips114_show_int(90,0,now_distance_x/10,4);
+              ips114_show_int(90,20,now_distance_y/10,4);//卡片坐标,即时更新
+          		 ips114_show_float(90,60,Car_dis_x,3,4);
+          		 ips114_show_float(90,90,Car_dis_y,3,4);//里程计x,y
         //         ips114_show_float(90,60,Card_dis_car_x,3,4);
         // 		     ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
         // //*******************************************************************//
         // //**************************观察行进变量*****************************//
 //           	 		 ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
-           	 		 ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
+//           	 		 ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
 //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
 //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
         // //*******************************************************************//
 			  // //**************************观察行进变量*****************************//
-           	 		 ips114_show_int(0,0,pick_up_mode,3);//观察摄像头模式
-           	 		 ips114_show_float(0,20,Speed[0].target_speed,3,4);//用于观测目标速度是否改变
+//           	 		 ips114_show_int(0,0,pick_up_mode,3);//观察摄像头模式
+//           	 		 ips114_show_float(0,20,Speed[0].target_speed,3,4);//用于观测目标速度是否改变
 //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
 //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
         // //*******************************************************************//
@@ -241,9 +257,35 @@ int main(void)
 //          ips114_show_float(0,100,Vy,3,2);//显示x,y速度
 //					ips114_show_float(90,100,Vz,3,2);//显示x,y速度
 //        //*******************************************************************//
-
+         //**************************观察卡片世界坐标*****************************//
+//				   
+//		          ips114_show_float(0,0,Angle_world,3,4);
+//							ips114_show_float(0,20,card_world_angle,3,4);
+//							ips114_show_float(0,40,car_world_angle,3,4);
+//          	  ips114_show_float(150,20,card_world_x,3,5);//捕获的卡片的世界x坐标
+//							ips114_show_float(150,40,card_world_y,3,5);//捕获的卡片世界y坐标
+//							ips114_show_float(150,60,card_world_distance,3,5);//捕获的卡片的世界x坐标
+//							ips114_show_float(150,80,car_world_distance,3,5);//捕获的卡片世界y坐标
+//							ips114_show_int(0,60,car_card_angle,4);//观察所夹角
+//							ips114_show_int(0,80,car_card_diatance,4);//卡片与车辆的直线距离
+//							if(car_card_diatance<30 && card_world_y!=0 && card_world_y!=0)//为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间,前一个条件判断弯道
+//           {
+//                      ips114_show_string( 90 , 100,   "SUCCESS");
+//           }
+//							ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
+//           	 	ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
+//          		ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
+        // //*******************************************************************//
+      //**************************观察多张卡片的情况*********************************//
+                   ips114_show_int(0,0,card_count,3);//用于观测卡片数目
+//                 ips114_show_float(0,20,Angle_z,3,2);
+//                 ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
+        //   		// 	ips114_show_float(0,40,turn_angle,3,2);
+//          		 	 ips114_show_float(0,60,Vz,3,2);
+        //         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
+        // //*******************************************************************//
         //*********************测试总的车辆行进打包函数**********************//
-         car_findcard(&car_mode);//模式选择
+//         car_findcard(&car_mode);//模式选择
         //*******************************************************************//
 
         //		car_run();
