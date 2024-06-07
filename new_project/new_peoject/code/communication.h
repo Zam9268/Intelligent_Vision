@@ -40,7 +40,7 @@ typedef struct{
 }Card;
 
 extern int now_distance_x;
-extern unsigned long now_distance_y;
+extern unsigned  int now_distance_y;
 extern Card card_position[100];  
 
 extern float last_card_world_x,last_card_world_y;//卡片世界坐标
