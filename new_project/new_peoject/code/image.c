@@ -5,7 +5,7 @@
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 uint8 type = 0;
-
+uint8 init_flag = 0;
 /*The following are the global variables used, but there may be some that are not used*/
 uint8 left_line[IMAGE_HEIGHT], right_line[IMAGE_HEIGHT]; // record the left line's column and the right line's column
 int center[IMAGE_HEIGHT];                                // record the center line's column
@@ -1914,8 +1914,8 @@ void Top_Add_Line(int x1, int y1, int x2, int y2)
         y2 = IMAGE_HEIGHT - 1;
     else if (y2 <= 0)
         y2 = 0;
-
-    // Ensure y1 and y2 are within the image height
+    // 做限幅处理
+    //  Ensure y1 and y2 are within the image height
     if (x1 >= IMAGE_WIDTH)
         x1 = IMAGE_WIDTH - 1;
     else if (x1 <= 0)
@@ -1924,7 +1924,7 @@ void Top_Add_Line(int x1, int y1, int x2, int y2)
         x2 = IMAGE_WIDTH - 1;
     else if (x2 <= 0)
         x2 = 0;
-
+    // 做限幅处理
     a1 = x1;
     a2 = x2; // Set the start and end of the line
 
@@ -1944,7 +1944,7 @@ void Top_Add_Line(int x1, int y1, int x2, int y2)
         else if (hy <= 0)
             hy = 0;
 
-        Island_surrond[i] = hy; // Store the vertical position of the line in this column
+        Island_surrond[i] = hy; // Set the value of the line in this column
     }
 }
 
@@ -1966,37 +1966,67 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
         start_column = end_column;
         end_column = temp;
     }
-
+    /*自下而上找的效果并不是很好，可以用原来的来找，也可以用距离最大值来找
+    方法1：距离原点最大值（稳） 方法2：在原来最长白列的基础上进行左扫点，扫出非连续性的点
+    可以先用第一个方法，当第一个用不了（返回值为0）的时候就用第二个*/
+    float max_distance = 0;
+    float temp;
+    uint8 index = 0;
     for (uint8 i = start_column; i <= end_column; i++)
     {
-        if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 4]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1] >= 30) && abs(Island_surrond[i] - Island_surrond[i + 2] >= 30) && abs(Island_surrond[i] - Island_surrond[i + 4] >= 30))
+        if (Island_surrond[i] <= 20)
         {
-            rrtern = i;
-            break;
+            break; // 退出循环
+        }
+        temp = InvSqrt(Island_surrond[i] * Island_surrond[i] + i * i);
+        if (temp > max_distance)
+        {
+            max_distance = temp;
+            index = i;
         }
     }
-    return rrtern;
+    /*检验求得的坐标是否正常*/
+    if (abs(index - start_column) <= 5) // 如果坐标太贴在起点，则重新检测
+    {
+        for (uint8 i = start_column; i <= end_column; i++)
+        {
+            if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
+            {
+                index = i;
+                break;
+            }
+        }
+    }
+    return index;
 }
 
-uint8 last_right_point = 0;
-void Surround_Analyse(void)
+uint8 Surround_Analyse(void)
 {
+    uint8 last_right_point = 0;
     for (uint8 i = 5; i < IMAGE_WIDTH - 5; i++)
     {
-        if (Island_surrond[i] == IMAGE_HEIGHT - 2 && Island_surrond[i + 1] == 0 && Island_surrond[i + 3] == 0 && Island_surrond[i + 4] == 0)//如果检测到越变在整个范围的点
+        if (Island_surrond[i] == IMAGE_HEIGHT - 2 && Island_surrond[i + 1] == 0 && Island_surrond[i + 3] == 0 && Island_surrond[i + 4] == 0) // 如果检测到越变在整个范围的点
         {
             last_right_point = i;
             break;
         }
     }
+    return last_right_point;
 }
 
 float Island_Surround(uint8 target_row)
 {
+    /*使用前要先将坐标全部清零*/
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        Island_surrond[i] = 0;
+    }
     uint8 continuious_flag = 0;
+    static uint8 last_continuious_flag = 0;
+    uint8 right_max_point = 0;
     for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     {
-        for (uint8 j = IMAGE_HEIGHT - 2; j >= 2; j--)
+        for (uint8 j = IMAGE_HEIGHT - 4; j >= 2; j--)
         {
             if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
             {
@@ -2009,11 +2039,39 @@ float Island_Surround(uint8 target_row)
             }
         }
     }
-    Surround_Analyse();
+    right_max_point = Surround_Analyse(); // 找出右边的点
     continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
+    if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
+    {
+        if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+        {
+            Center_line_deal_plus(40, 180);
+        }
+        continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
+    }
+    ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
+    ips114_show_int(188, 40, continuious_flag, 3);
+    last_continuious_flag = continuious_flag;
+    // if(Island_surrond[continuious_flag]<=20)
+    // {
+    //     continuious_flag=last_continuious_flag;
+    // }
     if (continuious_flag != 0)
     {
-        Top_Add_Line(continuious_flag,Island_surrond[continuious_flag],last_right_point,IMAGE_HEIGHT-2);//列补线，和前面的行补线不一样
+        uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
+        if (temp <= IMAGE_HEIGHT - 20)
+        {
+            temp = Island_surrond[2];
+        }
+
+        if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+        {
+            Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
+        }
+        else
+        {
+            Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+        }
     }
     island_err = 0.0;                             // 使用前先清零
     for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
@@ -2021,6 +2079,12 @@ float Island_Surround(uint8 target_row)
         island_err += Island_surrond[i] - target_row;
     }
     island_err = island_err / (IMAGE_WIDTH - 21); // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    if (island_err <= 10.0)
+    {
+        island_err = 10.0; // island_err的最小值
+    }
     return island_err;
 }
 
@@ -2238,15 +2302,19 @@ void test2(void)
         type = 6;
     else if (Road_Type == RIGHT_HUANDAO)
         type = 7;
-//    else if (Road_Type == RAMP)
-//        type = 8;
-//    if (Road_Type == CROSSING)
-//        Cross_Detect();
-//    if (left_island_flag || right_island_flag)
-//        Island_Detect();
+    //    else if (Road_Type == RAMP)
+    //        type = 8;
+    //    if (Road_Type == CROSSING)
+    //        Cross_Detect();
+    //    if (left_island_flag || right_island_flag)
+    //    Island_Detect();
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
+    }
+    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
+    {
+        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
     }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
@@ -2343,7 +2411,8 @@ void test(void)
             Outer_Analyse();
             island_err = Island_Surround(80); // 目标行选择为80
             ips114_show_float(188, 0, island_err, 3, 3);
-            //    Easy_Filtering(110,20,30,170,5);
+
+            Easy_Filtering(110, 20, 30, 170, 5);
         }
         else // 如果处于拾取卡片的状态
         {
