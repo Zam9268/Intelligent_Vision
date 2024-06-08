@@ -35,6 +35,7 @@
 #define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
 #define Turn_limiting  20//转向速度输出限幅
 #define Car_go           	0 //寻迹
+#define Car_find_card_y     1 //寻迹，用在第一种方式
 #define Car_arrive_card  	1 //已到达卡片世界坐标附近
 #define Car_turn         	2 //转向
 #define Car_find_card_cor  	3 //总钻风微调标
