@@ -43,6 +43,7 @@
 #include "control.h"
 #include "communication.h"
 #include "imu660ra.h"
+
 char send_str[30] = {0};
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern int pid_motor[4];  //???pid?????????
@@ -66,8 +67,11 @@ extern RoadType Road_Type;
 extern uint8 card_type; // 卡片类型，范围为1~15
 extern uint8 init_flag;
 char str1[] = "begin";
-extern uint8 card_abc; // 卡片字母数字，值的范围为1~15
-extern uint8 card_num; // 卡片数字，值的范围为1~3
+extern uint8 card_abc;         // 卡片字母数字，值的范围为1~15
+extern uint8 card_num;         // 卡片数字，值的范围为1~3
+extern int near_card_distance; // 最近卡片的距离
+extern int near_card_x;
+extern int near_card_y;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -105,17 +109,17 @@ int main(void)
         //----------pid初始化---------------------//
         //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
         //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
-        wireless_uart_init(); // 无线串口初始化
-        seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
-        seekfree_assistant_oscilloscope_struct oscilloscope_data;
+        // wireless_uart_init(); // 无线串口初始化
+        // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+        // seekfree_assistant_oscilloscope_struct oscilloscope_data;
 
-        oscilloscope_data.data[0] = 0.1111 + 2;
-        oscilloscope_data.data[1] = 0.3333 - 1;
-        oscilloscope_data.data[2] = 4.222;
-        oscilloscope_data.data[3] = 5.222;
-        oscilloscope_data.channel_num = 4;
+        // oscilloscope_data.data[0] = 0.1111 + 2;
+        // oscilloscope_data.data[1] = 0.3333 - 1;
+        // oscilloscope_data.data[2] = 4.222;
+        // oscilloscope_data.data[3] = 5.222;
+        // oscilloscope_data.channel_num = 4;
         // 设置为4个通道，通道数量最大为8个
-        // My_Communication_Init(); // 通信初始化
+        My_Communication_Init(); // 通信初始化
         // PidInit(); // 增量式pid初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         // Distance_PidInit(); // 距离环初始化
@@ -166,13 +170,19 @@ int main(void)
         //		float start_angle = 100.0;
         while (1)
         {
-                seekfree_assistant_oscilloscope_send(&oscilloscope_data);
-                oscilloscope_data.data[0] = encoder[0];
-                oscilloscope_data.data[1] = encoder[1];
-                oscilloscope_data.data[2] = encoder[2];
-                oscilloscope_data.data[3] = encoder[3];
-                // ips114_show_uint(0, 0, card_abc, 3);
-                // ips114_show_uint(0, 20, card_num, 3);
+                // seekfree_assistant_oscilloscope_send(&oscilloscope_data);
+                // oscilloscope_data.data[0] = encoder[0];
+                // oscilloscope_data.data[1] = encoder[1];
+                // oscilloscope_data.data[2] = encoder[2];
+                // oscilloscope_data.data[3] = encoder[3];
+                ips114_show_int(0, 0, near_card_x, 3);
+                ips114_show_int(0, 20, near_card_y, 3);
+                ips114_show_uint(0, 40, card_type, 3);
+                ips114_show_uint(0, 60, card_abc, 3);
+                ips114_show_uint(0, 80, right_data[0], 3);
+                ips114_show_uint(0, 100, right_data[1], 3);
+                ips114_show_uint(0, 120, right_data[2], 3);
+
                 // test();
                 //**************************观察卡片坐标和里程计*********************//
                 //           	   	 ips114_show_int(90,0,now_distance_x,4);

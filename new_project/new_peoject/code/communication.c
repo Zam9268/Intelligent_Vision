@@ -137,8 +137,8 @@ void get_uartdata(void)
         }
     }
 }
-extern float Car_dis_x, Car_dis_y;//??????????x??y?????
-extern float Angle_world;//?????????
+extern float Car_dis_x, Car_dis_y; //??????????x??y?????
+extern float Angle_world;          //?????????
 
 int last_distance_x;          // 上一次接收到的x距离
 unsigned int last_distance_y; // 上一次接收到的y距离
@@ -147,8 +147,11 @@ unsigned int now_distance_y;  // 当前接收到的y距离
 unsigned int card_count;      // 卡片计数
 float center_distance;        // 中心距离
 float last_center_distance;   // 上一次的中心距离
-uint8 find_card_flag = 0;     // 是否找到卡片的标志
-uint8 card_type = 0;          // 卡片类型，取值范围为1~15
+int near_card_distance;       // 最近卡片的距离
+int near_card_x;
+int near_card_y;
+uint8 find_card_flag = 0; // 是否找到卡片的标志
+uint8 card_type = 0;      // 卡片类型，取值范围为1~15
 Card card_position[100];
 uint8 card_abc = 0;
 uint8 card_num = 0;
@@ -197,19 +200,28 @@ void uart_data_handle(void)
             // card_position[card_count-1].y_distance=now_distance_y;//更新卡片的y距离
         }
         last_center_distance = center_distance; // 更新上一次的中心距离
+        uart_write_string(UART_1, str);         // 发送串口数据
     }
     /* 处理其他情况：发送串口数据 */
     /* 处理卡片类型数据 */
-    uart_write_string(UART_1, str); // 发送串口数据
-    if (data_length == 1)           // 如果数据长度为1
+    if (data_length == 6) // 如果数据长度为6,表示接收到了卡片类型数据
     {
         if (right_data[0] >= 1 && right_data[0] <= 15)
         {
             card_type = right_data[0];
         }
+        if (right_data[1] == 0) // 如果x坐标是负的
+        {
+            near_card_x = -(right_data[2] * 256 + right_data[3]);
+        }
+        else
+        {
+            near_card_x = right_data[2] * 256 + right_data[3];
+        }
+        near_card_y = right_data[4] * 256 + right_data[5];
         uart_write_string(UART_4, str); // 发送串口数据
     }
-    else if (data_length == 2) // 如果数据长度为2，表示接收到了卡片类型或卡片数量数据
+    if (data_length == 7) // 如果数据长度为7，表示接收到了字母数字数据
     {
         if (right_data[0] == 0x01)
         {
@@ -221,5 +233,15 @@ void uart_data_handle(void)
             card_num = right_data[1];
             card_abc = 0; // 卡片类型清零
         }
+        if (right_data[2] == 0) // 如果x坐标是负的
+        {
+            near_card_x = -(right_data[3] * 256 + right_data[4]);
+        }
+        else
+        {
+            near_card_x = right_data[3] * 256 + right_data[4];
+        }
+        near_card_y = right_data[5] * 256 + right_data[6];
+        uart_write_string(UART_4, str); // 发送串口数据
     }
 }
