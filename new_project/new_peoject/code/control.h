@@ -35,7 +35,8 @@
 #define CONTROL_FREQUENCY  100//编码器读取周期(0.01s 10ms)
 #define Turn_limiting  20//转向速度输出限幅
 #define Car_go           	0 //寻迹
-#define Car_find_card_y  	1 //向卡片的y轴坐标前进
+#define Car_find_card_y     1 //寻迹，用在第一种方式
+#define Car_arrive_card  	1 //已到达卡片世界坐标附近
 #define Car_turn         	2 //转向
 #define Car_find_card_cor  	3 //总钻风微调标
 #define Pick_up_card  		4 //机械臂拾取卡片
@@ -86,6 +87,8 @@ extern float loc_kd;
 extern float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 extern float Vx_world, Vy_world;//世界坐标上的x，y
 extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
+extern int car_world_distance;//车辆在全局坐标上与原点的距离
+extern float car_world_angle;//卡片世界坐标解算出的世界方位角
 extern float Car_dis_x2, Car_dis_y2;
 extern float Card_dis_car_x,Card_dis_car_y;
 extern double delta_card_y, delta_card_x;
@@ -139,4 +142,5 @@ float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid,int error);
 void CSI_dis_new_correct(int cor_x, int cor_y);
 void car_findcard(int *mode);
+void car_findcard_new(int *mode);
 #endif

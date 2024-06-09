@@ -1,8 +1,10 @@
 #include "communication.h"
 #include "zf_driver_uart.h"
 #include "zf_common_fifo.h"
+#include "zf_device_gnss.h"
 #include "mymath.h"
-#include "math.h"
+#include "control.h"
+#include "math.h" 
 
 uint8 uart_get_data[64];
 uint8 fifo_get_data[64];    // 用于获取FIFO中的数据
@@ -153,8 +155,38 @@ int near_card_y;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
 uint8 card_type = 0;      // 卡片类型，取值范围为1~15
 Card card_position[100];
-uint8 card_abc = 0;
-uint8 card_num = 0;
+int one_time=1;
+int card_word_ready;//卡片世界坐标解算完成的标志位
+float Card_angle=0;//卡片方位角
+float delta_card_angle;//用来查看
+int find_oldcard_flag;//找到相似卡片
+float last_card_world_x,last_card_world_y;//上次记录的卡片世界坐标
+float card_world_x,card_world_y;//卡片世界坐标
+float card_world_angle;//卡片世界坐标解算出的世界方位角
+int watch_card_world_angle;
+int card_world_distance;//卡片在全局坐标上与原点的距离
+float car_card_angle;//车辆与原点的连线与卡片与原点的连线的所夹角
+int car_card_diatance;//车辆与卡片的直线距离
+uint8 card_abc=0;
+uint8 card_num=0;
+
+extern float car_world_angle;//车辆世界坐标解算出的方位角
+/**
+ * @brief 卡片全局坐标数组初始化
+ * @param 对卡片结构体数组赋初值
+ * @return 无
+ */
+void card_position_init(void)
+{
+  for (uint8 i = 0; i < 100; i++)
+  {
+    card_position[i].x_distance=0;	        //卡片x坐标
+	card_position[i].y_distance=0;	        //卡片y坐标
+	card_position[i].world_distance=0;	    //卡片与原点的距离
+	card_position[i].world_angle=0.0;      //卡片在全局坐标的方位角
+    card_position[i].pick_doen_flag=0;       //卡片拾取完成标志位 = 0.00;
+  }
+}
 /**
  * @brief 处理接收到的串口数据
  * @param 无
@@ -165,6 +197,7 @@ uint8 card_num = 0;
  */
 void uart_data_handle(void)
 {
+    /**************** 有坐标传入时***********************/
     if (data_length == 5) // 如果数据长度为5
     {
         /* 处理x距离数据 */
@@ -176,29 +209,57 @@ void uart_data_handle(void)
         {
             now_distance_x = -(right_data[1] * 256 + right_data[2]); // 计算x距离（负值）
         }
+        now_distance_y = (right_data[3] * 255 + right_data[4]);                                   // y坐标
+        record_now_distance_x = now_distance_x;//记录下x坐标，防止最后x坐标清0后无法观察
+        record_now_distance_y = now_distance_y;//记录下y坐标，防止最后y坐标清0后无法观察
+		if(now_distance_x!=0 &&now_distance_y!=0)//测试使用，当有坐标传入时,此时x坐标y坐标已赋值
+		{	
+            /**************解算在这一次的传入坐标所解算出的世界坐标*********************/
+            center_distance = (int)sqrt((now_distance_x/10) * (now_distance_x/10) + (now_distance_y/10) * (now_distance_y/10)); // 卡片的直线距离
+			Card_angle = atan2((now_distance_y/10),(now_distance_x/10))/PI*180*1.0;//捕获到卡片时的偏转角，转换成角度制
+			delta_card_angle = (Card_angle-Angle_world)/180*PI;//转化成弧度制
+			card_world_x = Car_dis_x + (float)center_distance * cos(delta_card_angle);//解算出世界x坐标,新卡片只记录一次！！！
+            card_world_y = Car_dis_y + (float)center_distance * sin(delta_card_angle);//解算出世界y坐标
+            /*************************利用这张卡片的世界坐标来解算角度******************/
+            card_world_distance = sqrt( card_world_x * card_world_x + card_world_y * card_world_y);//原点与卡片的距离
+            card_world_angle = atan2(card_world_y,card_world_x)/PI*180*1.0;//角度制，卡片相对于原点解算出来的角度，这个还是会记录最后识别出的角度
+            // card_word_ready = YES;//卡片坐标已准备完毕
+            //后续解算在control.c的里程计中断中进行解算
+		}
+        for(uint8 i=0; i<card_count+1; i++)//遍历记录但未被拾取的卡片坐标
+       {
+		  find_count=i;//find_count记录变量i
+          if(card_position[i].pick_doen_flag==0)//只对未拾取的卡片作对比
+         {
+           if(fabsf(card_world_x-card_position[i].x_distance)<10 && fabsf(card_world_y-card_position[i].y_distance)<10)//当发现有卡片坐标与该卡片世界坐标很相近，认为是旧1卡片
+           {
+            find_oldcard_flag=YES;//找到了旧卡片
+            break;
+           }
+         }
+		}
+        if(find_count==card_count && find_oldcard_flag== NO)//遍历到了最后的一位，还是没有找到相同的
+       {
+         card_position[card_count].x_distance=card_world_x;//更新世界坐标x
+         card_position[card_count].y_distance=card_world_y;//更新世界坐标y
+		 card_position[card_count].world_distance=card_world_distance;//更新世界坐标y
+         card_position[card_count].world_angle=card_world_angle;//更新卡片方位角
+         card_position[card_count].card_word_ready = YES;//卡片坐标已准备完毕
+		 card_count++; //该张卡片已存入，卡片数量++，扩展数组的下一位
+		 find_count=0;//清空find_count
+       }
+		now_distance_x=0;//清空x坐标
+		now_distance_y=0;//清空y坐标，避免跳出函数时art数据仍保留，导致卡片中心坐标仍在更新
+        // card_word_ready=NO;//清空卡片世界坐标准备标志位
+        find_oldcard_flag=NO;//清空旧卡片标志位
+    }
+       /* ????????????: ???????????????*/
+        /* ???????????? */
+     if (data_length == 1) // ????????????????????else if
+     {
         now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // 计算y距离
         center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // 计算中心距离
-        if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
-        {
-            for (uint8 i = 0; i < card_count; i++)
-            {
-                if (card_position[i].pick_doen_flag == 1) // 如果卡片已经被拾取
-                    continue;
-                else // 如果卡片未被拾取
-                {
-                    if (center_distance > card_position[card_count].add_distance) // 如果当前距离大于卡片的加权距离
-                    {
-                        card_position[card_count].x_distance = now_distance_x;                                                                                                                                                    // 更新卡片的x距离
-                        card_position[card_count].y_distance = now_distance_y;                                                                                                                                                    // 更新卡片的y距离
-                        card_position[card_count].add_distance = sqrt(card_position[card_count].x_distance * card_position[card_count].x_distance + card_position[card_count].y_distance * card_position[card_count].y_distance); // 更新加权距离
-                        card_count++;                                                                                                                                                                                             // 卡片计数加1
-                    }
-                }
-            }
-            // card_count++; // 卡片计数加1
-            // card_position[card_count-1].x_distance=now_distance_x;//更新卡片的x距离
-            // card_position[card_count-1].y_distance=now_distance_y;//更新卡片的y距离
-        }
+//        if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
         last_center_distance = center_distance; // 更新上一次的中心距离
         uart_write_string(UART_1, str);         // 发送串口数据
     }

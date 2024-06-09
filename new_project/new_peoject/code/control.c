@@ -51,6 +51,8 @@ float Vx_card, Vy_card;    //相对于车底盘的更新坐标
 float Card_dis_car_x=0;
 float Card_dis_car_y=0;    //相对于车的更新坐标
 float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
+int   car_world_distance;//车辆在全局坐标上与原点的距离
+float car_world_angle;//卡片世界坐标解算出的世界方位角
 float Car_dis_x2, Car_dis_y2;
 float Turn_Bias;
 float dis_kp = 1.5;       //距离环kp
@@ -63,7 +65,7 @@ float card_distance;      //存放卡片的合成距离
 int only_one = 1;
 int target_type = 0;      //测试使用,观察模式
 int delta_x,delta_y;      //总钻风识别的卡片中心坐标
-float speed_k = 1;        //校正的速度
+int now_count=0;          //现在是第几张卡片
 int CSI_correct_flag = 0; //总钻风判断标志
 int Put_flag = 0;         //图片放置标志位
 int test_csi;             //延时计数
@@ -76,7 +78,10 @@ double delta_angle;       //计算出来的即时偏转角
 int correct_x_flag = 0;
 int correct_y_flag = 0;
 int correct_step=1;//校正步数
-
+//*********新的行进函数***********/
+int now_card=0;//当前的卡片
+int card_car_x,card_car_y;//世界坐标下卡片与车辆的x坐标差值和y坐标差值
+int card_car_other_angle=0;//由上面两个差值解算出的角度
 pid_info Pos_turn_pid[4];//位置式pid
 
 pid_info Speed[4]; // 增量式pid
@@ -309,17 +314,17 @@ void PidInit(void)
   }
 
   // ???
-  Speed[0].kp = -16.3; //-16.3  -26
-  Speed[0].ki = -3.3;  //-3.0 -1.80
+  Speed[0].kp = -17.3; //-17.3  -26
+  Speed[0].ki = -3.5;  //-3.0 -1.80
   // ???
   Speed[1].kp = -14.0; //-14.0 -34.5
-  Speed[1].ki = -2.5;  //-2.5  -0.98
+  Speed[1].ki = -2.8;  //-2.5  -0.98
   // ???
   Speed[2].kp = -15.0; //-15 -28.75
   Speed[2].ki = -3.0;  //-3.0   -0.6
   //???
   Speed[3].kp = -16.3; //-16.0  -28.75
-  Speed[3].ki = -2.8;  // PI赋值 -2.8  -1.0
+  Speed[3].ki = -3.0;  // PI赋值 -2.8  -1.0
 }
 /**
  * @brief 增量式pid(单环pid)速度环
@@ -632,6 +637,13 @@ void Encoder_odometer(void)
 }
   Car_dis_x += Vx_world * 0.005;//用于全局坐标
   Car_dis_y += Vy_world * 0.005;
+  car_world_distance = sqrt(Car_dis_x * Car_dis_x + Car_dis_y * Car_dis_y);//车辆与原点的距离
+  car_world_angle = atan2(Car_dis_y,Car_dis_x)/PI*180*1.0;//角度制，车辆相对于原点解算出来的角度
+  /*********************************************/
+  car_card_angle = card_world_angle - car_world_angle;//角度制
+  car_card_diatance = (int)sqrt((card_world_distance * card_world_distance)					 //卡片与原点距离的平方
+                                 +(car_world_distance * car_world_distance)          //车辆与原点距离的平方
+                                 -2*card_world_distance*car_world_distance*cos(car_card_angle/180*PI));
 
   Car_dis_x2 += Vx_world * 0.005;//用于总钻风微调
   Car_dis_y2 += Vy_world * 0.005;
@@ -770,7 +782,7 @@ void car_findcard(int *mode)
   //******************************找卡片*****************************//
   if (*mode == Car_find_card_y) 
   {
-    if (find_car_flag == 1) // 到达卡片附近，原本是4
+    if (find_car_flag == 1) // 到达卡片附近
     {
 			if(only_one)
 			{
@@ -799,7 +811,7 @@ void car_findcard(int *mode)
 				delta_angle = 90.0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为90
 			else
         delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
-        //因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
+        //因为车身姿态与采样频率8596的问题，有且只有一个相交点，给出在符合角度的波动区间
       if(delta_angle-Angle_z<10 && delta_angle-Angle_z>-15 && fabsf(Angle_z)>10.0)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
@@ -889,6 +901,138 @@ void car_findcard(int *mode)
       Card_dis_car_y=0;//卡片里程计清空
       card_x[0]=0;//卡片坐标清空
       card_y[0]=0;
+      target_type = *mode;
+    }
+    else
+    {
+     Turn_Angle_PD(now_angle);//向原先的角度转向回正
+		 Vx=0;
+		 Vy=0;
+		 Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+     *mode = Car_turn_again;
+    }
+   }
+}
+// /**
+// * @brief 小车模式切换，打包函数
+// * @param mode为模式选择
+// * @param
+// * @return 无
+// */
+void car_new_findcard(int *mode)
+{
+  //******************************正常循迹*****************************//
+  if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
+  {
+    if (card_position[now_card].card_word_ready==YES) //当卡片数组更新，当前卡片坐标已存入后,可以进入距离判断，避免从原点就开始发癫
+    {
+        *mode = Car_find_card_y;//转变小车运动模式
+				target_type = *mode;//测试变量使用
+      }			
+     }
+		else
+		{
+      car_run();//正常巡线模式
+			*mode=Car_go;
+		}
+  //******************************找卡片*****************************//
+  if (*mode == Car_find_card_y) 
+  {
+    if(car_card_diatance<35 && car_card_diatance>25) // 到达卡片附近
+    {
+      car_stop();//清空速度
+			system_delay_ms(1000);
+      now_angle = Angle_Z;//记录下此时角度
+      card_car_x = card_position[now_card].x_distance - (int)Car_dis_x;//世界坐标上卡片与车辆的x距离
+      card_car_y = card_position[now_card].y_distance - (int)Car_dis_y;//世界坐标上卡片与车辆的y距离
+      card_car_other_angle =atan2( card_car_y, card_car_x)/PI*180;//转换成角度制
+      if(abs(card_car_other_angle-(int)Angle_Z) < 4)//当解算出的角度与旋转角Angle_Z相差不大时
+      {
+        turn_angle=-90+now_angle;//向右转90度 
+      }
+      if(abs(card_car_other_angle-(int)Angle_Z-180) < 4)//当解算出的角度与旋转角Angle_Z翻转180度后的角度相差不大时,向左转
+      {
+        turn_angle=90+now_angle;//向左转90度
+      }
+      *mode = Car_turn; //模式转变
+    }
+		else
+		{
+			car_run();//正常寻迹跑
+      //实时计算
+      car_card_angle = card_world_angle - car_world_angle;//角度制
+      car_card_diatance = (int)sqrt((card_position[now_card].world_distance * card_position[now_card].world_distance)					 //卡片与原点距离的平方
+                                 +(car_world_distance * car_world_distance)                                                    //车辆与原点距离的平方
+                                 -2*card_position[now_card].world_distance*car_world_distance*cos(car_card_angle/180*PI));     //计算这时第now_card张卡片的角度
+      *mode = Car_find_card_y;//保持该模式
+		}
+  }
+//******************************向卡片方向转向*****************************//
+  if (*mode == Car_turn) 
+  {
+    if (fabsf(Angle_Z - turn_angle) < 1) // 陀螺仪转向识别
+    {
+      // Vz = 0;//清0Vz
+			car_stop();//清空速度
+			system_delay_ms(1000);
+      *mode = Car_find_card_cor; // 模式转变
+      target_type = *mode;
+			pick_up_mode = 1; //打开总钻风识别
+    }
+    else
+    {
+      Turn_Angle_PD(turn_angle);//准备Vz转速
+      Vx=0;
+      Vy=0;//x,y静止
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+      *mode = Car_turn;
+    }
+  }
+//******************************总钻风对正*****************************//
+  if (*mode == Car_find_card_cor) // 总钻风微调识别
+  {
+    if (CSI_correct_flag == 1) // 总钻风坐标对正
+    {
+      car_stop();//清空速度
+			system_delay_ms(500);
+      *mode = Pick_up_card;//模式转变
+			target_type = *mode;
+    }
+		else
+		{
+			*mode = Car_find_card_cor;
+      CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正，准备x,y速度
+      Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//			system_delay_ms(200);
+		}
+	}
+  //******************************卡片拾取*****************************//
+    if (*mode == Pick_up_card) // 捡卡片
+    {
+     if(arm_pick_flag==ARM_PICK_DONE)//卡片已被拾取
+	   {
+       catch_card_flag=0;//退出里程计第二种模式
+       *mode = Car_turn_again;//模式转变为转向回正
+	   }
+      else//卡片未被拾取
+	   {
+		  arm_control(2);//捡卡片
+	    arm_control(4);//默认模式
+      card_position[now_card].pick_doen_flag=YES;//标记该张卡片已经被拾取完毕
+		  arm_pick_flag=ARM_PICK_DONE;
+      *mode = Pick_up_card;
+	   }
+    }
+  //******************************车头回正*****************************//
+    if (*mode == Car_turn_again) 
+    {
+    if (fabsf(Angle_Z - now_angle) <= 2) // 陀螺仪转向识别
+    {
+			*mode = Car_go; //重新变为寻迹
+			car_stop();//清空速度
+			system_delay_ms(500);//停车0.5s
+      now_card++;//开始对比下一张卡片坐标
       target_type = *mode;
     }
     else
