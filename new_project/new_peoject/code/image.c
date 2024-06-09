@@ -1990,7 +1990,7 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
         end_column = temp;
     }
     /*自下而上找的效果并不是很好，可以用原来的来找，也可以用距离最大值来找
-    方法1：距离原点最大值（稳） 方法2：在原来最长白列的基础上进行左扫点，扫出非连续性的点
+    方法1：距离原点最大值（稳），且一定可以找到 方法2：在原来最长白列的基础上进行左扫点，扫出非连续性的点
     可以先用第一个方法，当第一个用不了（返回值为0）的时候就用第二个*/
     float max_distance = 0;
     float temp;
@@ -2011,7 +2011,7 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
     /*检验求得的坐标是否正常*/
     if (abs(index - start_column) <= 5) // 如果坐标太贴在起点，则重新检测
     {
-        for (uint8 i = start_column; i <= end_column; i++)
+        for (uint8 i = 5; i <= IMAGE_WIDTH - 6; i++)
         {
             if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
             {
@@ -2026,9 +2026,9 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
 uint8 Surround_Analyse(void)
 {
     uint8 last_right_point = 0;
-    for (uint8 i = 5; i < IMAGE_WIDTH - 5; i++)
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
-        if (Island_surrond[i] == IMAGE_HEIGHT - 2 && Island_surrond[i + 1] == 0 && Island_surrond[i + 3] == 0 && Island_surrond[i + 4] == 0) // 如果检测到越变在整个范围的点
+        if ((abs(Island_surrond[i] - lowest_row) <= 3) && Island_surrond[i + 1] == 0 && Island_surrond[i + 3] == 0 && Island_surrond[i + 4] == 0) // 如果检测到越变在整个范围的点
         {
             last_right_point = i;
             break;
@@ -2040,6 +2040,7 @@ uint8 Surround_Analyse(void)
 float Island_Surround(uint8 target_row)
 {
     /*使用前要先将坐标全部清零*/
+    lowest_row = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
         Island_surrond[i] = 0;
@@ -2047,13 +2048,18 @@ float Island_Surround(uint8 target_row)
     uint8 continuious_flag = 0;
     static uint8 last_continuious_flag = 0;
     uint8 right_max_point = 0;
-    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
         for (uint8 j = IMAGE_HEIGHT - 4; j >= 2; j--)
         {
             if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
             {
                 Island_surrond[i] = j + 1;
+                if (j + 1 > lowest_row)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
                 break;
             }
             else if (j == 2)
@@ -2062,6 +2068,7 @@ float Island_Surround(uint8 target_row)
             }
         }
     }
+
     right_max_point = Surround_Analyse(); // 找出右边的点
     continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
     if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
@@ -2072,29 +2079,109 @@ float Island_Surround(uint8 target_row)
         }
         continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
     }
-    ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
-    ips114_show_int(188, 40, continuious_flag, 3);
+    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0) // 利用最后一个点（或者利用最长白列求解）
+    {
+        Island_State = 6; // 进入下一个状态
+    }
+    else if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 7 &&lowest_column<=60)
+    {
+        Island_State = 8;
+    }
+
+    ips114_show_int(188, 40, right_max_point, 3);
+    ips114_show_uint(188, 80, lowest_row, 3);
+    ips114_show_uint(188, 90, lowest_column, 3);
+    ips114_show_uint(188, 100, Island_State, 3);
     last_continuious_flag = continuious_flag;
     // if(Island_surrond[continuious_flag]<=20)
     // {
     //     continuious_flag=last_continuious_flag;
     // }
-    if (continuious_flag != 0)
+    if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
     {
+        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
         uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
-        if (temp <= IMAGE_HEIGHT - 20)
+        if (Island_State == 0)
         {
-            temp = Island_surrond[2];
+            if (temp <= IMAGE_HEIGHT - 20)
+            {
+                temp = Island_surrond[2];
+            }
+
+            if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+            {
+                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
+            }
+            else
+            {
+                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+            }
+        }
+    }
+
+    if (Island_State == 6)
+    {
+        uint8 flag = 0;
+        for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态
+        {
+            if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 2]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
+            {
+                flag = i + 1;
+
+                break;
+            }
         }
 
-        if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+        if (flag != 0 && flag <= 60)
+            Island_State = 7;
+    }
+    else if (Island_State == 7) // 如果进入下一个状态
+    {
+        continuious_flag = 0;
+        for (uint8 i = 5; i <= IMAGE_WIDTH - 6; i++)
         {
-            Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
+            if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 2]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
+            {
+                continuious_flag = i + 1;
+                break;
+            }
         }
-        else
+        /*检验求得的是否为正确的*/
+        if (abs(lowest_column - continuious_flag) <= 5)
         {
-            Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+            continuious_flag = 0; // 清零，求取错误
         }
+        else if (Island_surrond[continuious_flag] <= 20)
+        {
+            continuious_flag = 0;
+        }
+        if (continuious_flag == 0)
+        {
+            float max_distance = 0.00;
+            /*如果没有检验出来，就启动planb：寻找最大值（这个百分百能算出来，就是位置可能会存在些许偏差）*/
+            for (uint8 i = IMAGE_WIDTH - 6; i >= 5; i--)
+            {
+                if (Island_surrond[i] <= 20) // 行坐标过低，不搜索
+                {
+                    break;
+                }
+                else
+                {
+                    float temp = InvSqrt((IMAGE_WIDTH - 1 - i) * (IMAGE_WIDTH - 1 - i) + Island_surrond[i] * Island_surrond[i]);
+                    if (temp > max_distance)
+                    {
+                        max_distance = temp;
+                        continuious_flag = i;
+                    }
+                }
+            }
+        }
+
+        if (continuious_flag != 0) // 如果检测出来的点不为0（检测出来），就和左边进行补线
+        {
+            Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], 1, lowest_row); // 补线
+        }
+        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_BLUE);
     }
     island_err = 0.0;                             // 使用前先清零
     for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差

@@ -43,6 +43,7 @@
 #include "control.h"
 #include "communication.h"
 #include "imu660ra.h"
+
 char send_str[30] = {0};
 extern uint8 Imgae_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern int pid_motor[4];  //???pid?????????
@@ -66,9 +67,11 @@ extern RoadType Road_Type;
 extern uint8 card_type; // 卡片类型，范围为1~15
 extern uint8 init_flag;
 char str1[] = "begin";
-extern uint8 card_abc; // 卡片字母数字，值的范围为1~15
-extern uint8 card_num; // 卡片数字，值的范围为1~3
-extern int only_one;
+extern uint8 card_abc;         // 卡片字母数字，值的范围为1~15
+extern uint8 card_num;         // 卡片数字，值的范围为1~3
+extern int near_card_distance; // 最近卡片的距离
+extern int near_card_x;
+extern int near_card_y;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -87,40 +90,39 @@ int main(void)
         debug_init();                  // debug��ʼ��
         system_delay_ms(300);
 
-    //    system_delay_ms(10000);         //
-    // key_init(10);//?????????
-    // pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
-    // while(1)//????????1s???????
-    // {
-    //     static unsigned int key_count=0;
-    //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
-    //     {
-    //         key_count++;
-    //         key_clear_state(KEY_1);
-    //     }
-    //     if(key_count>100)
-    //     {
-    //         break;
-    //     }
-    // }
-    //----------pid初始化---------------------//
-//    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
-//    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
-/**********无线串口模块***********/
-//        wireless_uart_init();
-//        seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
-//        seekfree_assistant_oscilloscope_struct oscilloscope_data;
-//        oscilloscope_data.data[0] = 0.1111 + 2;
-//        oscilloscope_data.data[1] = 0.3333 - 1;
-//        oscilloscope_data.data[2] = 4.222;
-//        oscilloscope_data.data[3] = 5.222;
-//        oscilloscope_data.channel_num = 4;
-//***************************************//				
-     My_Communication_Init(); // 通信初始化
-     card_position_init();
-     PidInit(); // 增量式pid初始化
-    //   Pos_PidInit();//位置式pid初始化，现已弃用
-     Distance_PidInit(); // 距离环初始化
+        //    system_delay_ms(10000);         //
+        // key_init(10);//?????????
+        // pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
+        // while(1)//????????1s???????
+        // {
+        //     static unsigned int key_count=0;
+        //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
+        //     {
+        //         key_count++;
+        //         key_clear_state(KEY_1);
+        //     }
+        //     if(key_count>100)
+        //     {
+        //         break;
+        //     }
+        // }
+        //----------pid初始化---------------------//
+        //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
+        //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
+        // wireless_uart_init(); // 无线串口初始化
+        // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+        // seekfree_assistant_oscilloscope_struct oscilloscope_data;
+
+        // oscilloscope_data.data[0] = 0.1111 + 2;
+        // oscilloscope_data.data[1] = 0.3333 - 1;
+        // oscilloscope_data.data[2] = 4.222;
+        // oscilloscope_data.data[3] = 5.222;
+        // oscilloscope_data.channel_num = 4;
+        // 设置为4个通道，通道数量最大为8个
+        My_Communication_Init(); // 通信初始化
+        // PidInit(); // 增量式pid初始化
+        //   Pos_PidInit();//位置式pid初始化，现已弃用
+        // Distance_PidInit(); // 距离环初始化
 
         ips114_init(); // 屏幕初始化
         ips114_set_dir(IPS114_PORTAIT);
@@ -152,58 +154,59 @@ int main(void)
 //     Speed[1].target_speed=40.0;
 //     Speed[0].target_speed=40.0;//?????
 
-    int once = 1;
-    uint8 temp = 0;
-    //    float zuobiao_x=0;
-    //	  float zuobiao_y=0;
-    //    int test_delta_card_x,test_delta_card_y;
-    //    float test_tan,test_delta_angle;
-    interrupt_global_enable(0); // 开中断使能
-    //		int b = 1;
-    //		float start_angle = 100.0;
-    while (1)
-    {
-//			seekfree_assistant_oscilloscope_send(&oscilloscope_data);
-//        oscilloscope_data.data[0]=Speed[0].now_speed;
-//        oscilloscope_data.data[1]=Speed[1].now_speed;
-//			  oscilloscope_data.data[2]=Speed[2].now_speed;
-//			  oscilloscope_data.data[3]=Speed[3].now_speed;
-        // ips114_show_uint(0, 0, card_abc, 3);
-        // ips114_show_uint(0, 20, card_num, 3);
-                 test();
-//                 car_run();
-        // //**************************观察卡片坐标和里程计*********************//
-			
-            	  ips114_show_int(90,0,record_now_distance_x/10,4);
-               ips114_show_int(90,20,record_now_distance_y/10,4);//卡片坐标,即时更新
-//          		 ips114_show_float(90,60,Car_dis_x,3,4);
-//          		 ips114_show_float(90,90,Car_dis_y,3,4);//里程计x,y
-        //         ips114_show_float(90,60,Card_dis_car_x,3,4);
-        // 		     ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
-        // //*******************************************************************//
-        // //**************************观察行进变量*****************************//
-           	  		 ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
-           	  		 ips114_show_int(90,60,target_type,3);//用于观测行进函数的步数
-                  ips114_show_int(90,80,card_x[0],4);
-                  ips114_show_int(90,100,card_y[0],4);//卡片坐标,即时更新
-		 						 ips114_show_int(150,0,only_one,4);//卡片坐标,即时更新
-//            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
-//           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
-        // //*******************************************************************//
-			  // //**************************观察行进变量*****************************//
-//           	 		 ips114_show_int(0,0,pick_up_mode,3);//观察摄像头模式
-//           	 		 ips114_show_float(0,20,Speed[0].target_speed,3,4);//用于观测目标速度是否改变
-//            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
-//           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
-        // //*******************************************************************//
-        // //**************************观察角度*********************************//
-            		   ips114_show_float(0,0,Angle_Z,3,2);
-                  ips114_show_float(0,20,Angle_z,3,2);
-                  ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
-//          		// 	ips114_show_float(0,40,turn_angle,3,2);
-           		 	 ips114_show_float(0,60,Vz,3,2);
-                 // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
-        // //*******************************************************************//
+        int once = 1;
+        uint8 temp = 0;
+        //    float zuobiao_x=0;
+        //	  float zuobiao_y=0;
+        //    int test_delta_card_x,test_delta_card_y;
+        //    float test_tan,test_delta_angle;
+        interrupt_global_enable(0); // 开中断使能
+        //		int b = 1;
+        //		float start_angle = 100.0;
+        while (1)
+        {
+                // seekfree_assistant_oscilloscope_send(&oscilloscope_data);
+                // oscilloscope_data.data[0] = encoder[0];
+                // oscilloscope_data.data[1] = encoder[1];
+                // oscilloscope_data.data[2] = encoder[2];
+                // oscilloscope_data.data[3] = encoder[3];
+                ips114_show_int(0, 0, near_card_x, 3);
+                ips114_show_int(0, 20, near_card_y, 3);
+                ips114_show_uint(0, 40, card_type, 3);
+                ips114_show_uint(0, 60, card_abc, 3);
+                ips114_show_uint(0, 80, right_data[0], 3);
+                ips114_show_uint(0, 100, right_data[1], 3);
+                ips114_show_uint(0, 120, right_data[2], 3);
+
+                // test();
+                //**************************观察卡片坐标和里程计*********************//
+                //           	   	 ips114_show_int(90,0,now_distance_x,4);
+                //                 ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
+                // 		// ips114_show_float(150,60,Car_dis_x,3,4);
+                // 		// ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
+                //         ips114_show_float(90,60,Card_dis_car_x,3,4);
+                // 		     ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
+                // //*******************************************************************//
+                // //**************************观察行进变量*****************************//
+                //           	 		 ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
+                // ips114_show_int(90, 60, target_type, 3); // 用于观测行进函数的步数
+                //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
+                //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
+                // //*******************************************************************//
+                // //**************************观察行进变量*****************************//
+                // ips114_show_int(0, 0, pick_up_mode, 3);                // 观察摄像头模式
+                // ips114_show_float(0, 20, Speed[0].target_speed, 3, 4); // 用于观测目标速度是否改变
+                //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
+                //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
+                // //*******************************************************************//
+                // //**************************观察角度*********************************//
+                //           		   ips114_show_float(0,0,Angle_Z,3,2);
+                //                 ips114_show_float(0,20,Angle_z,3,2);
+                //                 ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
+                //   		// 	ips114_show_float(0,40,turn_angle,3,2);
+                //          		 	 ips114_show_float(0,60,Vz,3,2);
+                //         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
+                // //*******************************************************************//
 
                 // //*********************测试弯道卡片坐标******************************//
                 //  			if(abs(now_distance_y)>0&&abs(now_distance_y)<800&&abs(now_distance_x)>0)//识别到卡片

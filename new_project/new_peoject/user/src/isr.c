@@ -40,8 +40,9 @@
 #include "take.h"
 #include "imu660ra.h"
 
-extern pid_info Speed[4];   //????pid???????pid
-extern float loc_target[4]; //????pid???????pid
+extern char uart_4_begin[];
+extern char uart_4_begin_abc[]; // 外部声明
+extern pid_info Speed[4];       // �ⲿ����
 extern uint8 step;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[];
@@ -95,6 +96,7 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
+        uart_write_string(UART_4, uart_4_begin_abc);
         pit_flag_clear(PIT_CH3);
     }
 
@@ -105,89 +107,86 @@ void LPUART1_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART1))
     {
-        // ?????��?
-//           #if DEBUG_UART_USE_INTERRUPT                        // ??????? debug ?????��?
-//               debug_interrupr_handler();                      // ???? debug ?????????????? ????? debug ???��????????
-//           #endif                                              // ???????? DEBUG_UART_INDEX ????��??????????????????��??
-         extern void UART1_handler(void); //?????????
-         UART1_handler();
+        // 接收中断
+        // #if DEBUG_UART_USE_INTERRUPT       // 如果使用 debug 中断
+        //         debug_interrupr_handler(); // 调用 debug 中断处理函数，将接收到的数据保存到 debug 缓冲区中
+        // #endif                             // 如果没有修改 DEBUG_UART_INDEX 的话就不需要去掉
+        extern void UART1_handler(void); //?????????
+        UART1_handler();
     }
 
-    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART2_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART2))
     {
-        // ?????��?
+        // 接收中断
     }
 
-    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART2, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART3_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART3))
     {
-        // ?????��?
+        // 接收中断
     }
 
-    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART3, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART4_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4))
     {
-        // ?????��?
-        //        flexio_camera_uart_handler();
-        //
-        //        gnss_uart_callback();
-         extern void UART4_handler(void); //?????????
-         UART4_handler();
+        // 接收中断
+        extern void UART4_handler(void); //?????????
+        UART4_handler();
     }
 
-    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART5_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART5))
     {
-        // ?????��?
+        // 接收中断
         camera_uart_handler();
     }
 
-    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART5, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART6_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART6))
     {
-        // ?????��?
+        // 接收中断
     }
 
-    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART6, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void LPUART8_IRQHandler(void)
 {
     if (kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART8))
     {
-        // ?????��?
+        // 接收中断
         wireless_module_uart_handler();
     }
 
-    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag); // ?????????
+    LPUART_ClearStatusFlags(LPUART8, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
 }
 
 void GPIO1_Combined_0_15_IRQHandler(void)
 {
     if (exti_flag_get(B0))
     {
-        exti_flag_clear(B0); // ????��???��
+        exti_flag_clear(B0); // 清除中断标志位
     }
 }
 
@@ -196,7 +195,7 @@ void GPIO1_Combined_16_31_IRQHandler(void)
     wireless_module_spi_handler();
     if (exti_flag_get(B16))
     {
-        exti_flag_clear(B16); // ????��???��
+        exti_flag_clear(B16); // 清除中断标志位
     }
 }
 
@@ -206,19 +205,19 @@ void GPIO2_Combined_0_15_IRQHandler(void)
 
     if (exti_flag_get(C0))
     {
-        exti_flag_clear(C0); // ????��???��
+        exti_flag_clear(C0); // 清除中断标志位
     }
 }
 
 void GPIO2_Combined_16_31_IRQHandler(void)
 {
-    // -----------------* ToF INT ?????��? ????��???????? *-----------------
+    // -----------------* ToF INT 中断预处理函数 *-----------------
     tof_module_exti_handler();
-    // -----------------* ToF INT ?????��? ????��???????? *-----------------
+    // -----------------* ToF INT 中断预处理函数 *-----------------
 
     if (exti_flag_get(C16))
     {
-        exti_flag_clear(C16); // ????��???��
+        exti_flag_clear(C16); // 清除中断标志位
     }
 }
 
@@ -227,19 +226,19 @@ void GPIO3_Combined_0_15_IRQHandler(void)
 
     if (exti_flag_get(D4))
     {
-        exti_flag_clear(D4); // ????��???��
+        exti_flag_clear(D4); // 清除中断标志位
     }
 }
 
 /*
-?��?????????????????????????��????
-Sample usage:??????????????????��?
+中断服务函数命名规则，根据对应的中断源命名
+Sample usage:当前工程使用的中断
 void PIT_IRQHandler(void)
 {
-    //?????????��
+    //处理中断标志位
     __DSB();
 }
-???????��????????��
+以下是已经定义的中断服务函数
 CTI0_ERROR_IRQHandler
 CTI1_ERROR_IRQHandler
 CORE_IRQHandler
