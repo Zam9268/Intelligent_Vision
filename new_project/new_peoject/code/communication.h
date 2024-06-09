@@ -49,6 +49,8 @@ typedef struct{
 
 extern int now_distance_x;
 extern unsigned long now_distance_y;
+extern int record_now_distance_x;
+extern unsigned long record_now_distance_y;
 extern Card card_position[100];
 extern float Card_angle;//捕获到卡片时的角度
 extern float delta_card_angle;

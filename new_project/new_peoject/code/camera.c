@@ -215,7 +215,7 @@ uint8 *Scharr_Edge(uint8 *image5,int threshold)
             G=InvSqrt(Gx*Gx+Gy*Gy);//梯度
             if(G>the_max_G) the_max_G=G;//最大梯度值
             if(abs(the_last_max_G-G)>=threshold) G=0;//梯度值小于阈值的置为0
-            G=G>255?255:G;//限幅
+            G=G>255?255:0;//限幅
             if(G!=255&&G!=0) G=0;//非边缘点置为0，这里就直接做二值化处理就行了，后面就不用二值化处理了
             scharr_image[i][j]=G;
             image5++;//地址自增
