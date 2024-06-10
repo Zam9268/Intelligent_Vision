@@ -57,9 +57,9 @@ extern char str[];                   //?????????????why
 extern int last_distance_x;          //?????????????????x????
 extern unsigned int last_distance_y; //?????y????
 extern int now_distance_x;
-extern unsigned long now_distance_y;
+extern unsigned int now_distance_y;
 extern unsigned int card_count;    //?????????????????????????
-extern int center_distance;      //????????????????????????
+extern float center_distance;      //????????????????????????
 extern float last_center_distance; //?????????????????????????????'
 extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern uint8 uart_send_flag;
@@ -119,7 +119,7 @@ int main(void)
         // oscilloscope_data.data[3] = 5.222;
         // oscilloscope_data.channel_num = 4;
         // 设置为4个通道，通道数量最大为8个
-        My_Communication_Init(); // 通信初始化
+        // My_Communication_Init(); // 通信初始化
         // PidInit(); // 增量式pid初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         // Distance_PidInit(); // 距离环初始化
@@ -175,15 +175,15 @@ int main(void)
                 // oscilloscope_data.data[1] = encoder[1];
                 // oscilloscope_data.data[2] = encoder[2];
                 // oscilloscope_data.data[3] = encoder[3];
-                ips114_show_int(0, 0, near_card_x, 3);
-                ips114_show_int(0, 20, near_card_y, 3);
-                ips114_show_uint(0, 40, card_type, 3);
-                ips114_show_uint(0, 60, card_abc, 3);
-                ips114_show_uint(0, 80, right_data[0], 3);
-                ips114_show_uint(0, 100, right_data[1], 3);
-                ips114_show_uint(0, 120, right_data[2], 3);
+                // ips114_show_int(0, 0, near_card_x, 3);
+                // ips114_show_int(0, 20, near_card_y, 3);
+                // ips114_show_uint(0, 40, card_type, 3);
+                // ips114_show_uint(0, 60, card_abc, 3);
+                // ips114_show_uint(0, 80, right_data[0], 3);
+                // ips114_show_uint(0, 100, right_data[1], 3);
+                // ips114_show_uint(0, 120, right_data[2], 3);
 
-                // test();
+                test();
                 //**************************观察卡片坐标和里程计*********************//
                 //           	   	 ips114_show_int(90,0,now_distance_x,4);
                 //                 ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新

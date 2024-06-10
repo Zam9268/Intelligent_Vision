@@ -590,6 +590,11 @@ void Search_Center(void)
                 break;
             }
         }
+        if (lower_black_row == 0)
+        {
+            card_left_up_find_flag = 0;
+            card_right_up_find_flag = 0;
+        }
         /*针对斜边形状卡片，当从左边和从右边扫到的顶点一样的话，就说明可以*/
         /*扫描方法：从起始行的左列，右列向中间扫，当扫到白点的时候就记录该点位置，记录每行的点对应的列坐标
         然后从上到下优先取坐标靠上的，当该坐标满足条件：1.和下5行的列坐标相近 2.且和下2个坐标相连（）*/
@@ -2019,6 +2024,7 @@ uint8 Surround_Analyse(void)
 float Island_Surround(uint8 target_row)
 {
     /*使用前要先将坐标全部清零*/
+    /*第一部分：扫线*/
     lowest_row = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
@@ -2048,57 +2054,44 @@ float Island_Surround(uint8 target_row)
         }
     }
 
-    right_max_point = Surround_Analyse(); // 找出右边的点
-    continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
-    if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
+    /*第二部分：状态机执行*/
+    // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
+    if (Island_State == 0)
     {
-        if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+        /*找拐点*/
+        continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
+        if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
         {
-            Center_line_deal_plus(40, 180);
+            if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+            {
+                Center_line_deal_plus(40, 180);
+            }
+            continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
         }
-        continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
-    }
-    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0) // 利用最后一个点（或者利用最长白列求解）
-    {
-        Island_State = 6; // 进入下一个状态
-    }
-    else if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 7 &&lowest_column<=60)
-    {
-        Island_State = 8;
-    }
-
-    ips114_show_int(188, 40, right_max_point, 3);
-    ips114_show_uint(188, 80, lowest_row, 3);
-    ips114_show_uint(188, 90, lowest_column, 3);
-    ips114_show_uint(188, 100, Island_State, 3);
-    last_continuious_flag = continuious_flag;
-    // if(Island_surrond[continuious_flag]<=20)
-    // {
-    //     continuious_flag=last_continuious_flag;
-    // }
-    if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
-    {
-        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
-        uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
-        if (Island_State == 0)
+        /*开始状态1的补线*/
+        if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
         {
-            if (temp <= IMAGE_HEIGHT - 20)
+            ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
+            uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
+            if (Island_State == 0)
             {
-                temp = Island_surrond[2];
-            }
+                if (temp <= IMAGE_HEIGHT - 20)
+                {
+                    temp = Island_surrond[2];
+                }
 
-            if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
-            {
-                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
-            }
-            else
-            {
-                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+                if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+                {
+                    Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
+                }
+                else
+                {
+                    Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+                }
             }
         }
     }
-
-    if (Island_State == 6)
+    else if (Island_State == 6)
     {
         uint8 flag = 0;
         for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态
@@ -2134,6 +2127,7 @@ float Island_Surround(uint8 target_row)
         {
             continuious_flag = 0;
         }
+
         if (continuious_flag == 0)
         {
             float max_distance = 0.00;
@@ -2160,8 +2154,29 @@ float Island_Surround(uint8 target_row)
         {
             Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], 1, lowest_row); // 补线
         }
-        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_BLUE);
     }
+
+    /*第三部分：状态机切换*/
+    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0) // 利用最后一个点（或者利用最长白列求解）
+    {
+        Island_State = 6; // 进入下一个状态
+    }
+    else if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 7 && lowest_column <= 60)
+    {
+        Island_State = 8;
+    }
+
+    ips114_show_int(188, 40, right_max_point, 3);
+    ips114_show_uint(188, 80, lowest_row, 3);
+    ips114_show_uint(188, 90, lowest_column, 3);
+    ips114_show_uint(188, 100, Island_State, 3);
+    last_continuious_flag = continuious_flag;
+    // if(Island_surrond[continuious_flag]<=20)
+    // {
+    //     continuious_flag=last_continuious_flag;
+    // }
+
+    /*第四部分：计算误差*/
     island_err = 0.0;                             // 使用前先清零
     for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
     {
@@ -2397,14 +2412,14 @@ void test2(void)
     //        Cross_Detect();
     //    if (left_island_flag || right_island_flag)
     //    Island_Detect();
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    {
-        ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
-    }
-    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
-    {
-        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
-    }
+    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    // {
+    //     ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
+    // }
+    // for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
+    // {
+    //     ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
+    // }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);

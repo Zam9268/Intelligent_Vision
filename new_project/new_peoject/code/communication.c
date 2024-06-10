@@ -144,9 +144,12 @@ extern float Angle_world;          //?????????
 
 int last_distance_x;          // 上一次接收到的x距离
 unsigned int last_distance_y; // 上一次接收到的y距离
+unsigned int record_now_distance_y;
+int record_now_distance_x;
 int now_distance_x;           // 当前接收到的x距离
 unsigned int now_distance_y;  // 当前接收到的y距离
 unsigned int card_count;      // 卡片计数
+unsigned int find_count;
 float center_distance;        // 中心距离
 float last_center_distance;   // 上一次的中心距离
 int near_card_distance;       // 最近卡片的距离
