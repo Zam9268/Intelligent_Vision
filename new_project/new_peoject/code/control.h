@@ -99,8 +99,8 @@ extern float dis_kd;//距离环kd
 extern float dis_error;
 extern float dis_change[4];//存放距离环输出结果
 extern int CSI_correct_flag;
-extern double card_y[10];
-extern double card_x[10];
+extern int card_y[10];
+extern int card_x[10];
 extern int Put_flag;
 extern int target_type;
 extern int car_mode;
@@ -139,7 +139,7 @@ void motor_close_control(void);
 void Turn_Angle_PD(float Tar_angle_Z);
 void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
-float Distance_pid(pid_info *pid,int error);
+float Distance_pid(pid_info *pid, int target_diantance, int actual_distance);
 void CSI_dis_new_correct(int cor_x, int cor_y);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);

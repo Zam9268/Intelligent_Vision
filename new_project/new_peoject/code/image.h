@@ -8,7 +8,7 @@
 #define LONG_WHITE_COLUMN 100 // 长白列长度阈�?
 #define WHITE_POINT 255
 #define BLACK_POINT 0
-
+#define DOWN_THTRESHOLD 175 //底下行的阈值
 extern int center[IMAGE_HEIGHT]; // ��������
 extern uint8 pick_up_mode;       // 捡卡片模式
 extern int center_x, center_y;   // 卡片中心坐标

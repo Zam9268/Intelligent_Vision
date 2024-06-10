@@ -251,8 +251,8 @@ void uart_data_handle(void)
 		 card_count++; //该张卡片已存入，卡片数量++，扩展数组的下一位
 		 find_count=0;//清空find_count
        }
-		now_distance_x=0;//清空x坐标
-		now_distance_y=0;//清空y坐标，避免跳出函数时art数据仍保留，导致卡片中心坐标仍在更新
+		// now_distance_x=0;//清空x坐标
+		// now_distance_y=0;//清空y坐标，避免跳出函数时art数据仍保留，导致卡片中心坐标仍在更新
         // card_word_ready=NO;//清空卡片世界坐标准备标志位
         find_oldcard_flag=NO;//清空旧卡片标志位
     }

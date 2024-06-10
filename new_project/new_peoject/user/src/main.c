@@ -130,20 +130,15 @@ int main(void)
         ips114_set_color(RGB565_RED, RGB565_BLACK);
         //----------模块初始化--------------------//
         ips114_clear();            // 清屏
-        Motor_Init();              // 电机初始化
+//        Motor_Init();              // 电机初始化
         Encoder_Init();            // 编码器初始化
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
         my_pwm_gpio();             // 机械臂初始化
-        ips114_clear();            // 清屏
-        Encoder_Init();            // 编码器初始化
-        Camera_Init();             // 摄像头初始化
-        my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
-        my_pwm_gpio();             // 机械臂初始化
-                                   // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
+       // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
         pit_ms_init(PIT_CH0, 5);   // 5ms
         pit_ms_init(PIT_CH1, 5);   // 10ms
-        pit_ms_init(PIT_CH2, 15);  // 15ms
+        pit_ms_init(PIT_CH2, 100);  // 15ms
         pit_ms_init(PIT_CH3, 500); // 25ms
         //
         // target_motor[1]=1000;
@@ -268,8 +263,8 @@ int main(void)
 //					ips114_show_int(90,100,correct_x_flag,4);//显示x调整标志位
 //          ips114_show_int(90,60,delta_y,4);//显示x，y差值
 //					ips114_show_int(90,60,correct_y_flag,4);//显示y调整标志位
-//          ips114_show_float(0,80,Vx,3,2);
-//          ips114_show_float(0,100,Vy,3,2);//显示x,y速度
+           ips114_show_float(0,80,Vx,3,2);
+           ips114_show_float(0,100,Vy,3,2);//显示x,y速度
 //					ips114_show_float(90,100,Vz,3,2);//显示x,y速度
 //        //*******************************************************************//
          //**************************观察卡片世界坐标*****************************//
@@ -292,7 +287,7 @@ int main(void)
 //          		ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
         // //*******************************************************************//
       //**************************观察多张卡片的情况*********************************//
-                   ips114_show_int(0,0,card_count,3);//用于观测卡片数目
+//                   ips114_show_int(0,0,card_count,3);//用于观测卡片数目
 //                 ips114_show_float(0,20,Angle_z,3,2);
 //                 ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
         //   		// 	ips114_show_float(0,40,turn_angle,3,2);
@@ -300,7 +295,7 @@ int main(void)
         //         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
         // //*******************************************************************//
         //*********************测试总的车辆行进打包函数**********************//
-//         car_findcard(&car_mode);//模式选择
+          car_findcard(&car_mode);//模式选择
         //*******************************************************************//
 
                 //		car_run();
