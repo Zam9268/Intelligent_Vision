@@ -54,7 +54,7 @@ extern unsigned int record_now_distance_y;
 extern Card card_position[100];
 extern float Card_angle;//捕获到卡片时的角度
 extern float delta_card_angle;
-extern int center_distance;//卡片的直线距离  
+extern float center_distance;//卡片的直线距离  
 
 extern int card_word_ready;//卡片世界坐标是否解算完毕
 extern unsigned int card_count;

@@ -58,8 +58,9 @@ extern int last_distance_x;          //?????????????????x????
 extern unsigned int last_distance_y; //?????y????
 extern int now_distance_x;
 extern unsigned int now_distance_y;
+extern unsigned int now_distance_y;
 extern unsigned int card_count;    //?????????????????????????
-extern int center_distance;      //????????????????????????
+extern float center_distance;      //????????????????????????
 extern float last_center_distance; //?????????????????????????????'
 extern uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 extern uint8 uart_send_flag;
@@ -135,24 +136,24 @@ int main(void)
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
         my_pwm_gpio();             // 机械臂初始化
-       // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
+                                   // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
         pit_ms_init(PIT_CH0, 5);   // 5ms
         pit_ms_init(PIT_CH1, 5);   // 10ms
-        pit_ms_init(PIT_CH2, 100);  // 15ms
+        pit_ms_init(PIT_CH2, 100); // 15ms
         pit_ms_init(PIT_CH3, 500); // 25ms
-        //
-        // target_motor[1]=1000;
-        // target_motor[3]=1000;
+                                   //
+                                   // target_motor[1]=1000;
+                                   // target_motor[3]=1000;
 
-    //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
-    /*视觉处理部分代码初始化*/
-    Last_Longest_White_Column_Left[1] = 94;
-    Longest_White_Column_Left[1] = 94;
-    Road_Type = STRAIGHT_ROAD;
-//     Speed[3].target_speed=40.0;
-//     Speed[2].target_speed=40.0;
-//     Speed[1].target_speed=40.0;
-//     Speed[0].target_speed=40.0;//?????
+        //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
+        /*视觉处理部分代码初始化*/
+        Last_Longest_White_Column_Left[1] = 94;
+        Longest_White_Column_Left[1] = 94;
+        Road_Type = STRAIGHT_ROAD;
+        //     Speed[3].target_speed=40.0;
+        //     Speed[2].target_speed=40.0;
+        //     Speed[1].target_speed=40.0;
+        //     Speed[0].target_speed=40.0;//?????
 
         int once = 1;
         uint8 temp = 0;
@@ -170,7 +171,10 @@ int main(void)
                 // oscilloscope_data.data[1] = encoder[1];
                 // oscilloscope_data.data[2] = encoder[2];
                 // oscilloscope_data.data[3] = encoder[3];
-                
+                // ips114_show_int(0, 0, near_card_x, 3);
+                // ips114_show_int(0, 20, near_card_y, 3);
+                // ips114_show_uint(0, 40, card_type, 3);
+                // ips114_show_uint(0, 60, card_abc, 3);
                 // ips114_show_uint(0, 80, right_data[0], 3);
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);

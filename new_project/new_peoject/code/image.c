@@ -8,22 +8,23 @@ uint8 type = 0;
 uint8 init_flag = 0;
 /*The following are the global variables used, but there may be some that are not used*/
 uint8 left_line[IMAGE_HEIGHT], right_line[IMAGE_HEIGHT]; // record the left line's column and the right line's column
-int center[IMAGE_HEIGHT];                                // record the center line's column
-uint8 the_maxlen_position;                               // record  the max length of the white column
-uint8 num;                                               //
-uint8 Longest_White_Column_Left[2];                      // Record the longest white column in this iteration
-uint8 Last_Longest_White_Column_Left[2];                 // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
-uint8 Left_Line_Start, Right_Line_Start;                 // Starting point of the left and right lines
-uint8 Longest_White_Column_Right[2];                     // The longest white column on the right side, not used
-uint8 Right_Lost_Flag[IMAGE_HEIGHT];                     // Lost line flag for the right boundary
-uint8 Left_Lost_Flag[IMAGE_HEIGHT];                      // Lost line flag for the left boundary
-uint8 Left_Lost_Time = 0;                                // Number of times the left line is lost
-uint8 Right_Lost_Time = 0;                               // Number of times the right line is lost
-uint8 Both_Lost_Time = 0;                                // Number of times both lines are lost in the same row
-uint8 Search_Stop_Line;                                  // Stop line for searching
-uint8 Boundry_Start_Left, Boundry_Start_Right;           // Starting points of the left and right boundaries
-uint8 Road_Wide[IMAGE_HEIGHT];                           // Road width
-RoadType Road_Type;                                      // Type of road element
+uint8 left_line_out[IMAGE_HEIGHT], right_line_out[IMAGE_HEIGHT];
+int center[IMAGE_HEIGHT];                      // record the center line's column
+uint8 the_maxlen_position;                     // record  the max length of the white column
+uint8 num;                                     //
+uint8 Longest_White_Column_Left[2];            // Record the longest white column in this iteration
+uint8 Last_Longest_White_Column_Left[2];       // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
+uint8 Left_Line_Start, Right_Line_Start;       // Starting point of the left and right lines
+uint8 Longest_White_Column_Right[2];           // The longest white column on the right side, not used
+uint8 Right_Lost_Flag[IMAGE_HEIGHT];           // Lost line flag for the right boundary
+uint8 Left_Lost_Flag[IMAGE_HEIGHT];            // Lost line flag for the left boundary
+uint8 Left_Lost_Time = 0;                      // Number of times the left line is lost
+uint8 Right_Lost_Time = 0;                     // Number of times the right line is lost
+uint8 Both_Lost_Time = 0;                      // Number of times both lines are lost in the same row
+uint8 Search_Stop_Line;                        // Stop line for searching
+uint8 Boundry_Start_Left, Boundry_Start_Right; // Starting points of the left and right boundaries
+uint8 Road_Wide[IMAGE_HEIGHT];                 // Road width
+RoadType Road_Type;                            // Type of road element
 uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0;   // Finding the left top turning point
@@ -40,9 +41,20 @@ uint8 Island_State = 0;                    // record the state of the island on 
 uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
 uint8 start_row = 0;                       // record the start row
-uint8 my_threshold=0;
-int left_up_state3_point[2] = {0};         // 左上角顶点的坐标
+uint8 my_threshold = 0;
+uint8 lowest_column = 0;
+uint8 lowest_row = 0;
+int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
 uint8 Island_surrond[IMAGE_WIDTH] = {0};
+uint8 straight_card_left_down_point[2] = {0};
+uint8 straight_card_left_up_point[2] = {0}; // 如果想要找左上角的坐标，就必须要用距离小值的方法进行求解
+uint8 straight_card_right_down_point[2] = {0};
+uint8 staraight_left_find_flag = 0;
+uint8 staraight_right_find_flag = 0;
+int center_straight_left_card_x = 0;
+int center_straight_left_card_y = 0;
+int center_straight_right_card_x = 0;
+int center_straight_right_card_y = 0;
 int center_x, center_y;
 int left_up_point[2] = {0};  // 左上角拐点坐标
 int right_up_point[2] = {0}; // 右下角拐点坐标
@@ -352,7 +364,7 @@ begin:
     /*Counting white columns*/
     for (uint8 j = start_column; j <= end_column; j++)
     {
-        if (Image_Use[119][j] >=DOWN_THTRESHOLD) //???????��?��??????????��????????
+        if (Image_Use[119][j] >= DOWN_THTRESHOLD) //???????��?��??????????��????????
         {
             for (uint8 i = IMAGE_HEIGHT - 3; i >= 0; i--) //???????????????????????????????
             {
@@ -368,8 +380,6 @@ begin:
                 }
             }
         }
-        
-        
     }
     /* Find the longest white column */
     Last_Longest_White_Column_Left[0] = Longest_White_Column_Left[0]; // Record the longest white column in the previous iteration
@@ -590,10 +600,10 @@ void Search_Center(void)
                 break;
             }
         }
-        if(lower_black_row==0)
+        if (lower_black_row == 0)
         {
-            card_left_up_find_flag=0;
-            card_right_up_find_flag=0;
+            card_left_up_find_flag = 0;
+            card_right_up_find_flag = 0;
         }
         /*针对斜边形状卡片，当从左边和从右边扫到的顶点一样的话，就说明可以*/
         /*扫描方法：从起始行的左列，右列向中间扫，当扫到白点的时候就记录该点位置，记录每行的点对应的列坐标
@@ -810,10 +820,10 @@ void Outer_Analyse(void)
             Road_Type = RIGHT_TURN;
         if (Right_Lost_Time < 15 && Left_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
             Road_Type = LEFT_TURN;
-        if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 &&Left_Lost_Time<=100)
+        if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100)
             Road_Type = LEFT_HUANDAO;
         left_island_flag = 1;
-        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 &&Right_Lost_Time<=100)
+        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100)
             Road_Type = RIGHT_HUANDAO;
         right_island_flag = 1;
         if (Right_Lost_Time >= 30 && Left_Lost_Time >= 30 && Both_Lost_Time >= 30)
@@ -821,7 +831,7 @@ void Outer_Analyse(void)
     }
 
     /*校准代码*/
-    
+
     // if (Road_Type == STRAIGHT_ROAD)
     //     Ramp_Detect();
     // if (Road_Type == STRAIGHT_ROAD)
@@ -1020,18 +1030,17 @@ int Continuity_Change_Right(int start, int end, int mode)
     return continuity_change_flag; //????0?????��????????��??????????????��?????????
 }
 
-
 uint8 Image_Get_Down(void)
 {
-    uint8 threshold=0;
+    uint8 threshold = 0;
     unsigned int sum;
-    for(uint8 i=0;i<=IMAGE_WIDTH-1;i++)
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
-        Image_Use[119][i]+=sum;
+        Image_Use[119][i] += sum;
     }
-    threshold=(int)(sum/188);
-		
-		return threshold;
+    threshold = (int)(sum / 188);
+
+    return threshold;
 }
 /**
  * @brief ????????
@@ -2042,6 +2051,7 @@ uint8 lowest_column;
 float Island_Surround(uint8 target_row)
 {
     /*使用前要先将坐标全部清零*/
+    /*第一部分：扫线*/
     lowest_row = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
@@ -2071,57 +2081,44 @@ float Island_Surround(uint8 target_row)
         }
     }
 
-    right_max_point = Surround_Analyse(); // 找出右边的点
-    continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
-    if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
+    /*第二部分：状态机执行*/
+    // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
+    if (Island_State == 0)
     {
-        if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+        /*找拐点*/
+        continuious_flag = Surround_continious_detect(IMAGE_WIDTH - 1, 10);
+        if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
         {
-            Center_line_deal_plus(40, 180);
+            if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+            {
+                Center_line_deal_plus(40, 180);
+            }
+            continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
         }
-        continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
-    }
-    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0) // 利用最后一个点（或者利用最长白列求解）
-    {
-        Island_State = 6; // 进入下一个状态
-    }
-    else if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 7 &&lowest_column<=60)
-    {
-        Island_State = 8;
-    }
-
-    ips114_show_int(188, 40, right_max_point, 3);
-    ips114_show_uint(188, 80, lowest_row, 3);
-    ips114_show_uint(188, 90, lowest_column, 3);
-    ips114_show_uint(188, 100, Island_State, 3);
-    last_continuious_flag = continuious_flag;
-    // if(Island_surrond[continuious_flag]<=20)
-    // {
-    //     continuious_flag=last_continuious_flag;
-    // }
-    if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
-    {
-        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
-        uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
-        if (Island_State == 0)
+        /*开始状态1的补线*/
+        if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
         {
-            if (temp <= IMAGE_HEIGHT - 20)
+            ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
+            uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
+            if (Island_State == 0)
             {
-                temp = Island_surrond[2];
-            }
+                if (temp <= IMAGE_HEIGHT - 20)
+                {
+                    temp = Island_surrond[2];
+                }
 
-            if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
-            {
-                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
-            }
-            else
-            {
-                Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+                if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+                {
+                    Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
+                }
+                else
+                {
+                    Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, Island_surrond[IMAGE_WIDTH - 2]); // 列补线，和前面的行补线不一样
+                }
             }
         }
     }
-
-    if (Island_State == 6)
+    else if (Island_State == 6)
     {
         uint8 flag = 0;
         for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态
@@ -2157,6 +2154,7 @@ float Island_Surround(uint8 target_row)
         {
             continuious_flag = 0;
         }
+
         if (continuious_flag == 0)
         {
             float max_distance = 0.00;
@@ -2183,8 +2181,29 @@ float Island_Surround(uint8 target_row)
         {
             Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], 1, lowest_row); // 补线
         }
-        ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_BLUE);
     }
+
+    /*第三部分：状态机切换*/
+    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0) // 利用最后一个点（或者利用最长白列求解）
+    {
+        Island_State = 6; // 进入下一个状态
+    }
+    else if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 7 && lowest_column <= 60)
+    {
+        Island_State = 8;
+    }
+
+    ips114_show_int(188, 40, right_max_point, 3);
+    ips114_show_uint(188, 80, lowest_row, 3);
+    ips114_show_uint(188, 90, lowest_column, 3);
+    ips114_show_uint(188, 100, Island_State, 3);
+    last_continuious_flag = continuious_flag;
+    // if(Island_surrond[continuious_flag]<=20)
+    // {
+    //     continuious_flag=last_continuious_flag;
+    // }
+
+    /*第四部分：计算误差*/
     island_err = 0.0;                             // 使用前先清零
     for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
     {
@@ -2198,6 +2217,115 @@ float Island_Surround(uint8 target_row)
         island_err = 10.0; // island_err的最小值
     }
     return island_err;
+}
+
+void Straight_Card_Find(void)
+{
+
+    /*数组清空*/
+    for (uint8 i = 0; i <= IMAGE_HEIGHT - 1; i++)
+    {
+        left_line_out[i] = 0;
+        right_line_out[i] = 0;
+    }
+    /*扫出左右边线*/
+    for (uint8 i = 118; i >= 3; i--)
+    {
+        for (uint8 j = 1; j <= left_line[i]; j++)
+        {
+            if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j + 1] == WHITE_POINT)
+            {
+                left_line_out[i] = j;
+                break;
+            }
+        }
+        for (uint8 j = IMAGE_WIDTH - 2; j >= right_line[i]; j--)
+        {
+            if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j - 1] == WHITE_POINT)
+            {
+                right_line_out[i] = j;
+                break;
+            }
+        }
+    }
+    /*开始比较，找出跳跃点*/
+    straight_card_left_down_point[0] = 0;
+    straight_card_left_down_point[1] = 0;
+    straight_card_left_up_point[0] = 0;
+    straight_card_left_up_point[1] = 0;
+    uint8 max_column_count = 94;
+    uint8 max_column_index = 0;
+    uint8 right_column_count = 94;
+    uint8 right_column_index = 0;
+    staraight_left_find_flag = 0;
+    staraight_right_find_flag = 0;
+    center_straight_left_card_x = 0;
+    center_straight_left_card_y = 0;
+    center_straight_right_card_x = 0;
+    center_straight_right_card_y = 0;
+    for (uint8 i = 115; i >= 5; i--)
+    {
+        if (left_line_out[i] != 0)
+        {
+            if (left_line_out[i] < max_column_count && abs(left_line_out[i] - left_line[i]) >= 5)
+            {
+                max_column_count = left_line_out[i];
+                max_column_index = i; // 千万不要加上break
+            }
+        }
+        if (right_line_out[i] != 0)
+        {
+            if (right_line_out[i] > right_column_count && abs(right_line_out[i] - right_line[i]) >= 5)
+            {
+                right_column_count = right_line_out[i];
+                right_column_index = i;
+            }
+        }
+    }
+
+    if (max_column_index == 0 && max_column_count == 94)
+    {
+        staraight_left_find_flag = 0;
+    }
+    else
+    {
+        staraight_left_find_flag = 1;
+    }
+    if (right_column_count == 94 && right_column_index == 0)
+    {
+        staraight_right_find_flag = 0;
+    }
+    else
+    {
+        staraight_right_find_flag = 1;
+    }
+    if (staraight_left_find_flag == 1)
+    {
+        straight_card_left_down_point[0] = max_column_index;
+        straight_card_left_down_point[1] = max_column_count;
+    }
+    if (staraight_right_find_flag == 1)
+    {
+        straight_card_right_down_point[0] = right_column_index;
+        straight_card_right_down_point[1] = right_column_count;
+    }
+
+    ips114_draw_line(0, 60, straight_card_left_down_point[1], straight_card_left_down_point[0], RGB565_RED);
+    ips114_draw_line(188, 60, right_column_count, right_column_index, RGB565_GREEN);
+
+    /*求出对应的卡片现实坐标*/
+    if (staraight_left_find_flag == 1)
+    {
+        Pespective_point(straight_card_left_down_point[1], straight_card_left_down_point[0], &center_straight_left_card_x, &center_straight_left_card_y);
+        center_straight_left_card_x = center_straight_left_card_x + 60; // 现实坐标矫正
+        center_straight_left_card_y = center_straight_left_card_y + 60;
+    }
+    if (staraight_right_find_flag == 1)
+    {
+        Pespective_point(straight_card_right_down_point[1], straight_card_right_down_point[0], &center_straight_right_card_x, &center_straight_right_card_y);
+        center_straight_right_card_x = center_straight_right_card_x - 60; // 现实坐标矫正
+        center_straight_right_card_y = center_straight_right_card_y + 60;
+    }
 }
 
 /**
@@ -2420,14 +2548,15 @@ void test2(void)
     //        Cross_Detect();
     //    if (left_island_flag || right_island_flag)
     //    Island_Detect();
-//    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-//    {
-//        ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
-//    }
-//    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
-//    {
-//        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
-//    }
+    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    {
+        // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
+        // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+    }
+    //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
+    //    {
+    //        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
+    //    }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
@@ -2452,9 +2581,9 @@ void test2(void)
 
     //    ips114_show_uint(188,120,threshold,3);
     ips114_displayimage03x(*Image_Use, 188, 120);
-    
+
     float my_err = Err_Handle();
-    ips114_show_float(188,0,my_err,3,3);
+    ips114_show_float(188, 0, my_err, 3, 3);
     extern int now_distance_x;
     extern unsigned int now_distance_y;
     //    ips114_show_int(0,0,now_distance_x,3);//显示卡片x坐标
@@ -2478,10 +2607,10 @@ void test2(void)
     // // ips114_show_int(188, 100, Right_Lost_Time, 3);
     // // ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
-    // ips114_show_uint(188,70,Image_Use[119][23],3);
-    // ips114_show_uint(188,80,Image_Use[119][50],3);
-    // ips114_show_uint(188,90,Image_Use[118][50],3);
-    // ips114_show_uint(188,100,Image_Use[118][23],3);
+    ips114_show_int(188, 70, center_straight_left_card_x, 3);
+    ips114_show_int(188, 80, center_straight_left_card_y, 3);
+    ips114_show_int(188, 90, center_straight_right_card_x, 3);
+    ips114_show_int(188, 100, center_straight_right_card_y, 3);
     //  ips114_show_int(188,90,now_distance_y,3);
     /*计算矩阵
 
@@ -2524,14 +2653,16 @@ void test(void)
         if (pick_up_mode == 0)
         {
             output_address = Scharr_Edge(*mt9v03x_image, 1700); // 使用扫描边缘的方式获取图像
-            my_threshold=Image_Get_Down();
-            ips114_show_uint(188,120,my_threshold,4);
+            my_threshold = Image_Get_Down();
+            ips114_show_uint(188, 120, my_threshold, 4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));
+            Easy_Filtering(110, 60, 30, 130, 5);
+            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
             Outer_Analyse();
-//            island_err = Island_Surround(80); // 目标行选择为80
-//            ips114_show_float(188, 0, island_err, 3, 3);
+            //            island_err = Island_Surround(80); // 目标行选择为80
+            //            ips114_show_float(188, 0, island_err, 3, 3);
 
             // Easy_Filtering(110, 20, 30, 170, 5);
         }

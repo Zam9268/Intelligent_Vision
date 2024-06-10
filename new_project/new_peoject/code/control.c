@@ -99,7 +99,8 @@ extern RoadType Road_Type;
 extern uint8 Last_Longest_White_Column_Left[2];
 extern uint8 Longest_White_Column_Left[2];
 pid_info Speed[4]; // 增量式pid
-
+extern int record_now_distance_x;
+extern unsigned int record_now_distance_y;
 pid_info Angle_turn_pid; // 角度环pid
 
 pid_info distance_pid[4]; // 距离环pid
