@@ -5,6 +5,9 @@
 #include "stdint.h"
 #include "zf_common_headfile.h"
 
+#define OPEN   1
+#define CLOSE  0
+
 #define DIR_LF D14//电机gpio
 #define DIR_LB D3//电机gpio
 #define DIR_RF D12//电机gpio
@@ -61,7 +64,8 @@ typedef struct{
 	float output_last;    //上次输出值
 }pid_info;
 
-
+extern int card_center_x;
+extern int card_center_y;
 extern float Car_H;//车长
 extern float Car_W;//车宽
 extern float Vx,Vy,Vz;

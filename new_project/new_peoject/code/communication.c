@@ -142,16 +142,19 @@ void get_uartdata(void)
 extern float Car_dis_x, Car_dis_y; //??????????x??y?????
 extern float Angle_world;          //?????????
 
+int record_now_distance_x;
+unsigned int record_now_distance_y;
 int last_distance_x;          // 上一次接收到的x距离
 unsigned int last_distance_y; // 上一次接收到的y距离
 int now_distance_x;           // 当前接收到的x距离
 unsigned int now_distance_y;  // 当前接收到的y距离
 unsigned int card_count;      // 卡片计数
-float center_distance;        // 中心距离
+int center_distance;        // 中心距离
 float last_center_distance;   // 上一次的中心距离
 int near_card_distance;       // 最近卡片的距离
 int near_card_x;
 int near_card_y;
+int find_count=0;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
 uint8 card_type = 0;      // 卡片类型，取值范围为1~15
 Card card_position[100];
@@ -228,7 +231,7 @@ void uart_data_handle(void)
 		}
         for(uint8 i=0; i<card_count+1; i++)//遍历记录但未被拾取的卡片坐标
        {
-		  find_count=i;//find_count记录变量i
+		      find_count=i;//find_count记录变量i
           if(card_position[i].pick_doen_flag==0)//只对未拾取的卡片作对比
          {
            if(fabsf(card_world_x-card_position[i].x_distance)<10 && fabsf(card_world_y-card_position[i].y_distance)<10)//当发现有卡片坐标与该卡片世界坐标很相近，认为是旧1卡片

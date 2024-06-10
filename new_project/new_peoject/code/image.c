@@ -2023,6 +2023,7 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
     return index;
 }
 
+uint8 lowest_row=0;
 uint8 Surround_Analyse(void)
 {
     uint8 last_right_point = 0;
@@ -2037,6 +2038,7 @@ uint8 Surround_Analyse(void)
     return last_right_point;
 }
 
+uint8 lowest_column;
 float Island_Surround(uint8 target_row)
 {
     /*使用前要先将坐标全部清零*/
@@ -2418,10 +2420,10 @@ void test2(void)
     //        Cross_Detect();
     //    if (left_island_flag || right_island_flag)
     //    Island_Detect();
-   for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-   {
-       ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
-   }
+//    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+//    {
+//        ips114_draw_point((right_line[i] + left_line[i]) / 2, i, RGB565_RED);
+//    }
 //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
 //    {
 //        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
@@ -2466,20 +2468,20 @@ void test2(void)
     20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
-    ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
-    ips114_show_uint(188, 20, type, 3);
-    ips114_show_int(188, 30, Search_Stop_Line, 3);
-    ips114_show_uint(188, 40, Boundry_Start_Left, 3);
-    ips114_show_uint(188, 50, Boundry_Start_Right, 3);
+    // ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
+    // ips114_show_uint(188, 20, type, 3);
+    // ips114_show_int(188, 30, Search_Stop_Line, 3);
+    // ips114_show_uint(188, 40, Boundry_Start_Left, 3);
+    // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
 
-    // ips114_show_int(188, 90, Left_Lost_Time, 3);
-    // ips114_show_int(188, 100, Right_Lost_Time, 3);
-    // ips114_show_uint(188, 110, Both_Lost_Time, 3);
+    // // ips114_show_int(188, 90, Left_Lost_Time, 3);
+    // // ips114_show_int(188, 100, Right_Lost_Time, 3);
+    // // ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
-    ips114_show_uint(188,70,Image_Use[119][23],3);
-    ips114_show_uint(188,80,Image_Use[119][50],3);
-    ips114_show_uint(188,90,Image_Use[118][50],3);
-    ips114_show_uint(188,100,Image_Use[118][23],3);
+    // ips114_show_uint(188,70,Image_Use[119][23],3);
+    // ips114_show_uint(188,80,Image_Use[119][50],3);
+    // ips114_show_uint(188,90,Image_Use[118][50],3);
+    // ips114_show_uint(188,100,Image_Use[118][23],3);
     //  ips114_show_int(188,90,now_distance_y,3);
     /*计算矩阵
 
@@ -2535,7 +2537,7 @@ void test(void)
         }
         else // 如果处于拾取卡片的状态
         {
-            output_address = Scharr_Edge(*mt9v03x_image, 1700); // 使用扫描边缘的方式获取图像
+            output_address = Scharr_Edge_Simple(*mt9v03x_image); // 使用扫描边缘的方式获取图像
             uint8 threshold = OSTU_GetThreshold((uint8 *)mt9v03x_image, IMAGE_WIDTH, IMAGE_HEIGHT);
             // ips114_show_uint(188,15,the_max_G,4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));

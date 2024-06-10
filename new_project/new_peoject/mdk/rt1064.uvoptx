@@ -263,22 +263,22 @@
         <Ww>
           <count>21</count>
           <WinNumber>1</WinNumber>
-          <ItemText>Speed[3].target_speed</ItemText>
+          <ItemText>encoder[0],0x0A</ItemText>
         </Ww>
         <Ww>
           <count>22</count>
           <WinNumber>1</WinNumber>
-          <ItemText>encoder[0],0x0A</ItemText>
+          <ItemText>Speed[0].now_speed</ItemText>
         </Ww>
         <Ww>
           <count>23</count>
           <WinNumber>1</WinNumber>
-          <ItemText>Speed[0].now_speed</ItemText>
+          <ItemText>test_card_angle</ItemText>
         </Ww>
         <Ww>
           <count>24</count>
           <WinNumber>1</WinNumber>
-          <ItemText>test_card_angle</ItemText>
+          <ItemText>init_flag,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

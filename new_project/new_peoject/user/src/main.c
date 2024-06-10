@@ -57,7 +57,7 @@ extern char str[];                   //?????????????why
 extern int last_distance_x;          //?????????????????x????
 extern unsigned int last_distance_y; //?????y????
 extern int now_distance_x;
-extern unsigned long now_distance_y;
+extern unsigned int now_distance_y;
 extern unsigned int card_count;    //?????????????????????????
 extern int center_distance;      //????????????????????????
 extern float last_center_distance; //?????????????????????????????'
@@ -120,7 +120,7 @@ int main(void)
         // oscilloscope_data.channel_num = 4;
         // 设置为4个通道，通道数量最大为8个
         My_Communication_Init(); // 通信初始化
-        // PidInit(); // 增量式pid初始化
+        PidInit(); // 增量式pid初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         // Distance_PidInit(); // 距离环初始化
 
@@ -130,7 +130,7 @@ int main(void)
         ips114_set_color(RGB565_RED, RGB565_BLACK);
         //----------模块初始化--------------------//
         ips114_clear();            // 清屏
-//        Motor_Init();              // 电机初始化
+        //Motor_Init();              // 电机初始化
         Encoder_Init();            // 编码器初始化
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
@@ -170,26 +170,23 @@ int main(void)
                 // oscilloscope_data.data[1] = encoder[1];
                 // oscilloscope_data.data[2] = encoder[2];
                 // oscilloscope_data.data[3] = encoder[3];
-                ips114_show_int(0, 0, near_card_x, 3);
-                ips114_show_int(0, 20, near_card_y, 3);
-                ips114_show_uint(0, 40, card_type, 3);
-                ips114_show_uint(0, 60, card_abc, 3);
-                ips114_show_uint(0, 80, right_data[0], 3);
-                ips114_show_uint(0, 100, right_data[1], 3);
-                ips114_show_uint(0, 120, right_data[2], 3);
+                
+                // ips114_show_uint(0, 80, right_data[0], 3);
+                // ips114_show_uint(0, 100, right_data[1], 3);
+                // ips114_show_uint(0, 120, right_data[2], 3);
 
-                // test();
+                 test();
                 //**************************观察卡片坐标和里程计*********************//
-                //           	   	 ips114_show_int(90,0,now_distance_x,4);
-                //                 ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
+                           	   	 ips114_show_int(90,0,now_distance_x,4);
+                                 ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
                 // 		// ips114_show_float(150,60,Car_dis_x,3,4);
                 // 		// ips114_show_float(150,90,Car_dis_y,3,4);//里程计x,y
                 //         ips114_show_float(90,60,Card_dis_car_x,3,4);
                 // 		     ips114_show_float(90,90,Card_dis_car_y,3,4);//卡片里程计x,y
                 // //*******************************************************************//
                 // //**************************观察行进变量*****************************//
-                //           	 		 ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
-                // ips114_show_int(90, 60, target_type, 3); // 用于观测行进函数的步数
+                           ips114_show_int(90,40,card_y[0],3);//第一次捕捉到卡片的y坐标
+                           ips114_show_int(90, 60, target_type, 3); // 用于观测行进函数的步数
                 //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
                 //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
                 // //*******************************************************************//
@@ -200,11 +197,11 @@ int main(void)
                 //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
                 // //*******************************************************************//
                 // //**************************观察角度*********************************//
-                //           		   ips114_show_float(0,0,Angle_Z,3,2);
-                //                 ips114_show_float(0,20,Angle_z,3,2);
-                //                 ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
+                           		   ips114_show_float(0,0,Angle_Z,3,2);
+                                 ips114_show_float(0,20,Angle_z,3,2);
+                                 ips114_show_float(0,40,delta_angle,3,2);//显示现在的偏转角
                 //   		// 	ips114_show_float(0,40,turn_angle,3,2);
-                //          		 	 ips114_show_float(0,60,Vz,3,2);
+                          		 	 ips114_show_float(0,60,Vz,3,2);
                 //         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
                 // //*******************************************************************//
 
@@ -251,7 +248,7 @@ int main(void)
 
         //*********************测试侧面舵机********************************//
 //         test_arm();
-        //*********************测试总钻风校正********************************//
+        //*********************测试总钻风/art校正********************************//
 //				  pick_up_mode = 1; 
 //          CSI_dis_new_correct(center_x, center_y);
 //          Turn_Angle_PD(90.0);//准备Vz转速，作用是锁住车头方向
@@ -263,6 +260,8 @@ int main(void)
 //					ips114_show_int(90,100,correct_x_flag,4);//显示x调整标志位
 //          ips114_show_int(90,60,delta_y,4);//显示x，y差值
 //					ips114_show_int(90,60,correct_y_flag,4);//显示y调整标志位
+        ips114_show_int(150,20,card_center_x,3);//第一次捕捉到卡片的y坐标
+        ips114_show_int(150,40,card_center_y, 3); // 用于观测行进函数的步数
            ips114_show_float(0,80,Vx,3,2);
            ips114_show_float(0,100,Vy,3,2);//显示x,y速度
 //					ips114_show_float(90,100,Vz,3,2);//显示x,y速度
@@ -295,10 +294,10 @@ int main(void)
         //         // ips114_show_float(0,20,delta_card_y/delta_card_x,3,2);
         // //*******************************************************************//
         //*********************测试总的车辆行进打包函数**********************//
-          car_findcard(&car_mode);//模式选择
+        car_findcard(&car_mode);//模式选择
         //*******************************************************************//
 
-                //		car_run();
+//                		car_run();
                 //  ips114_show_float(0,60,center_distance,3,2);
                 //  ips114_show_int(188,80,right_data[3],3);
                 // for(uint8 i=0;i<4;i++)

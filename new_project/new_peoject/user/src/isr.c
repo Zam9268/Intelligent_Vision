@@ -39,7 +39,7 @@
 #include "control.h"
 #include "take.h"
 #include "imu660ra.h"
-
+extern int correct_art2_flag;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[]; // 外部声明
 extern pid_info Speed[4];       // �ⲿ����
@@ -85,10 +85,10 @@ void PIT_IRQHandler(void)
         {
             init_count++;
             if (init_count == 15)
-						{
-                init_flag = 1;
-						    Motor_Init();              // 电机初始化
-						}
+			     {
+             init_flag = 1;
+			       Motor_Init();              // 电机初始化
+			     }
         }
 
         pit_flag_clear(PIT_CH2); //
@@ -96,7 +96,8 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-        uart_write_string(UART_4, uart_4_begin_abc);
+        if(correct_art2_flag==OPEN)
+           uart_write_string(UART_4, uart_4_begin);
         pit_flag_clear(PIT_CH3);
     }
 

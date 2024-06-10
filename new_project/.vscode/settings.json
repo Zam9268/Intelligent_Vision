@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "math.h": "c"
+        "math.h": "c",
+        "zf_common_headfile.h": "c"
     }
 }
