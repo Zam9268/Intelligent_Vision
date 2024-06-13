@@ -2032,7 +2032,6 @@ uint8 Surround_continious_detect(uint8 start_column, uint8 end_column)
     return index;
 }
 
-uint8 lowest_row=0;
 uint8 Surround_Analyse(void)
 {
     uint8 last_right_point = 0;
@@ -2657,7 +2656,7 @@ void test(void)
             ips114_show_uint(188, 120, my_threshold, 4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));
             Easy_Filtering(110, 60, 30, 130, 5);
-            Straight_Card_Find();
+//            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
             Outer_Analyse();

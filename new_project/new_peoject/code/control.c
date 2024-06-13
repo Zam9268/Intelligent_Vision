@@ -879,7 +879,7 @@ void car_findcard(int *mode)
     {
       car_stop();//清空速度
 			system_delay_ms(500);
-			correct_art2_flag = CLOSE;
+			correct_art2_flag = CLOSE;//关闭art4发数据
 			only_one=1;//重新打开only_one
 			card_center_x=0;
 			card_center_y=0;
@@ -898,11 +898,10 @@ void car_findcard(int *mode)
 					 {
 						 card_center_x=near_card_x;
 						 card_center_y=near_card_y;
-						 only_one=0;
+						 only_one=0;//只记录一次
 					 }
 				 }
-         CSI_dis_new_correct(near_card_x, near_card_y);//总钻风坐标对正，准备x,y速度
-				//  CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正，准备x,y速度
+         CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
          Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
          Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
 		}
@@ -918,7 +917,7 @@ void car_findcard(int *mode)
 	   {
 		  arm_control(2);//捡卡片
 	    arm_control(4);//默认模式
-		  arm_pick_flag=ARM_PICK_DONE;
+		  arm_pick_flag=ARM_PICK_DONE;//打开中断
 			ahead_flag=1;//卡片向前走了一段距离
       Car_dis_x2=0; 
       Car_dis_y2=0;//里程计2清零 
@@ -958,8 +957,6 @@ void car_findcard(int *mode)
 		 Vx=0;
 		//  if(ahead_flag==1)//有前进一段距离
 		  Vy=Distance_pid(&distance_pid[0], -5, (int)Car_dis_y2);
-		//  else
-		//   Vy=0;
 		 Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
      *mode = Car_turn_again;
     }
