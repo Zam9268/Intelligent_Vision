@@ -180,7 +180,7 @@ int main(void)
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);
 
-//                 test();
+               test();
                 //**************************观察卡片坐标和里程计*********************//
                            	//    	 ips114_show_int(90,0,now_distance_x,4);
                                 //  ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
