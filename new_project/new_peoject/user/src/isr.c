@@ -61,13 +61,13 @@ void PIT_IRQHandler(void)
     if (pit_flag_get(PIT_CH0))
     {
         // 读取编码器w
-			  if(init_flag)
-				{
-        Read_Encoder();
-        increment_pid();
-        motor_close_control();
-        pit_flag_clear(PIT_CH0);
-				}
+        if (init_flag)
+        {
+            Read_Encoder();
+            increment_pid();
+            motor_close_control();
+            pit_flag_clear(PIT_CH0);
+        }
     }
 
     if (pit_flag_get(PIT_CH1))
@@ -85,10 +85,10 @@ void PIT_IRQHandler(void)
         {
             init_count++;
             if (init_count == 15)
-						{
+            {
                 init_flag = 1;
-						    Motor_Init();              // 电机初始化
-						}
+                Motor_Init(); // 电机初始化
+            }
         }
 
         pit_flag_clear(PIT_CH2); //
@@ -96,7 +96,7 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-        // uart_write_string(UART_4, uart_4_begin_abc);
+        // uart_write_string(UART_4, uart_4_begin);
         pit_flag_clear(PIT_CH3);
     }
 
