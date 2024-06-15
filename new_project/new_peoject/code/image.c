@@ -2798,7 +2798,7 @@ void test(void)
     {
         uint8 *output_address; // 图像第一个像素的地址
         /*注意：如果阈值在*/
-        if (pick_up_mode == 1)
+        if (pick_up_mode == 0)
         {
             output_address = Scharr_Edge(*mt9v03x_image, 1700); // 使用扫描边缘的方式获取图像
             my_threshold = Image_Get_Down();

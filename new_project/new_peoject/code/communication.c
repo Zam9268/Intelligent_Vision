@@ -37,6 +37,8 @@ void My_Communication_Init(void)
     NVIC_SetPriority(LPUART4_IRQn, 1);                             // 设置UART4中断优先级
 }
 
+
+
 /**
  * @brief UART1接收中断处理函数
  * @param 无

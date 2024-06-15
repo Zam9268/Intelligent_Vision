@@ -139,14 +139,16 @@ void arm_control(uint8 mode)
 
  case 2: //模式2收纳模式，减第一张卡片时的角度
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(173, 80, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 148, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 100, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(30, 58, 50); //?????
-   system_delay_ms(1000);
+   servo_slow_ctrl(170, 80, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(165, 150, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(165, 100, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(30, 100, 50); //?????
+   system_delay_ms(500);
+   servo_slow_ctrl(30, 45, 50); //?????
+   system_delay_ms(500);
    gpio_set_level(C11, 0);
    break;
 
@@ -232,7 +234,7 @@ void test_arm(void)
 	if(arm_pick_flag==ARM_PICK_NOT_DONE)
 	{
 		arm_control(2);//捡卡片
-//	  arm_control(3);//默认模式
+	  arm_control(4);//默认模式
 		arm_pick_flag=ARM_PICK_DONE;
 //    arm_control(6);//开门
 	}

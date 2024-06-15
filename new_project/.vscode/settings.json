@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "math.h": "c",
-        "zf_common_headfile.h": "c"
+        "zf_common_headfile.h": "c",
+        "communication.h": "c",
+        "camera.h": "c"
     }
 }

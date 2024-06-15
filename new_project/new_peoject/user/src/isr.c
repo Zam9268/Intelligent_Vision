@@ -39,6 +39,8 @@
 #include "control.h"
 #include "take.h"
 #include "imu660ra.h"
+extern int uart1_flag;
+extern int uart4_flag;
 extern int correct_art2_flag;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[]; // 外部声明
@@ -46,10 +48,20 @@ extern pid_info Speed[4];       // �ⲿ����
 extern uint8 step;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[];
+extern fifo_struct uart_data_fifo; // UART数据FIFO结构体
+extern uint8 uart_get_data[64];
 int count = 0;
 int arm_flag = 0;
 unsigned int init_count = 0;
 extern uint8 init_flag;
+unsigned int my_sceond_count=0;
+uint8 seconds=0;
+uint8 change=0;
+
+
+char uart_1_begin[] = " start";    // UART4开始字符串
+char uart_1_stop[] = " stop"; // UART4开始字符串abc
+
 void CSI_IRQHandler(void)
 {
     CSI_DriverIRQHandler(); // ????SDK??????��???? ?????????????????????????????
@@ -96,8 +108,32 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-//        if(correct_art2_flag==OPEN)
+			
+			// my_sceond_count++;
+			// if(my_sceond_count==10)
+			// {
+			// 	my_sceond_count=0;
+			// 	seconds++;
+			// }
+			// if(seconds==2)
+			// {
+            //     seconds=0;
+            //     change=!change;
+            //     if(change==1)
+            //     {
+            //         uart_write_string(UART_1, uart_1_begin);
+            //     }
+			// 	else
+            //     {
+            //         uart_write_string(UART_1, uart_1_stop);
+            //     }
+			// }
+        if(correct_art2_flag==1)
+		   {
            uart_write_string(UART_4, uart_4_begin);
+//           correct_art2_flag=0;
+		   }
+			 
         pit_flag_clear(PIT_CH3);
     }
 
@@ -113,7 +149,10 @@ void LPUART1_IRQHandler(void)
         //         debug_interrupr_handler(); // 调用 debug 中断处理函数，将接收到的数据保存到 debug 缓冲区中
         // #endif                             // 如果没有修改 DEBUG_UART_INDEX 的话就不需要去掉
         extern void UART1_handler(void); //?????????
+//			 if(uart1_flag==OPEN)
+//			 {
         UART1_handler();
+//			 }
     }
 
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
@@ -145,7 +184,10 @@ void LPUART4_IRQHandler(void)
     {
         // 接收中断
         extern void UART4_handler(void); //?????????
+//			 if(uart4_flag==OPEN)
+//			 {
         UART4_handler();
+//			 }
     }
 
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
