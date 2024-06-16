@@ -46,6 +46,7 @@ uint8 start_row = 0;                       // record the start row
 uint8 my_threshold = 0;
 uint8 lowest_column = 0;
 uint8 lowest_row = 0;
+uint8 ramp_change_flagh=0;
 int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
 uint8 Island_surrond[IMAGE_WIDTH] = {0};
 uint8 straight_card_left_down_point[2] = {0};
@@ -53,6 +54,7 @@ uint8 straight_card_left_up_point[2] = {0}; // 如果想要找左上角的坐标
 uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
+uint8 lower_row_center_threshold=0;
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
 int center_straight_right_card_x = 0;
@@ -346,7 +348,7 @@ void Center_line_deal_plus(uint8 start_column, uint8 end_column)
 {
 begin:
 
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    for (uint8 i = 0; i <= IMAGE_HEIGHT - 1; i++)
     {
         left_line[i] = 0;
         right_line[i] = 0;
@@ -366,7 +368,7 @@ begin:
     /*Counting white columns*/
     for (uint8 j = start_column; j <= end_column; j++)
     {
-        if (Image_Use[119][j] >= DOWN_THTRESHOLD) //???????��?��??????????��????????
+        if (Image_Use[119][j] >= lower_row_center_threshold) //???????��?��??????????��????????
         {
             for (uint8 i = IMAGE_HEIGHT - 3; i >= 0; i--) //???????????????????????????????
             {
@@ -930,6 +932,27 @@ void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 en
         }
     }
 }
+
+uint8 Get_DownCenterThreshold(void)
+{
+    uint8 max=0,min=255;//定义最小阈值和最大阈值
+    for(uint8 i=0;i<IMAGE_WIDTH;i++)
+    {
+        if(Image_Use[119][i]<min)
+        {
+            min=Image_Use[119][i];
+        }
+        if(Image_Use[119][i]>max)
+        {
+            max=Image_Use[119][i];
+        }
+    }
+
+    uint8 my_return=(max+min)/2;
+    return my_return;
+
+}
+
 /**
  * @brief the function Edge array analysis
  * @param none
@@ -975,12 +998,12 @@ void Outer_Analyse(void)
 
     /*校准代码*/
 
-    // if (Road_Type == STRAIGHT_ROAD)
-    //     Ramp_Detect();
-    // if (Road_Type == STRAIGHT_ROAD)
-    //     Zebra_Stripes_Detect();
-    // if (Road_Type == RAMP)
-    //     Ramp_Detect(); //??????
+    if (Road_Type == STRAIGHT_ROAD)
+        Ramp_Detect();
+    if (Road_Type == STRAIGHT_ROAD)
+        Zebra_Stripes_Detect();
+    if (Road_Type == RAMP)
+        Ramp_to_Straight_Detect(); //??????
 }
 
 /**
@@ -1963,10 +1986,11 @@ uint8 my_count = 0;
 void Ramp_Detect(void)
 {
     my_count = 0;
+    
     if (Road_Type != STRAIGHT_ROAD)
         return; // misjudgment detection
     /*Update minimum road width*/
-    uint8 temp = 0;
+       uint8 temp = 0;
     for (uint8 i = IMAGE_HEIGHT - 1; i >= IMAGE_HEIGHT - Search_Stop_Line; i--)
     {
         if (Road_Wide[i] < Road_Min_Width[0])
@@ -1995,7 +2019,23 @@ void Ramp_Detect(void)
     }
     else
         Road_Type = STRAIGHT_ROAD; // Otherwise, the element will remain straight (without any changes)
+
 }
+
+void Ramp_to_Straight_Detect(void)
+{
+    if(ramp_flag==0)
+        return;
+    if(Road_Type!=RAMP)
+    {
+        return;
+    }
+    if(Left_Lost_Time<=5&&Right_Lost_Time<=5 &&Both_Lost_Time<=5)
+    {
+        Road_Type=STRAIGHT_ROAD;
+    }
+}
+
 /**
  * @brief Black and white detection function
  * @param uint8 row : the row that was fixed and counts for pixle
@@ -2690,16 +2730,17 @@ void test2(void)
         type = 6;
     else if (Road_Type == RIGHT_HUANDAO)
         type = 7;
-    //    else if (Road_Type == RAMP)
-    //        type = 8;
-    //    if (Road_Type == CROSSING)
-    //        Cross_Detect();
-    //    if (left_island_flag || right_island_flag)
-    //    Island_Detect();
+    else if (Road_Type == RAMP)
+        type = 8;
+       if (Road_Type == CROSSING)
+           Cross_Detect();
+       if (left_island_flag || right_island_flag)
+       Island_Detect();
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
         // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
     }
     //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     //    {
@@ -2746,7 +2787,7 @@ void test2(void)
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
     // ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
-    // ips114_show_uint(188, 20, type, 3);
+    ips114_show_uint(188, 20, type, 3);
     // ips114_show_int(188, 30, Search_Stop_Line, 3);
     // ips114_show_uint(188, 40, Boundry_Start_Left, 3);
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
@@ -2755,7 +2796,7 @@ void test2(void)
     // // ips114_show_int(188, 100, Right_Lost_Time, 3);
     // // ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
-    ips114_show_int(188, 70, center_straight_left_card_x, 3);
+    ips114_show_int(188, 70, lower_row_center_threshold, 3);
     ips114_show_int(188, 80, center_straight_left_card_y, 3);
     ips114_show_int(188, 90, center_straight_right_card_x, 3);
     ips114_show_int(188, 100, center_straight_right_card_y, 3);
@@ -2807,6 +2848,7 @@ void test(void)
             Easy_Filtering(110, 60, 30, 130, 5);
 //            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
+            lower_row_center_threshold=Get_DownCenterThreshold();
             Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
             Outer_Analyse();
             //            island_err = Island_Surround(80); // 目标行选择为80

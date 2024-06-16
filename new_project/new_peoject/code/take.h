@@ -11,9 +11,9 @@
 #define SERVO_MOTOR_FREQ                (50)                                       // 舵机频率
 #define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //舵机角度转换成对应的pwm值
 
-#define class_A_angle            30 //a类对应舵机角度30度
-#define class_B_angle            90 //b类对应舵机角度90度
-#define class_C_angle            153//c类对应舵机角度153度
+#define class_A_angle            173    //a类对应舵机角度173度
+#define class_B_angle            113    //b类对应舵机角度113度
+#define class_C_angle            53     //c类对应舵机角度53度
 
 
 #define ARM_PICK_NOT_DONE        (0)
@@ -44,6 +44,7 @@ void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_cou
 void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count);
 void arm_control(uint8 mode);
 void test_arm(void);
+void classify_360(uint8 card_classify_type);
 //void classify_pick(uint8 type, uint8 on_off);
 // void classify_pick(uint8 mode);
 // void tri_servo(uint8 tri_mode);

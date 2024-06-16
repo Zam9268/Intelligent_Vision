@@ -160,7 +160,7 @@ int near_card_distance;       // 最近卡片的距离
 int near_card_x;
 int near_card_y;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
-uint8 card_type = 0;      // 卡片类型，取值范围为1~15
+int card_type = 0;      // 卡片类型，取值范围为1~15
 Card card_position[100];
 int one_time=1;
 int card_word_ready;//卡片世界坐标解算完成的标志位

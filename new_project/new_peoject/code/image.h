@@ -8,7 +8,7 @@
 #define LONG_WHITE_COLUMN 100 // 长白列长度阈�?
 #define WHITE_POINT 255
 #define BLACK_POINT 0
-#define DOWN_THTRESHOLD 175 //底下行的阈值
+#define DOWN_THTRESHOLD 145 //底下行的阈值
 extern int center[IMAGE_HEIGHT]; // ��������
 extern uint8 pick_up_mode;       // 捡卡片模式
 extern int center_x, center_y;   // 卡片中心坐标
@@ -59,10 +59,12 @@ void Outer_Analyse(void);
 void K_Draw_Line(float k, int startX, int startY, int endY);
 void Draw_Line(int startX, int startY, int endX, int endY);
 void Center_line_deal(uint8 start_column, uint8 end_column);
+void Center_line_deal_plus(uint8 start_column, uint8 end_column);
 void Image_denoising(uint8 *bin_image);
 void test(void);
 void Zebra_Stripes_Detect(void);
 void Ramp_Detect(void);
+void Ramp_to_Straight_Detect(void);
 void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 end_column, uint8 threshold);
 void Get_Card_Center_coordinate(int left_up_camera_x, int left_up_camera_y, int right_up_camera_x, int right_up_camera_y, int *real_x, int *real_y);
 void Pespective_point(int camera_x, int camera_y, int *real_x, int *real_y);

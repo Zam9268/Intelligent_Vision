@@ -47,6 +47,7 @@ typedef struct{
   int pick_doen_flag;       //卡片拾取完成标志位
 }Card;
 
+extern int card_type;
 extern int now_distance_x;
 extern unsigned int now_distance_y;
 extern int record_now_distance_x;
