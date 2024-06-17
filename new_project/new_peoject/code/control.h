@@ -5,6 +5,9 @@
 #include "stdint.h"
 #include "zf_common_headfile.h"
 
+#define OPEN   1
+#define CLOSE  0
+
 #define DIR_LF D14//电机gpio
 #define DIR_LB D3//电机gpio
 #define DIR_RF D12//电机gpio
@@ -44,6 +47,7 @@
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 
+
 //??pid??
 typedef struct{
 	float now_speed;	  //实际速度
@@ -61,14 +65,12 @@ typedef struct{
 	float output_last;    //上次输出值
 }pid_info;
 
-
-extern float Car_H;//车长
-extern float Car_W;//车宽
+extern int card_center_x;
+extern int card_center_y;
+extern int arrive_card_flag;
 extern float Vx,Vy,Vz;
 extern float ahead_speed;//直行速度
-extern float correct_x_speed;//x轴上的修正速度
 extern float correct_z_speed;//z轴上的修正速度
-extern float correct_move_speed ;//x轴修正速度
 extern float correct_turn_speed;//x轴修正速度
 extern int encoder[4];//四个编码器读数
 extern int encoder_test[4];
@@ -89,6 +91,9 @@ extern float Vx_world, Vy_world;//世界坐标上的x，y
 extern float Car_dis_x, Car_dis_y;//x轴，y轴行走距离
 extern int car_world_distance;//车辆在全局坐标上与原点的距离
 extern float car_world_angle;//卡片世界坐标解算出的世界方位角
+extern float correct_x,correct_y;
+extern uint8 card_classify;
+extern float Car_dis_x1, Car_dis_y1;
 extern float Car_dis_x2, Car_dis_y2;
 extern float Card_dis_car_x,Card_dis_car_y;
 extern double delta_card_y, delta_card_x;
@@ -109,6 +114,10 @@ extern int catch_card_flag;
 extern int delta_x,delta_y; //总钻风识别的卡片中心坐标
 extern int correct_x_flag,correct_y_flag;
 extern int correct_step;
+extern int correct_art2_flag;
+extern uint8 Traffic;        //交通工具类
+extern uint8 Weapon;         //武器类
+extern uint8 Supply;		 //物资类
 
 extern int pid_motor[4];
 
@@ -141,6 +150,7 @@ void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid, int target_diantance, int actual_distance);
 void CSI_dis_new_correct(int cor_x, int cor_y);
+void ramp_cross(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
 #endif

@@ -4,6 +4,8 @@ extern float Gyro_z;
 extern float fil_Gyro_z;//�����ǽ��ٶ�
 extern float Angle_z;
 extern float Angle_world;//用于计算卡片全局坐标的车辆角度
+extern float Angle_arrive_card;
+extern float Angle_ramp;
 extern float kal_angle;
 extern float coe_Gyro_z;
 extern float IMU660ra_FIFO[11];

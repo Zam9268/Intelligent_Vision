@@ -25,6 +25,7 @@ uint8 arm_state_flag = 0;//机械臂开启标志
 uint8 one_pick = 0;
 uint8 arm_put_down = 0;//机械臂放下标志位
 
+
 int finish_count = 0;//中断结束计数位
 int once = 1;
 extern int count;
@@ -35,7 +36,7 @@ void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(173)); //云台舵机度数15  75  135(侧面) 0 60 120(正面)
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(173)); //云台舵机度数15  75  135(侧面) 173 113 53(正面)
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
  gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
@@ -139,14 +140,16 @@ void arm_control(uint8 mode)
 
  case 2: //模式2收纳模式，减第一张卡片时的角度
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(173, 80, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 148, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 100, 50);
-   system_delay_ms(1000);
-   servo_slow_ctrl(30, 58, 50); //?????
-   system_delay_ms(1000);
+   servo_slow_ctrl(170, 80, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(165, 150, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(165, 100, 50);
+   system_delay_ms(500);
+   servo_slow_ctrl(30, 100, 50); //?????
+   system_delay_ms(500);
+   servo_slow_ctrl(30, 45, 50); //?????
+   system_delay_ms(500);
    gpio_set_level(C11, 0);
    break;
 
@@ -178,53 +181,41 @@ void arm_control(uint8 mode)
    system_delay_ms(1000);
  	side_servo_slow_ctrl(30, 10);//侧面舵机控制，默认角度
 	system_delay_ms(1000);
-   break;
+  break;
   case 6: //模式6侧边舵机拾取
   gpio_set_level(C10, 0);//电磁铁断电
 	side_servo_slow_ctrl(50, 10);//侧面舵机控制，默认角度
 	system_delay_ms(1000);
 	break;
-//    switch (side_step)
-//  {
-//    case 1:
-//        side_servo_slow_ctrl(20, 30);//侧边舵机控制，吸门
-//    if(arm_flag==1)//计数延时完成标志
-//    {
-//       mode = 6;
-//       side_step = 2;
-//       arm_flag = 0;//重置计数标志
-//    }
-//    case 2:
-//    side_servo_slow_ctrl(141, 50); //放门
-//    PIT_CH2_Int_Init(10);
-//    if(arm_flag==1)//计数延时完成标志
-//    {
-//       mode = 6;
-//       side_step = 3;
-//       arm_flag = 0;//重置计数标志
-//    }
-//    case 3:
-//    side_servo_slow_ctrl(22, 100); //门回归初始位置
-//      if(arm_flag==1)//计数延时完成标志
-//    {
-//       arm_flag = 0;
-//       side_step = 4;//更新步骤
-//       mode = 0;//模式变为0
-//    }
-//    case 4:
-//    gpio_set_level(C9, 0);//电磁铁断电
-//    side_servo_slow_ctrl(50, 100); //回归初始状态
-//    if(arm_flag == 1)//计数延时完成标志
-//    {
-//       arm_flag = 0;
-//       side_step = 0;//全部完成，步骤置0
-//       mode = 0;//模式重置
-//    }
-//    break;
-//  }
+
  default:
    break; //退出
  }
+}
+/**************************************************************************
+函数功能：360度舵机分类
+入口参数：mode
+返回值：无
+备注：1.A类  2.B类  3.C类
+调用示例：classify_360(card_type);
+**************************************************************************/
+void classify_360(uint8 card_classify_type)
+{
+  switch(card_classify_type)
+  {
+  case 1:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_A_angle));
+    system_delay_ms(300);
+    break;
+  case 2:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_B_angle));
+    system_delay_ms(300);
+    break;
+  case 3:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_C_angle));
+    system_delay_ms(300);
+    break;  
+  }
 }
 //*******************************舵机测试函数******************************//
 void test_arm(void)
@@ -232,7 +223,7 @@ void test_arm(void)
 	if(arm_pick_flag==ARM_PICK_NOT_DONE)
 	{
 		arm_control(2);//捡卡片
-//	  arm_control(3);//默认模式
+	  arm_control(4);//默认模式
 		arm_pick_flag=ARM_PICK_DONE;
 //    arm_control(6);//开门
 	}

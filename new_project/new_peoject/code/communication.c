@@ -37,6 +37,8 @@ void My_Communication_Init(void)
     NVIC_SetPriority(LPUART4_IRQn, 1);                             // 设置UART4中断优先级
 }
 
+
+
 /**
  * @brief UART1接收中断处理函数
  * @param 无
@@ -142,6 +144,8 @@ void get_uartdata(void)
 extern float Car_dis_x, Car_dis_y; //??????????x??y?????
 extern float Angle_world;          //?????????
 
+int record_now_distance_x;
+unsigned int record_now_distance_y;
 int last_distance_x;          // 上一次接收到的x距离
 unsigned int last_distance_y; // 上一次接收到的y距离
 unsigned int record_now_distance_y;
@@ -156,7 +160,7 @@ int near_card_distance;     // 最近卡片的距离
 int near_card_x;
 int near_card_y;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
-uint8 card_type = 0;      // 卡片类型，取值范围为1~15
+int card_type = 0;      // 卡片类型，取值范围为1~15
 Card card_position[100];
 int one_time = 1;
 int card_word_ready;                        // 卡片世界坐标解算完成的标志位
