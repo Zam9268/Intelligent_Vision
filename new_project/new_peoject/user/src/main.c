@@ -170,8 +170,8 @@ int main(void)
                 // oscilloscope_data.data[1] = encoder[1];
                 // oscilloscope_data.data[2] = encoder[2];
                 // oscilloscope_data.data[3] = encoder[3];
-                // ips114_show_int(0, 0, near_card_x, 3);
-                // ips114_show_int(0, 20, near_card_y, 3);
+                ips114_show_int(0, 0, near_card_x, 3);
+                ips114_show_int(0, 20, near_card_y, 3);
                 // ips114_show_uint(0, 40, card_type, 3);
                 // ips114_show_uint(0, 60, card_abc, 3);
                 // ips114_show_uint(0, 80, right_data[0], 3);

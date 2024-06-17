@@ -96,7 +96,7 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-        // uart_write_string(UART_4, uart_4_begin);
+        uart_write_string(UART_4, uart_4_begin);
         pit_flag_clear(PIT_CH3);
     }
 
