@@ -177,6 +177,7 @@ int main(void)
         //		float start_angle = 100.0;
         while (1)
         {
+                //ok
 //                seekfree_assistant_oscilloscope_send(&oscilloscope_data);
 //                oscilloscope_data.data[0] = Speed[0].now_speed;
 //                oscilloscope_data.data[1] = Speed[1].now_speed;
