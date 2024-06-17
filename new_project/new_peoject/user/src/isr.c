@@ -54,13 +54,13 @@ int count = 0;
 int arm_flag = 0;
 unsigned int init_count = 0;
 extern uint8 init_flag;
-unsigned int my_sceond_count=0;
-uint8 seconds=0;
-uint8 change=0;
+unsigned int my_sceond_count = 0;
+uint8 seconds = 0;
+uint8 ramp_begin_detect_flag = 0;
+uint8 change = 0;
 
-
-char uart_1_begin[] = " start";    // UART4开始字符串
-char uart_1_stop[] = " stop"; // UART4开始字符串abc
+char uart_1_begin[] = " start"; // UART4开始字符串
+char uart_1_stop[] = " stop";   // UART4开始字符串abc
 
 void CSI_IRQHandler(void)
 {
@@ -108,32 +108,23 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-			
-			// my_sceond_count++;
-			// if(my_sceond_count==10)
-			// {
-			// 	my_sceond_count=0;
-			// 	seconds++;
-			// }
-			// if(seconds==2)
-			// {
-            //     seconds=0;
-            //     change=!change;
-            //     if(change==1)
-            //     {
-            //         uart_write_string(UART_1, uart_1_begin);
-            //     }
-			// 	else
-            //     {
-            //         uart_write_string(UART_1, uart_1_stop);
-            //     }
-			// }
-        if(correct_art2_flag==1)
-		   {
-           uart_write_string(UART_4, uart_4_begin);
-//           correct_art2_flag=0;
-		   }
-			 
+
+        my_sceond_count++;
+        if (my_sceond_count == 2)
+        {
+            my_sceond_count = 0;
+            seconds++;
+        }
+        if (seconds >= 10) // 十秒过后才会开始检测坡道
+        {
+            ramp_begin_detect_flag = 1;
+        }
+        if (correct_art2_flag == 1)
+        {
+            uart_write_string(UART_4, uart_4_begin);
+            //           correct_art2_flag=0;
+        }
+
         pit_flag_clear(PIT_CH3);
     }
 
@@ -149,10 +140,10 @@ void LPUART1_IRQHandler(void)
         //         debug_interrupr_handler(); // 调用 debug 中断处理函数，将接收到的数据保存到 debug 缓冲区中
         // #endif                             // 如果没有修改 DEBUG_UART_INDEX 的话就不需要去掉
         extern void UART1_handler(void); //?????????
-//			 if(uart1_flag==OPEN)
-//			 {
+                                         //			 if(uart1_flag==OPEN)
+                                         //			 {
         UART1_handler();
-//			 }
+        //			 }
     }
 
     LPUART_ClearStatusFlags(LPUART1, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
@@ -184,10 +175,10 @@ void LPUART4_IRQHandler(void)
     {
         // 接收中断
         extern void UART4_handler(void); //?????????
-//			 if(uart4_flag==OPEN)
-//			 {
+                                         //			 if(uart4_flag==OPEN)
+                                         //			 {
         UART4_handler();
-//			 }
+        //			 }
     }
 
     LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag); // 清除接收溢出标志位
