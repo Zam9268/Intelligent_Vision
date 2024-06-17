@@ -46,7 +46,9 @@ uint8 start_row = 0;                       // record the start row
 uint8 my_threshold = 0;
 uint8 lowest_column = 0;
 uint8 lowest_row = 0;
-uint8 ramp_change_flagh=0;
+uint8 ramp_change_flagh = 0;
+uint8 zebra_flag = 0;              // 斑马线判断标志位
+uint8 zebra_flag_new = 0;          // 用于第二种斑马线的判断
 int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
 uint8 Island_surrond[IMAGE_WIDTH] = {0};
 uint8 straight_card_left_down_point[2] = {0};
@@ -54,7 +56,7 @@ uint8 straight_card_left_up_point[2] = {0}; // 如果想要找左上角的坐标
 uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
-uint8 lower_row_center_threshold=0;
+uint8 lower_row_center_threshold = 0;
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
 int center_straight_right_card_x = 0;
@@ -71,6 +73,7 @@ float Right_derivative[IMAGE_HEIGHT] = {0.0};
 float err = 0.00;
 float last_err = 0.00;
 float island_err = 0.00; // 记录环岛时的误差
+float new_island_err = 0.00;
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];        // store the data received from the serial port,it only store 64 bytes
 extern uint32 fifo_data_count;      // the number of data lied in the buffer
@@ -81,6 +84,8 @@ extern unsigned int the_max_G;      // the scchar's threshold
 extern int now_distance_x;          // the distance made by the target detection algorithm,left is negative,right is positive
 extern unsigned int now_distance_y; // the distance made by the target detection algorithm,up is always positive
 extern uint8 init_flag;             // the flag of the initialization
+extern uint8 seconds;
+extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始就误判坡道标志位
 uint8 state3_left_up_guai[2] = {0};
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT] =
@@ -935,22 +940,21 @@ void Easy_Filtering(uint8 start_row, uint8 end_row, uint8 start_column, uint8 en
 
 uint8 Get_DownCenterThreshold(void)
 {
-    uint8 max=0,min=255;//定义最小阈值和最大阈值
-    for(uint8 i=0;i<IMAGE_WIDTH;i++)
+    uint8 max = 0, min = 255; // 定义最小阈值和最大阈值
+    for (uint8 i = 0; i < IMAGE_WIDTH; i++)
     {
-        if(Image_Use[119][i]<min)
+        if (Image_Use[119][i] < min)
         {
-            min=Image_Use[119][i];
+            min = Image_Use[119][i];
         }
-        if(Image_Use[119][i]>max)
+        if (Image_Use[119][i] > max)
         {
-            max=Image_Use[119][i];
+            max = Image_Use[119][i];
         }
     }
 
-    uint8 my_return=(max+min)/2;
+    uint8 my_return = (max + min) / 2;
     return my_return;
-
 }
 
 /**
@@ -1001,9 +1005,9 @@ void Outer_Analyse(void)
     if (Road_Type == STRAIGHT_ROAD)
         Ramp_Detect();
     if (Road_Type == STRAIGHT_ROAD)
-        Zebra_Stripes_Detect();
-    if (Road_Type == RAMP)
-        Ramp_to_Straight_Detect(); //??????
+        Zebra_Stripes_Detect_new();
+    // if (Road_Type == RAMP)
+    //     Ramp_to_Straight_Detect(); //??????
 }
 
 /**
@@ -1986,11 +1990,11 @@ uint8 my_count = 0;
 void Ramp_Detect(void)
 {
     my_count = 0;
-    
+
     if (Road_Type != STRAIGHT_ROAD)
         return; // misjudgment detection
-    /*Update minimum road width*/
-       uint8 temp = 0;
+                /*Update minimum road width*/
+    uint8 temp = 0;
     for (uint8 i = IMAGE_HEIGHT - 1; i >= IMAGE_HEIGHT - Search_Stop_Line; i--)
     {
         if (Road_Wide[i] < Road_Min_Width[0])
@@ -2011,7 +2015,7 @@ void Ramp_Detect(void)
             my_count++;
         }
     }
-    if (my_count >= 5 && init_flag == 1)
+    if (my_count >= 5 && init_flag == 1 && (zebra_flag == 0 || zebra_flag_new == 0) && ramp_begin_detect_flag == 1)
     {
         type = 8;
         Road_Type = RAMP; // If the abnormal width of the row exceeds a certain value, it is judged as a ramp
@@ -2019,20 +2023,19 @@ void Ramp_Detect(void)
     }
     else
         Road_Type = STRAIGHT_ROAD; // Otherwise, the element will remain straight (without any changes)
-
 }
 
 void Ramp_to_Straight_Detect(void)
 {
-    if(ramp_flag==0)
+    if (ramp_flag == 0)
         return;
-    if(Road_Type!=RAMP)
+    if (Road_Type != RAMP)
     {
         return;
     }
-    if(Left_Lost_Time<=5&&Right_Lost_Time<=5 &&Both_Lost_Time<=5)
+    if (Left_Lost_Time <= 5 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5)
     {
-        Road_Type=STRAIGHT_ROAD;
+        Road_Type = STRAIGHT_ROAD;
     }
 }
 
@@ -2229,10 +2232,8 @@ uint8 Surround_Analyse(void)
     return last_right_point;
 }
 
-/*
-沿环岛循迹总处理函数
-*/
-float Island_Surround(uint8 target_row)
+/*从下而上对上边线进行循迹*/
+void Top_Line_Search(void)
 {
     /*使用前要先将坐标全部清零*/
     lowest_row = 0;
@@ -2240,8 +2241,7 @@ float Island_Surround(uint8 target_row)
     {
         Island_surrond[i] = 0;
     }
-    uint8 continuious_flag = 0;
-    static uint8 last_continuious_flag = 0;
+
     uint8 right_max_point = 0;
     /*第一部分：扫线*/
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
@@ -2264,7 +2264,33 @@ float Island_Surround(uint8 target_row)
             }
         }
     }
+}
 
+float Top_Line_Err(uint8 target_row)
+{
+    island_err = 0.0;                             // 使用前先清零
+    for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
+    {
+        island_err += Island_surrond[i] - target_row;
+    }
+    island_err = island_err / (IMAGE_WIDTH - 21); // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    if (island_err <= 10.0)
+    {
+        island_err = 10.0; // island_err的最小值
+    }
+    return island_err;
+}
+
+/*
+沿环岛循迹总处理函数：巡线处理函数
+*/
+float Island_Surround(uint8 target_row)
+{
+    uint8 continuious_flag = 0;
+    static uint8 last_continuious_flag = 0;
+    Top_Line_Search(); // 扫线
     /*第二部分：状态机执行*/
     // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
     if (Island_State == 0)
@@ -2302,7 +2328,7 @@ float Island_Surround(uint8 target_row)
             }
         }
     }
-    else if (Island_State == 6)/*此时为进入环岛的圆弧，没有出圆弧的状态*/
+    else if (Island_State == 6) /*此时为进入环岛的圆弧，没有出圆弧的状态*/
     {
         uint8 flag = 0;
         for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态
@@ -2365,9 +2391,9 @@ float Island_Surround(uint8 target_row)
             Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], 1, lowest_row); // 补线
         }
     }
-    else if(Island_State==9)//此时将要出环岛，将要进入直道，对找到左上拐点，对左上拐点进行补线
+    else if (Island_State == 9) // 此时将要出环岛，将要进入直道，对找到左上拐点，对左上拐点进行补线
     {
-        continuious_flag=Continuity_Change_Left_Island(IMAGE_HEIGHT-1,10);
+        continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10);
     }
 
     /*第三部分：状态机切换*/
@@ -2380,10 +2406,10 @@ float Island_Surround(uint8 target_row)
         Island_State = 8;
     }
 
-    ips114_show_int(188, 40, right_max_point, 3);
-    ips114_show_uint(188, 80, lowest_row, 3);
-    ips114_show_uint(188, 90, lowest_column, 3);
-    ips114_show_uint(188, 100, Island_State, 3);
+    //    ips114_show_int(188, 40, right_max_point, 3);
+    //    ips114_show_uint(188, 80, lowest_row, 3);
+    //    ips114_show_uint(188, 90, lowest_column, 3);
+    //    ips114_show_uint(188, 100, Island_State, 3);
     last_continuious_flag = continuious_flag;
     // if(Island_surrond[continuious_flag]<=20)
     // {
@@ -2707,9 +2733,41 @@ void Zebra_Stripes_Detect(void)
                                                                                                                                                               // if(Black_White_Dump((higher_flag+lower_flag)/2,left_line[higher_flag]-5,right_line[higher_flag]-5))
         {
             Road_Type = BANMAXIAN;
+            zebra_flag = 1;
             if (Road_Type == STRAIGHT_ROAD)
                 Road_Type = BANMAXIAN; // 如果当前道路类型为直行，则将道路类型设置为斑马线
         }
+    }
+}
+
+/*为了防止上面那个放案用不了，就多写了一种方案进行判别：
+这种方法更加灵活，且运算起来更快*/
+void Zebra_Stripes_Detect_new(void)
+{
+
+    /*
+    正常情况下：图像下面的路宽是比图像上面的路宽要大很多的，当下面比上面要小时，说明进入了斑马线了
+    直接判断是否存在某一段，使得左右边线间距非常小，同时左边线，右边线离最长白列比较近
+    好像这样就直接结束了
+    */
+    uint8 zebra_count = 0;
+
+    for (uint8 i = 30; i <= IMAGE_HEIGHT - 31; i++)
+    {
+        if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])))
+        {
+            zebra_count++; // 多计算几行特殊行，这样就防止误判
+        }
+    }
+    if (zebra_count >= 10) // 如果至少10行这样的特殊行，那么说明必定是斑马线
+    {
+        Road_Type = BANMAXIAN;
+        zebra_flag_new = 1;
+    }
+    else
+    {
+        zebra_flag_new = 0;
+        Road_Type = STRAIGHT_ROAD;
     }
 }
 
@@ -2732,15 +2790,16 @@ void test2(void)
         type = 7;
     else if (Road_Type == RAMP)
         type = 8;
-       if (Road_Type == CROSSING)
-           Cross_Detect();
-       if (left_island_flag || right_island_flag)
-       Island_Detect();
+    if (Road_Type == CROSSING)
+        Cross_Detect();
+    if (left_island_flag || right_island_flag)
+        Island_Detect();
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
         // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
-        ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
+        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+        // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
     }
     //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     //    {
@@ -2786,7 +2845,7 @@ void test2(void)
     20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
-    // ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
+    ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
     // ips114_show_int(188, 30, Search_Stop_Line, 3);
     // ips114_show_uint(188, 40, Boundry_Start_Left, 3);
@@ -2796,10 +2855,10 @@ void test2(void)
     // // ips114_show_int(188, 100, Right_Lost_Time, 3);
     // // ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
-    ips114_show_int(188, 70, lower_row_center_threshold, 3);
-    ips114_show_int(188, 80, center_straight_left_card_y, 3);
-    ips114_show_int(188, 90, center_straight_right_card_x, 3);
-    ips114_show_int(188, 100, center_straight_right_card_y, 3);
+    // ips114_show_int(188, 70, lower_row_center_threshold, 3);
+    // ips114_show_int(188, 80, center_straight_left_card_y, 3);
+    // ips114_show_int(188, 90, center_straight_right_card_x, 3);
+    // ips114_show_int(188, 100, center_straight_right_card_y, 3);
     //  ips114_show_int(188,90,now_distance_y,3);
     /*计算矩阵
 
@@ -2846,13 +2905,15 @@ void test(void)
             ips114_show_uint(188, 120, my_threshold, 4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));
             Easy_Filtering(110, 60, 30, 130, 5);
-//            Straight_Card_Find();
+            //            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
-            lower_row_center_threshold=Get_DownCenterThreshold();
-            Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
-            Outer_Analyse();
+            lower_row_center_threshold = Get_DownCenterThreshold();
+            // Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
+            // Outer_Analyse();
+            Top_Line_Search();
+            new_island_err = Top_Line_Err(80);
             //            island_err = Island_Surround(80); // 目标行选择为80
-            //            ips114_show_float(188, 0, island_err, 3, 3);
+            ips114_show_float(188, 30, new_island_err, 3, 3);
 
             // Easy_Filtering(110, 20, 30, 170, 5);
         }
