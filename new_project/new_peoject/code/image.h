@@ -12,6 +12,7 @@
 extern int center[IMAGE_HEIGHT]; // ��������
 extern uint8 pick_up_mode;       // 捡卡片模式
 extern int center_x, center_y;   // 卡片中心坐标
+extern uint8 type;               // 元素类型变量
 typedef enum
 {
     STRAIGHT_ROAD,
@@ -55,6 +56,9 @@ typedef enum
 #define getw_b(u, v) (b31 * (u) + b32 * (v) + b33)
 
 float Err_Handle(void);
+float Island_Surround(uint8 target_row);
+void Top_Line_Search(void);
+float Top_Line_Err(uint8 target_row);
 void Outer_Analyse(void);
 void K_Draw_Line(float k, int startX, int startY, int endY);
 void Draw_Line(int startX, int startY, int endX, int endY);

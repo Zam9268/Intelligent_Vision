@@ -95,6 +95,7 @@ float zuobiao_x = 0;
 float zuobiao_y = 0;
 double test_delta_card_x, test_delta_card_y;
 double test_tan, test_delta_angle;
+extern float Now_angle;
 
 int main(void)
 {
@@ -136,14 +137,14 @@ int main(void)
         PidInit();               // 增量式pid初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         Distance_PidInit(); // 距离环初始化
-                            //        correct_art2_flag=OPEN;
+        // correct_art2_flag=OPEN;
         ips114_init();      // 屏幕初始化
         ips114_set_dir(IPS114_PORTAIT);
         ips114_set_font(IPS114_6X8_FONT);
         ips114_set_color(RGB565_RED, RGB565_BLACK);
         //----------模块初始化--------------------//
         ips114_clear();            // 清屏
-                                   //        Motor_Init();              // 电机初始化
+       //Motor_Init();              // 电机初始化
         Encoder_Init();            // 编码器初始化
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
@@ -153,9 +154,9 @@ int main(void)
         pit_ms_init(PIT_CH1, 5);   // 10ms
         pit_ms_init(PIT_CH2, 100); // 15ms
         pit_ms_init(PIT_CH3, 500); // 25ms
-                                   //
-                                   // target_motor[1]=1000;
-                                   // target_motor[3]=1000;
+        //
+        // target_motor[1]=1000;
+        // target_motor[3]=1000;
         //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
         /*视觉处理部分代码初始化*/
         Last_Longest_White_Column_Left[1] = 94;
@@ -167,8 +168,10 @@ int main(void)
         //             Speed[0].target_speed=30.0;//?????
 
         int once = 1;
+				uint8 step=0;//直行
         int one_time = 1;
         uint8 temp = 0;
+				find_ramp = OPEN;
         //    float zuobiao_x=0;
         //	  float zuobiao_y=0;
         //    int test_delta_card_x,test_delta_card_y;
@@ -191,6 +194,67 @@ int main(void)
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);
                 test();
+
+		// car_run_upline();
+		// ips114_show_float(0,0,top_error,3,4);//
+                // ips114_show_float(0,20,Vx,3,4);
+		// ips114_show_float(0,40,Vy,3,4);
+                // ips114_show_int(0,60,type,4);
+		if(step==0)
+		{
+		  car_run();
+		}
+		if(step==1)
+		{
+                  card_final_classify(&classify_mode);    
+		}
+		if(type==5)//找到斑马线,斑马线识别成功
+               {
+		step=1;
+	       }
+//		  ips114_show_float(0,0,Angle_Z,3,4);
+//                ips114_show_float(0,20,Now_angle,3,4);
+//							  ips114_show_float(0,40,Vz,3,4);
+//                ips114_show_int(0,60,type,4);
+//                ips114_show_float(0,40,ramp_y,3,4);//绕行的里程计x,y
+//                ips114_show_int(90,0,ramp_step,4);
+//                ips114_show_float(0,60,Vx,3,4);
+//                ips114_show_float(0,80,Vy,3,4);//x,y速度
+					//坡道绕行函数
+//                if(type == 8)
+//                {
+//                   if(once)
+//                   {
+//                     Angle_ramp=0;
+//                     ramp_x=0;
+//                     ramp_y=0;
+//                     ramp_step=1;
+//										 step=1;
+//										 car_stop();
+////									find_ramp = 1;
+//                     once=0;
+//                   }
+//                }
+//								if(step==0)
+//								{
+//								  car_run();
+//								}
+//								if(step==1)
+//								{
+//                  ramp_cross(60, 140);//坡道绕行函数
+//								  Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//									if(ramp_finish==1)
+//									{
+//										step=0;
+//										type=0;
+//									}
+//								}
+//                ips114_show_float(0,0,Angle_ramp,3,4);
+//                ips114_show_float(0,20,ramp_x,3,4);
+//                ips114_show_float(0,40,ramp_y,3,4);//绕行的里程计x,y
+//                ips114_show_int(90,0,ramp_step,4);
+//                ips114_show_float(0,60,Vx,3,4);
+//                ips114_show_float(0,80,Vy,3,4);//x,y速度
                 //                car_run();
 
                 //*********************测试总的车辆行进打包函数**********************//
@@ -320,8 +384,8 @@ int main(void)
                 //          ips114_show_int(90,40,card_center_y,4);//显示卡片中心坐标
                 //  ips114_show_int(90,40,delta_x,4);
                 //  ips114_show_int(90,60,delta_y,4);//显示delta
-                ips114_show_int(90, 80, correct_x_flag, 4);  // 显示x调整标志位
-                ips114_show_int(90, 100, correct_y_flag, 4); // 显示y调整标志位
+                // ips114_show_int(90, 80, correct_x_flag, 4);  // 显示x调整标志位
+                // ips114_show_int(90, 100, correct_y_flag, 4); // 显示y调整标志位
                 //  ips114_show_int(0,20,near_card_x,3);//第一次捕捉到卡片的y坐标
                 //  ips114_show_int(0,40,near_card_y, 3); // 用于观测行进函数的步数
                 // 			 ips114_show_int(40,0,my_sceond_count,3);

@@ -1003,7 +1003,7 @@ void Outer_Analyse(void)
     /*校准代码*/
 
     if (Road_Type == STRAIGHT_ROAD)
-        Ramp_Detect();
+        // Ramp_Detect();
     if (Road_Type == STRAIGHT_ROAD)
         Zebra_Stripes_Detect_new();
     // if (Road_Type == RAMP)
@@ -2246,7 +2246,7 @@ void Top_Line_Search(void)
     /*第一部分：扫线*/
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
-        for (uint8 j = IMAGE_HEIGHT - 4; j >= 2; j--)
+        for (uint8 j = IMAGE_HEIGHT - 4; j >= 70; j--)
         {
             if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
             {
@@ -2258,9 +2258,9 @@ void Top_Line_Search(void)
                 }
                 break;
             }
-            else if (j == 2)
+            else if (j <= 75)
             {
-                Island_surrond[i] = 0; // 此时丢线
+							Island_surrond[i] = 134; // 此时丢线,默认为最低那一行
             }
         }
     }
@@ -2271,15 +2271,20 @@ float Top_Line_Err(uint8 target_row)
     island_err = 0.0;                             // 使用前先清零
     for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
     {
-        island_err += Island_surrond[i] - target_row;
+        island_err += target_row - Island_surrond[i];
     }
     island_err = island_err / (IMAGE_WIDTH - 21); // 取平均值，不加权重了
 
     /*在丢线时，要对err进行合理的限幅*/
-    if (island_err <= 10.0)
+		/*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    if (island_err >= 15.0)
     {
-        island_err = 10.0; // island_err的最小值
+        island_err = 15.0; // island_err的最小值
     }
+		else if(island_err <=-15.0)
+		{
+			island_err=-15.0;
+		}
     return island_err;
 }
 
@@ -2908,10 +2913,10 @@ void test(void)
             //            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             lower_row_center_threshold = Get_DownCenterThreshold();
-            // Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
-            // Outer_Analyse();
-            Top_Line_Search();
-            new_island_err = Top_Line_Err(80);
+            Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
+            Outer_Analyse();
+            // Top_Line_Search();
+            // new_island_err = Top_Line_Err(80);
             //            island_err = Island_Surround(80); // 目标行选择为80
             ips114_show_float(188, 30, new_island_err, 3, 3);
 

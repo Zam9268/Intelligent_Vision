@@ -44,6 +44,11 @@
 #define Car_find_card_cor  	3 //总钻风微调标
 #define Pick_up_card  		4 //机械臂拾取卡片
 #define Car_turn_again  	5 //回正
+
+#define Fing_banmaxian      0//找到斑马线
+#define Find_upline         1//上边线寻迹
+#define Catch_card          2//向卡片前进识别
+#define Watch_card          3//看卡片上的数字类型
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 
@@ -64,7 +69,7 @@ typedef struct{
 	float output;         //输出值
 	float output_last;    //上次输出值
 }pid_info;
-
+extern float top_error;
 extern int card_center_x;
 extern int card_center_y;
 extern int arrive_card_flag;
@@ -115,9 +120,14 @@ extern int delta_x,delta_y; //总钻风识别的卡片中心坐标
 extern int correct_x_flag,correct_y_flag;
 extern int correct_step;
 extern int correct_art2_flag;
+extern uint8 find_ramp;
+extern float ramp_x,ramp_y;
+extern uint8 ramp_step;
+extern uint8 ramp_finish;
 extern uint8 Traffic;        //交通工具类
 extern uint8 Weapon;         //武器类
 extern uint8 Supply;		 //物资类
+extern int classify_mode;
 
 extern int pid_motor[4];
 
@@ -135,6 +145,8 @@ void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void car_run(void);
+void car_run_upline(void);
+void car_stop(void);
 void PidInit(void);
 void Pos_PidInit(void);
 void Distance_PidInit(void);
@@ -151,6 +163,7 @@ float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid, int target_diantance, int actual_distance);
 void CSI_dis_new_correct(int cor_x, int cor_y);
 void ramp_cross(int Traverse_distance, int Straight_distance);
+void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
 #endif

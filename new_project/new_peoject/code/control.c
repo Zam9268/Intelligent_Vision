@@ -25,7 +25,7 @@ extern char uart_1_stop[]; // UART4开始字符串abc
 /******************坡道绕行函数所需变量*****************/
 uint8 find_ramp;//用于切换坡道里程计调整
 uint8 ramp_step;//用于坡道绕行函数的步数调整
-
+uint8 ramp_finish=0;//坡道绕行完成标志
 /*******************************************************/
 uint8 chance=0;
 float Vx, Vy, Vz;
@@ -56,7 +56,7 @@ float dt = 0.005;
 /*******************角度环所需变量***************************/
 float turn_error = 3;      //可接受的角度误差
 float Turn_KP = 0.5;       // 角度PID//
-float Turn_KD = 0.0;       // 角度PID//
+float Turn_KD = 0.5;       // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
 /************************************************************/
 //*****************里程计所用变量****************//
@@ -130,6 +130,18 @@ int now_card=0;//当前的卡片
 int card_car_x,card_car_y;//世界坐标下卡片与车辆的x坐标差值和y坐标差值
 int card_car_other_angle=0;//由上面两个差值解算出的角度
 /*********************************/
+/*********************用于上边线寻迹所需的变量*****************************/
+float top_error,last_top_error;         //与目标行数的加权误差
+/************************************************************************/
+//*********斑马线分类函数***************/
+int once_time=1;
+int classify_mode = 0;
+float Now_angle;
+int num_card_x,num_card_y;
+uint8 classify_step;
+uint8 classify_correct_finish;
+uint8 numcard_classify;
+/*************************************/
 /*************************各种pid*****************************/
 int pid_motor[4];
 
@@ -258,7 +270,21 @@ void car_run(void)
   Speed[3].target_speed = 5 * (1 + angle);
   // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
 }
-
+/**
+ * @brief 对速度预处理
+ * @param 中线误差
+ * @return 无
+ */
+void car_run_upline(void)
+{
+  Top_Line_Search();//对上边线扫线，为上边线数组做准备
+  top_error=Top_Line_Err(110);//对上边线扫线输出一个误差,作归一化处理
+  float kp = 1.0f, kd = 0.5f;//1.0对应速度30  0.9响应10
+  Vy= kp * top_error + kd * (top_error - last_top_error);//输出为Vy速度
+  last_top_error = top_error; // 记录下上次误差
+  Vx=20;//给固定的横移速度
+  Car_Inverse_kinematics_solution(Vx, Vy, 0);//速度解算赋值
+}
 /**
  * @brief 距离环pid初始化
  * @param 无 对kp kd赋值
@@ -713,7 +739,7 @@ void Encoder_odometer(void)
   correct_y += Vy_correct * 0.005;//分解出卡片所需的里程，用于找卡片
 }
 /***************************坡道绕行时使用***************************************/
-if (find_ramp == OPEN)             //总钻风微调，总钻风微调时的里程计
+if (find_ramp == OPEN)             //坡道调整
 {
     Angle_ramp_bias = Angle_ramp * PI / 180;
 
@@ -722,7 +748,7 @@ if (find_ramp == OPEN)             //总钻风微调，总钻风微调时的里�
     Vx_ramp_1 = Vx_enco * sin(Angle_ramp_bias);
     Vx_ramp_2 = Vx_enco * cos(Angle_ramp_bias);
     Vy_ramp_1 = Vy_enco * cos(Angle_ramp_bias);
-    Vy_ramp_2 = Vy_enco * sin(Angle_ramp_bias); //用于总钻风微调
+    Vy_ramp_2 = Vy_enco * sin(Angle_ramp_bias); //用于坡道调整
     Vx_ramp = Vx_ramp_2 - Vy_ramp_2;//简单的分解计算
     Vy_ramp = Vx_ramp_1 + Vy_ramp_1;
   }
@@ -733,8 +759,8 @@ if (find_ramp == OPEN)             //总钻风微调，总钻风微调时的里�
     Vx_ramp_2 = Vx_enco * cos(Angle_ramp_bias);
     Vy_ramp_1 = Vy_enco * cos(Angle_ramp_bias);
     Vy_ramp_2 = Vy_enco * sin(Angle_ramp_bias); //用于总钻风微调
-    Vx_ramp = Vx_correct_2 + Vy_correct_2;//简单的分解计算
-    Vy_ramp = -Vx_correct_1 + Vy_correct_1;
+    Vx_ramp = Vx_ramp_2 + Vy_ramp_2;//简单的分解计算
+    Vy_ramp = -Vx_ramp_1 + Vy_ramp_1;
   }
   ramp_x += Vx_ramp * 0.005;
   ramp_y += Vy_ramp * 0.005;//分解出卡片所需的里程，用于找卡片
@@ -849,13 +875,20 @@ extern uint8 type;
  */
 void ramp_cross(int Traverse_distance, int Straight_distance)
 {
-  if(type==RAMP)
-  {
     switch(ramp_step)
     {
      case 1://向右横移出赛道
       Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
-      Vx=Distance_pid(&distance_pid[0], Traverse_distance, (int)ramp_x);//左移出赛道
+		 if(ramp_x<=Traverse_distance && ramp_step==1)
+		 {
+      Vx=30;//左移出赛道
+		  Vy=0;
+		 }
+		 else
+		 {
+			 Vx=0;//停车
+		   Vy=0;
+		 }
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
       if(abs(Traverse_distance-(int)ramp_x)<2)
       {
@@ -864,7 +897,16 @@ void ramp_cross(int Traverse_distance, int Straight_distance)
      break;
      case 2:
       Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
-      Vy=Distance_pid(&distance_pid[0], Straight_distance, (int)ramp_y);//在赛道与坡道平行通过
+      if(ramp_y<=Straight_distance && ramp_step==2)
+		 {
+      Vx=0;
+		  Vy=30;//前进
+		 }
+		 else
+		 {
+			 Vx=0;//穿过坡道
+		   Vy=0;
+		 }
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
       if(abs(Straight_distance-(int)ramp_y)<2)
       {
@@ -872,19 +914,84 @@ void ramp_cross(int Traverse_distance, int Straight_distance)
       }
        break;
       case 3:
-      Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
-      Vx=Distance_pid(&distance_pid[0], 0, (int)ramp_x);//平移回归赛道
-      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-      if(abs((int)ramp_x)<2)
+			if(abs((int)ramp_x)<2)
       {
         ramp_step=4;
       }
+      Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
+      if(ramp_x>=0 && ramp_step==3)
+		 {
+      Vx=-30;//右移回归赛道
+		  Vy=0;
+		 }
+		 else
+		 {
+			 Vx=0;//停车
+		   Vy=0;
+		 }
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+			break;
       case 4:
        car_stop();//清空速度
        system_delay_ms(200);
-       ramp_step=1;//回归到初始状态
+			 ramp_finish=1;
+       ramp_step=0;//回归到初始状态,需要使用时再赋值
       break;
-    }
+  }
+}
+/**
+ * @brief 坡道绕行函数，记得要在前面对Angle_ramp,ramp_x,ramp_y清零
+ * @param Traverse_distance横移距离
+ * @param Straight_distance直行距离
+ * @return 无
+ */
+void find_classify(int Traverse_distance, int Straight_distance)
+{
+    switch(classify_step)
+    {
+     case 1://向右横移出赛道
+      Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
+		 if(Card_dis_car_x<=Traverse_distance+8 && classify_step==1)//要比卡片坐标多移8厘米
+		 {
+      Vx=10;//右移出赛道
+		  Vy=0;
+		 }
+		 else
+		 {
+			 Vx=0;//停车
+		   Vy=0;
+		 }
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+      if(abs(Traverse_distance+8-(int)Card_dis_car_x)<2)
+      {
+        classify_step=2;
+      }
+     break;
+     case 2:
+      Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
+      if(Card_dis_car_y<=Straight_distance-20 && classify_step==2)//25
+		 {
+      Vx=0;
+		  Vy=10;//前进
+		 }
+		 else if(Card_dis_car_y>=Straight_distance-17 && classify_step==2)//28
+		 {
+			 Vx=0;//
+		   Vy=-10;//后退
+		 }
+     else if(Card_dis_car_y > Straight_distance-20 && Card_dis_car_y < Straight_distance-17 && classify_step==2)
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+      if(abs(Straight_distance-20-(int)Card_dis_car_y)<2)
+      {
+        classify_step=3;
+      }
+       break;
+      case 3:
+       car_stop();//清空速度
+       system_delay_ms(200);
+			 classify_correct_finish=1;
+       classify_step=0;//回归到初始状态,需要使用时再赋值
+      break;
   }
 }
 /**
@@ -1146,7 +1253,7 @@ void car_new_findcard(int *mode)
     {
         *mode = Car_find_card_y;//转变小车运动模式
 				target_type = *mode;//测试变量使用
-      }			
+    }			
      }
 		else
 		{
@@ -1262,4 +1369,111 @@ void car_new_findcard(int *mode)
      *mode = Car_turn_again;
     }
    }
+}
+// /**
+// * @brief 斑马线分类，打包函数
+// * @param mode为模式选择
+// * @param
+// * @return 无
+// */
+void card_final_classify(int *classify_step)
+{
+ if(classify_step==Fing_banmaxian)//找到斑马线
+ {
+   if(abs(Angle_Z-(Now_angle+90))<3)//转到了目标角度
+   {
+     *classify_step=Find_upline;//转变成上边线寻迹
+     once_time=1;//重新打开one_time
+     target_type = *classify_step;
+   }
+   else
+   {
+     if(once_time)
+     {
+       Now_angle=Angle_Z;//记录下当前角度
+       once_time=0;
+     }
+     Turn_Angle_PD(Now_angle+90);//此处可以根据实际情况修改
+     classify_step=Fing_banmaxian;
+   }
+ }
+ if(classify_step==Find_upline)//切换至上边线寻迹
+ {
+   if(now_distance_y > 400 && now_distance_y < 500 && now_distance_x>120)//尝试设定一个判断区域,在最右边第一次看到，在行进过程中，只会在右边，art1识别(可能会用到art4识别)
+   {
+     car_stop();
+     num_card_x = now_distance_x;//记录看到的x坐标
+     num_card_y = now_distance_y;//记录看到的y坐标
+     catch_card_flag=OPEN;//打开卡片捕获的里程计
+     Angle_z=0;           //清零角度
+     Card_dis_car_x=0;
+     Card_dis_car_y=0;    //卡片里程计清空
+     classify_step=1;     //卡片分类区域修正
+     *classify_step=Catch_card;//向卡片分类区域前进
+     target_type = *classify_step;
+   }
+   else
+   {
+    //方案一，上边线巡线，鲁棒性好
+    //  car_run_upline();///上边线寻迹
+     Vx=10;//横移速度为10
+     Turn_Angle_PD(Now_angle+90);//此处可以根据实际情况修改，提供Vz的车头修正速度
+     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+     classify_step=Find_upline;
+   }
+ }
+ if(classify_step==Catch_card)//识别卡片分类区域
+ {
+   if(classify_correct_finish==1)//找到了数字分类卡片区域，准备识别
+   {
+     *classify_step=Watch_card;//识别卡片上的数字
+     num_card_x = 0;          //清零数字卡片的x坐标
+     num_card_y = 0;          //清零数字卡片的y坐标
+     now_distance_x = 0;      //清零当前x坐标
+     now_distance_y = 0;      //清零当前y坐标
+     correct_art2_flag=1;     //打开art4中断标志
+     catch_card_flag=CLOSE;   //关闭卡片捕获的里程计，但是要保存直行的距离Card_dis_car_y(已记录)
+     target_type = *classify_step;
+   }
+   else
+   {
+     find_classify((int)num_card_x/10, (int)num_card_y/10);
+     *classify_step=Catch_card;
+   }
+ }
+  if(classify_step==Watch_card)   //识别卡片分类区域
+ {
+   if( classify_correct_finish==1)//找到了数字分类卡片区域，准备识别
+   {
+     *classify_step=Watch_card;   //识别卡片上的数字
+      once_time=1;                //重新打开once_time
+     catch_card_flag=CLOSE;       //关闭卡片捕获的里程计，但是要保存直行的距离Card_dis_car_y(已记录)
+     target_type = *classify_step;
+   }
+   else
+   {
+      *classify_step = Watch_card;
+				if(near_card_x!=0 && near_card_y!=0)
+				{
+					if(once_time)
+				 {
+          numcard_classify=card_num;//数字类型
+					correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
+					once_time=0;              //只记录一次
+				 }
+				}
+          if(numcard_classify==1)//武器放置类
+          {
+            classify_360(Weapon);
+          }
+          else if(numcard_classify==2)//物资放置类
+          {
+            classify_360(Supply);
+          }
+          else if(numcard_classify==2)//交通工具类
+          {
+            classify_360(Traffic);
+          }
+   }
+ }
 }

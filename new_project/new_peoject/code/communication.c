@@ -160,7 +160,7 @@ int near_card_distance;     // 最近卡片的距离
 int near_card_x;
 int near_card_y;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
-int card_type = 0;      // 卡片类型，取值范围为1~15
+int card_type = 0;        // 卡片类型，取值范围为1~15
 Card card_position[100];
 int one_time = 1;
 int card_word_ready;                        // 卡片世界坐标解算完成的标志位
@@ -266,7 +266,7 @@ void uart_data_handle(void)
     {
         now_distance_y = (right_data[3] * 255 + right_data[4]);                                    // 计算y距离
         center_distance = sqrt(now_distance_x * now_distance_x + now_distance_y * now_distance_y); // 计算中心距离
-                                                                                                   //        if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
+                                                                                                   // if ((center_distance - last_center_distance > 0 ? center_distance - last_center_distance : last_center_distance - center_distance) > 100.0)
         last_center_distance = center_distance;                                                    // 更新上一次的中心距离
         uart_write_string(UART_1, str);                                                            // 发送串口数据
     }
