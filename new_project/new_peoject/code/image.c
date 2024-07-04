@@ -57,6 +57,7 @@ uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
 uint8 lower_row_center_threshold = 0;
+int Edge_threshold = 1700; // 边缘检测的阈值，通过按键进行调节，初始值为1700
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
 int center_straight_right_card_x = 0;
@@ -986,7 +987,7 @@ void Outer_Analyse(void)
         Road_Wide[i] = right_line[i] - left_line[i]; // Record the road width
     }
 
-    if (Road_Type != RAMP)
+    if (Road_Type != RAMP || Road_Type != LEFT_HUANDAO || Road_Type != RIGHT_HUANDAO) // 元素排斥
     {
         if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c==0 && right_c==0)
             Road_Type = STRAIGHT_ROAD;
@@ -995,11 +996,15 @@ void Outer_Analyse(void)
         if (Right_Lost_Time < 15 && Left_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
             Road_Type = LEFT_TURN;
         if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100)
-            Road_Type = LEFT_HUANDAO;
-        left_island_flag = 1;
+        {
+            Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
+            left_island_flag = 1;
+        }
         if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100)
-            Road_Type = RIGHT_HUANDAO;
-        right_island_flag = 1;
+        {
+            Road_Type = RIGHT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
+            right_island_flag = 1;
+        }
         if (Right_Lost_Time >= 30 && Left_Lost_Time >= 30 && Both_Lost_Time >= 30)
             Road_Type = CROSSING;
     }
@@ -2279,15 +2284,15 @@ float Top_Line_Err(uint8 target_row)
     island_err = island_err / (IMAGE_WIDTH - 21); // 取平均值，不加权重了
 
     /*在丢线时，要对err进行合理的限幅*/
-		/*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
     if (island_err >= 15.0)
     {
         island_err = 15.0; // island_err的最小值
     }
-		else if(island_err <=-15.0)
-		{
-			island_err=-15.0;
-		}
+    else if (island_err <= -15.0)
+    {
+        island_err = -15.0;
+    }
     return island_err;
 }
 
@@ -2311,21 +2316,27 @@ float Island_Surround(uint8 target_row)
             {
                 Center_line_deal_plus(40, 180);
             }
-            continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 找到左边单调跳变点（从左往右扫）
+            if (1)
+            {
+                continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 这里可以检测左边的最大值
+            }
+            else
+            {
+                continuious_flag = Monotonicity_Change_Left(IMAGE_HEIGHT - 5, 10); // 这个检测的方法比前面的应该会更好
+            }
         }
         /*开始状态1的补线*/
         if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
         {
             ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
             uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
-            if (Island_State == 0)
+            if (Island_State == 0) // 进入状态前提保证
             {
-                if (temp <= IMAGE_HEIGHT - 20)
+                if (temp <= IMAGE_HEIGHT - 20) // 当做线的终点过低的时候，就要用左边的起点来进行补线
                 {
                     temp = Island_surrond[2];
                 }
-
-                if (temp >= 0 && temp <= IMAGE_HEIGHT - 1)
+                if (temp >= 0 && temp <= IMAGE_HEIGHT - 1) // 只有temp在合理的范围才会进行补线
                 {
                     Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], IMAGE_WIDTH - 2, temp); // 列补线，和前面的行补线不一样
                 }
@@ -2339,7 +2350,7 @@ float Island_Surround(uint8 target_row)
     else if (Island_State == 6) /*此时为进入环岛的圆弧，没有出圆弧的状态*/
     {
         uint8 flag = 0;
-        for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态
+        for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态（这个方法非常好用，是因为在左环岛向左运动）
         {
             if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 2]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
             {
@@ -2348,7 +2359,7 @@ float Island_Surround(uint8 target_row)
             }
         }
 
-        if (flag != 0 && flag <= 60)
+        if (flag != 0 && flag <= 60) // 断裂点在图像的左侧
             Island_State = 7;
     }
     else if (Island_State == 7) /*此时为出环岛的圆弧，图像左半段出现角点*/
@@ -2358,7 +2369,7 @@ float Island_Surround(uint8 target_row)
         {
             if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 2]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
             {
-                continuious_flag = i + 1;
+                continuious_flag = i + 1; // 求出出环岛的角点
                 break;
             }
         }
@@ -2399,9 +2410,10 @@ float Island_Surround(uint8 target_row)
             Top_Add_Line(continuious_flag, Island_surrond[continuious_flag], 1, lowest_row); // 补线
         }
     }
-    else if (Island_State == 9) // 此时将要出环岛，将要进入直道，对找到左上拐点，对左上拐点进行补线
+    else if (Island_State == 9) // 此时将要出环岛，将要进入直道，对找到左上拐点，对左上拐点进行补线，如果不行的话可以求出坐标的最大值（要对x坐标进行一定的限幅）
     {
         continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10);
+        Left_Add_Line(left_line[continuious_flag], continuious_flag, left_line[IMAGE_HEIGHT - 1], IMAGE_HEIGHT - 1); // 从左边拉线到左下角
     }
 
     /*第三部分：状态机切换*/
@@ -2550,6 +2562,33 @@ void Straight_Card_Find(void)
     }
 }
 
+/*
+斑马线
+*/
+void Finnal_Zebra_Number_Find(void)
+{
+    /*一：从上往下开始扫线*/
+    int f_card_left_up_point[2] = {0};
+    int f_card_right_up_point[2] = {0};
+    uint8 Island_surround_up[IMAGE_WIDTH] = {0}; // 从上往下数的边线
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++) // 从上20行往下数
+    {
+        for (uint8 j = 20; j < IMAGE_HEIGHT - 21; j++)
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT && Image_Use[j - 1][i] == BLACK_POINT)
+            {
+                Island_surround_up[i] = j + 1;
+                break;
+            }
+        }
+    }
+    /*二：对线进行连续性判断*/
+    uint8 continus_left[2] = {0};
+    for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
+    {
+        if (abs(Island_surround_up[i] - Island_surround_up[i - 1]) >=)
+    }
+}
 /**
  * @brief Island detection function
  * @param none
