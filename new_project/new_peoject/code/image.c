@@ -987,7 +987,7 @@ void Outer_Analyse(void)
     {
         if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15)
             Road_Type = STRAIGHT_ROAD;
-        if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
+        if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && left_line[120 - Search_Stop_Line] >= 120)
             Road_Type = RIGHT_TURN;
         if (Right_Lost_Time < 15 && Left_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
             Road_Type = LEFT_TURN;
@@ -996,7 +996,7 @@ void Outer_Analyse(void)
             Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             left_island_flag = 1;
         }
-        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100)
+        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120)
         {
             Road_Type = RIGHT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             right_island_flag = 1;
