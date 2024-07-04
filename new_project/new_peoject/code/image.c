@@ -2583,11 +2583,11 @@ void Finnal_Zebra_Number_Find(void)
         }
     }
     /*二：对线进行连续性判断*/
-    uint8 continus_left[2] = {0};
-    for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
-    {
-        if (abs(Island_surround_up[i] - Island_surround_up[i - 1]) >=)
-    }
+    // uint8 continus_left[2] = {0};
+    // for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
+    // {
+    //     if (abs(Island_surround_up[i] - Island_surround_up[i - 1]) >=)
+    // }
 }
 /**
  * @brief Island detection function
@@ -2954,7 +2954,7 @@ void test(void)
         /*注意：如果阈值在*/
         if (pick_up_mode == 0)
         {
-            output_address = Scharr_Edge(*mt9v03x_image, 1700); // 使用扫描边缘的方式获取图像
+            output_address = Scharr_Edge(*mt9v03x_image, Edge_threshold); // 使用扫描边缘的方式获取图像
             my_threshold = Image_Get_Down();
             ips114_show_uint(188, 120, my_threshold, 4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));

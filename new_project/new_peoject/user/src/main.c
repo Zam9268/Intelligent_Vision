@@ -47,6 +47,7 @@
 #include "control.h"
 #include "communication.h"
 #include "imu660ra.h"
+#include "my_key.h"
 
 char send_str[30] = {0};
 extern float Car_dis_x1;
@@ -73,6 +74,7 @@ extern uint8 uart_send_flag;
 extern RoadType Road_Type;
 extern int card_type; // 卡片类型，范围为1~15
 extern uint8 init_flag;
+extern int Edge_threshold;//外部声明，边缘检测的阈值
 char str1[] = "begin";
 extern int card_abc;         // 卡片字母数字，值的范围为1~15
 extern int card_num;         // 卡片数字，值的范围为1~3
@@ -123,7 +125,7 @@ int main(void)
         //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
         //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
         wireless_uart_init(); // 无线串口初始化
-        key_init();//按键初始化
+        key_init(20);//按键初始化
         seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
         seekfree_assistant_oscilloscope_struct oscilloscope_data;
 
@@ -183,6 +185,7 @@ int main(void)
         //		float start_angle = 100.0;
         while (1)
         {
+                my_key_handle();//别删，调总钻风的阈值
                 //                seekfree_assistant_oscilloscope_send(&oscilloscope_data);
                 //                oscilloscope_data.data[0] = Speed[0].now_speed;
                 //                oscilloscope_data.data[1] = Speed[1].now_speed;
@@ -197,7 +200,7 @@ int main(void)
                 // ips114_show_uint(0, 120, right_data[2], 3);
                 test();
 //		            test_arm();
-							ips114_show_int(120,0,now_distance_x,4);
+							ips114_show_int(188,60,Edge_threshold,4);
               ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
 					/*****************测试上边线巡线(仅直道)成功***********************/
 //                car_run_upline();

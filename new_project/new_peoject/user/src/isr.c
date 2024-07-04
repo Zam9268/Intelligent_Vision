@@ -39,6 +39,7 @@
 #include "control.h"
 #include "take.h"
 #include "imu660ra.h"
+#include "my_key.h"
 extern int uart1_flag;
 extern int uart4_flag;
 extern int correct_art2_flag;
@@ -85,6 +86,13 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH1))
     {
+        static uint8 key_xiaodou=0;
+        key_xiaodou++;
+        if(key_xiaodou==4)//消抖间隔为20ms
+        {
+            key_scan();
+					key_xiaodou=0;
+        }
         // ��ȡ������
         //  Read_Encoder();
         Get_angle();

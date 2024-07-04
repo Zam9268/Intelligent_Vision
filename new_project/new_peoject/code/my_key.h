@@ -13,5 +13,6 @@ struct key{
 
 extern int Edge_threshold;//外部声明，边缘检测的阈值
 void key_scan(void);
+void my_key_handle(void);
 
 #endif
