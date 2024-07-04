@@ -74,8 +74,8 @@ extern RoadType Road_Type;
 extern int card_type; // 卡片类型，范围为1~15
 extern uint8 init_flag;
 char str1[] = "begin";
-extern uint8 card_abc;         // 卡片字母数字，值的范围为1~15
-extern uint8 card_num;         // 卡片数字，值的范围为1~3
+extern int card_abc;         // 卡片字母数字，值的范围为1~15
+extern int card_num;         // 卡片数字，值的范围为1~3
 extern int near_card_distance; // 最近卡片的距离
 extern int near_card_x;
 extern int near_card_y;
@@ -96,7 +96,7 @@ float zuobiao_y = 0;
 double test_delta_card_x, test_delta_card_y;
 double test_tan, test_delta_angle;
 extern float Now_angle;
-
+int main_step=0;//直行
 int main(void)
 {
         clock_init(SYSTEM_CLOCK_600M); //??????????
@@ -148,7 +148,7 @@ int main(void)
         Encoder_Init();            // 编码器初始化
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
-        my_pwm_gpio();             // 机械臂初始化
+//        my_pwm_gpio();             // 机械臂初始化
                                    // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
         pit_ms_init(PIT_CH0, 5);   // 5ms
         pit_ms_init(PIT_CH1, 5);   // 10ms
@@ -161,17 +161,19 @@ int main(void)
         /*视觉处理部分代码初始化*/
         Last_Longest_White_Column_Left[1] = 94;
         Longest_White_Column_Left[1] = 94;
-        Road_Type = STRAIGHT_ROAD;
+			// correct_art2_flag=OPEN;
+        // Road_Type = STRAIGHT_ROAD;
         //             Speed[3].target_speed=30.0;
         //             Speed[2].target_speed=30.0;
         //             Speed[1].target_speed=30.0;
         //             Speed[0].target_speed=30.0;//?????
 
         int once = 1;
-				uint8 step=0;//直行
         int one_time = 1;
         uint8 temp = 0;
-				find_ramp = OPEN;
+        uint8 type_count=0;
+	      int car_run_mode=0;
+	      find_ramp = OPEN;
         //    float zuobiao_x=0;
         //	  float zuobiao_y=0;
         //    int test_delta_card_x,test_delta_card_y;
@@ -194,33 +196,63 @@ int main(void)
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);
                 test();
-
-		// car_run_upline();
-		// ips114_show_float(0,0,top_error,3,4);//
-                // ips114_show_float(0,20,Vx,3,4);
-		// ips114_show_float(0,40,Vy,3,4);
+//		            test_arm();
+							ips114_show_int(120,0,now_distance_x,4);
+              ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
+					/*****************测试上边线巡线(仅直道)成功***********************/
+//                car_run_upline();
+//                Turn_Angle_PD(Angle_Z);
+//					      Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
+//                ips114_show_float(0,0,top_error,3,4);//上边线误差
+//                ips114_show_float(0,20,Vx,3,4);
+//		            ips114_show_float(0,40,Vy,3,4);
+					/***************************************************************/
                 // ips114_show_int(0,60,type,4);
-		if(step==0)
-		{
-		  car_run();
-		}
-		if(step==1)
-		{
-                  card_final_classify(&classify_mode);    
-		}
-		if(type==5)//找到斑马线,斑马线识别成功
-               {
-		step=1;
-	       }
-//		  ips114_show_float(0,0,Angle_Z,3,4);
-//                ips114_show_float(0,20,Now_angle,3,4);
-//							  ips114_show_float(0,40,Vz,3,4);
-//                ips114_show_int(0,60,type,4);
-//                ips114_show_float(0,40,ramp_y,3,4);//绕行的里程计x,y
-//                ips114_show_int(90,0,ramp_step,4);
-//                ips114_show_float(0,60,Vx,3,4);
-//                ips114_show_float(0,80,Vy,3,4);//x,y速度
-					//坡道绕行函数
+//       switch(car_run_mode)
+// 			 {
+// 			   case 0:
+// 					 if(type==5)
+// 					 {
+//             type_count++;
+//             if(type_count>5)
+//             {
+// 						  car_run_mode=1;//更改寻迹模式
+// 						  now_distance_x=0;
+// 						  now_distance_y=0;
+//             }
+// 					 }
+// 					 else
+// 					 {
+// 					   car_run_mode=0;//
+// 					 }
+// 					 car_run();
+// 					 break;
+// 				 case 1://
+// 					 card_final_classify(&classify_mode);
+//           if(banmaxian_finish==FINISH)
+//              car_run_mode=0;
+//           else
+//              car_run_mode=1;
+// 				 break;	 
+// 			 }				 
+//     ips114_show_int(0,0,correct_art2_flag,4);
+//     ips114_show_int(0,20,classify_type,4);								
+// 		ips114_show_int(0,40,numcard_classify,4);
+// 		ips114_show_int(120,0,near_card_x/10,4);
+//     ips114_show_int(120,20,near_card_y/10,4);//卡片坐标,即时更新
+/*************************测试上边线巡线**********************/
+
+//    ips114_show_float(0,60,Vx,3,4);
+//    ips114_show_float(0,80,Vy,3,4);//x,y速度
+//    ips114_show_int(0,100,delta_class_x,4);
+//    ips114_show_int(0,120,delta_class_y,4);
+//		ips114_show_int(120,0,now_distance_x/10,4);
+//    ips114_show_int(120,20,now_distance_y/10,4);//卡片坐标,即时更新
+//		ips114_show_int(120,40,num_card_x,4);
+//    ips114_show_int(120,60,num_card_y,4);//卡片坐标,即时更新
+//		ips114_show_int(120,80,Card_dis_car_x,4);
+//    ips114_show_int(120,100,Card_dis_car_y,4);//卡片坐标,即时更新            
+		//坡道绕行函数
 //                if(type == 8)
 //                {
 //                   if(once)

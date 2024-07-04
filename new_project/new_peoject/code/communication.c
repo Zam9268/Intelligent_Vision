@@ -174,8 +174,8 @@ int watch_card_world_angle;
 int card_world_distance; // 卡片在全局坐标上与原点的距离
 float car_card_angle;    // 车辆与原点的连线与卡片与原点的连线的所夹角
 int car_card_diatance;   // 车辆与卡片的直线距离
-uint8 card_abc = 0;
-uint8 card_num = 0;
+int card_abc = 0;
+int card_num = 0;
 
 extern float car_world_angle; // 车辆世界坐标解算出的方位角
 /**

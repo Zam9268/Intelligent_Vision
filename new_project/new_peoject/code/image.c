@@ -967,6 +967,10 @@ void Outer_Analyse(void)
 {
     //????????��???????????
     /*???????????��?????*/
+    uint8 left_c=Continuity_Change_Left_Island(IMAGE_HEIGHT-10,10);
+    uint8 right_c=Continuity_Change_Right_Island(IMAGE_HEIGHT-10,10);
+    ips114_show_uint(188,90,left_c,3);
+    ips114_show_uint(188,100,right_c,3);
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (Left_Lost_Flag[i] == 1)
@@ -984,7 +988,7 @@ void Outer_Analyse(void)
 
     if (Road_Type != RAMP)
     {
-        if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15)
+        if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c==0 && right_c==0)
             Road_Type = STRAIGHT_ROAD;
         if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
             Road_Type = RIGHT_TURN;
@@ -1004,8 +1008,7 @@ void Outer_Analyse(void)
 
     if (Road_Type == STRAIGHT_ROAD)
         // Ramp_Detect();
-    if (Road_Type == STRAIGHT_ROAD)
-        Zebra_Stripes_Detect_new();
+    Zebra_Stripes_Detect_new();
     // if (Road_Type == RAMP)
     //     Ramp_to_Straight_Detect(); //??????
 }
@@ -2260,7 +2263,7 @@ void Top_Line_Search(void)
             }
             else if (j <= 75)
             {
-							Island_surrond[i] = 134; // 此时丢线,默认为最低那一行
+							Island_surrond[i] = 119; // 此时丢线,默认为最低那一行
             }
         }
     }
@@ -2648,7 +2651,10 @@ void Island_Detect(void)
         // Left_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], left_line[117], 117);
         // else // 找不到的话启动planb，这个拐点一般都是能找到的
         // {
-
+        for(uint8 i=0;i<188;i++)
+        {
+            ips114_draw_point(i,Island_surrond[i],RGB565_RED);
+        }
         // for (uint8 i = IMAGE_HEIGHT - 5; i >= 5; i--)
         // {
         //     if (left_line[i] == 2 && left_line[i + 1] != 2) // 如果出现左边丢线就记录
@@ -2740,7 +2746,7 @@ void Zebra_Stripes_Detect(void)
             Road_Type = BANMAXIAN;
             zebra_flag = 1;
             if (Road_Type == STRAIGHT_ROAD)
-                Road_Type = BANMAXIAN; // 如果当前道路类型为直行，则将道路类型设置为斑马线
+               Road_Type = BANMAXIAN; // 如果当前道路类型为直行，则将道路类型设置为斑马线
         }
     }
 }
@@ -2850,6 +2856,10 @@ void test2(void)
     20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
+		for(uint8 i=0;i<188;i++)
+		{
+			ips114_draw_point(i,Island_surrond[i]+2,RGB565_RED);
+		}
     ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
     // ips114_show_int(188, 30, Search_Stop_Line, 3);

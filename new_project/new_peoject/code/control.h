@@ -8,6 +8,12 @@
 #define OPEN   1
 #define CLOSE  0
 
+#define READY   1
+#define NOT_READY  0
+
+#define FINISH   1
+#define NOT_FINISH  0
+
 #define DIR_LF D14//电机gpio
 #define DIR_LB D3//电机gpio
 #define DIR_RF D12//电机gpio
@@ -45,10 +51,14 @@
 #define Pick_up_card  		4 //机械臂拾取卡片
 #define Car_turn_again  	5 //回正
 
-#define Fing_banmaxian      0//找到斑马线
+#define Find_banmaxian      0//找到斑马线
 #define Find_upline         1//上边线寻迹
 #define Catch_card          2//向卡片前进识别
 #define Watch_card          3//看卡片上的数字类型
+#define Putout_card         4//放置卡片
+#define Go_back             5//后退至y处原本的位置
+#define Turn_back           6//返回正常寻迹
+
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 
@@ -128,6 +138,12 @@ extern uint8 Traffic;        //交通工具类
 extern uint8 Weapon;         //武器类
 extern uint8 Supply;		 //物资类
 extern int classify_mode;
+extern int classify_type;
+extern int num_card_x,num_card_y;
+extern uint8 numcard_classify;
+extern int delta_class_x,delta_class_y;
+extern uint8 Find_num;		//识别完毕的标志位
+extern int banmaxian_finish;  
 
 extern int pid_motor[4];
 
@@ -166,4 +182,5 @@ void ramp_cross(int Traverse_distance, int Straight_distance);
 void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
+void card_final_classify(int *classify_step);
 #endif

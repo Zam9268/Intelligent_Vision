@@ -42,6 +42,7 @@
 extern int uart1_flag;
 extern int uart4_flag;
 extern int correct_art2_flag;
+extern int classify_art2_flag;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[]; // 外部声明
 extern pid_info Speed[4];       // �ⲿ����
@@ -121,10 +122,13 @@ void PIT_IRQHandler(void)
         }
         if (correct_art2_flag == 1)
         {
-            uart_write_string(UART_4, uart_4_begin);
+           uart_write_string(UART_4, uart_4_begin);
             //           correct_art2_flag=0;
         }
-
+		if(classify_art2_flag == 1)
+		{
+			uart_write_string(UART_4, uart_4_begin_abc);
+    }
         pit_flag_clear(PIT_CH3);
     }
 
