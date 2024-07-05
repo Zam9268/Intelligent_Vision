@@ -28,6 +28,7 @@ uint8 arm_put_down = 0;//机械臂放下标志位
 
 int finish_count = 0;//中断结束计数位
 int once = 1;
+int pick_count=0;
 extern int count;
 extern int arm_flag;
 
@@ -140,27 +141,27 @@ void arm_control(uint8 mode)
 
  case 2: //模式2收纳模式，减第一张卡片时的角度
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(170, 80, 50);
-   system_delay_ms(500);
-   servo_slow_ctrl(165, 150, 50);
-   system_delay_ms(500);
+   servo_slow_ctrl(175, 80, 50);
+   system_delay_ms(300);
+   servo_slow_ctrl(170, 150, 50);
+   system_delay_ms(300);
    servo_slow_ctrl(165, 100, 50);
-   system_delay_ms(500);
-   servo_slow_ctrl(30, 100, 50); //?????
-   system_delay_ms(500);
-   servo_slow_ctrl(30, 45, 50); //?????
-   system_delay_ms(500);
+   system_delay_ms(300);
+   servo_slow_ctrl(30, 100, 20); //?????
+   system_delay_ms(300);
+   servo_slow_ctrl(30, 45, 20); //?????
+   system_delay_ms(300);
    gpio_set_level(C11, 0);
    break;
 
- case 3: //捡后续卡片所用的模式
+ case 3: //放出卡片
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(173, 148, 20);//下双臂
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 80, 50); //动后臂
-   system_delay_ms(1000);
-   servo_slow_ctrl(25, 75, 100); //收前臂 25 75
-   system_delay_ms(1000);
+   servo_slow_ctrl(15, 70, 20);//收前臂
+   system_delay_ms(500);
+   servo_slow_ctrl(15, 45, 50); //动后臂    15 45
+   system_delay_ms(500);
+   servo_slow_ctrl(170, 80, 100); //取出卡片 25 75
+   system_delay_ms(500);
    gpio_set_level(C11, 0);
 
    break;
@@ -220,17 +221,10 @@ void classify_360(uint8 card_classify_type)
 //*******************************舵机测试函数******************************//
 void test_arm(void)
 {
-	if(arm_pick_flag==ARM_PICK_NOT_DONE)
+	if(pick_count<5)
 	{
-		arm_control(2);//捡卡片
+		arm_control(3);//放卡片
 	  arm_control(4);//默认模式
-		arm_pick_flag=ARM_PICK_DONE;
-//    arm_control(6);//开门
+		pick_count++;
 	}
-//	if(arm_pick_flag==ARM_PICK_DONE)
-//	{
-//		arm_control(5);//开门
-////		arm_control(6);//恢复默认
-//		arm_pick_flag=2;
-//	}
 }

@@ -48,8 +48,8 @@ typedef struct{
 }Card;
 
 extern int card_type;
-extern uint8 card_num;
-extern uint8 card_abc;
+extern int card_num;
+extern int card_abc;
 extern int now_distance_x;
 extern unsigned int now_distance_y;
 extern int record_now_distance_x;

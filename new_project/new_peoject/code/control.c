@@ -115,6 +115,9 @@ float ahead_distance;     //前进的距离
 uint8 Traffic=1;         //交通工具类
 uint8 Weapon =2;         //武器类
 uint8 Supply =3;		     //物资类
+int Traffic_count=0;     //拾取的交通工具卡片数
+int Weapon_count=0;      //拾取的武器总卡片数
+int Supply_count=0;      //拾取的物资的总卡片数
 /********************************************************************/
 /******************用于总钻风修正的变量*******************/
 int card_center_x;
@@ -138,9 +141,19 @@ int once_time=1;
 int classify_mode = 0;
 float Now_angle;
 int num_card_x,num_card_y;
-uint8 classify_step;
+uint8 class_step;
 uint8 classify_correct_finish;
 uint8 numcard_classify;
+int delta_class_x,delta_class_y;
+int classify_art2_flag;
+int classify_type;//用于观察分类的模式
+uint8 Find_num=0;   //识别完毕的标志位
+int put_out_count;  //需要放出的卡片数目
+uint8 put_out_card_flag=0;      //所有卡片是否放出的标志位
+uint8 Traffic_Finish=0;         //交通工具类
+uint8 Weapon_Finish =0;         //武器类
+uint8 Supply_Finish =0;		     //物资类
+int banmaxian_finish;          //斑马线处理完成与否的标志位
 /*************************************/
 /*************************各种pid*****************************/
 int pid_motor[4];
@@ -250,6 +263,7 @@ void car_run(void)
   move_error = err_watch / 94.0f; // 横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
 
   float kp = 1.0f, kd = 0.5f;//1.0对应速度30  0.9响应10
+  float target_all_speed = 5;
 
   angle = kp * move_error + kd * (move_error - last_error1); // 原本的+=，现在改成=      2024/3/26
 
@@ -264,10 +278,10 @@ void car_run(void)
 
   last_error1 = move_error; // 记录下上次误差
 
-  Speed[0].target_speed = 5 * (1 - angle);
-  Speed[1].target_speed = 5 * (1 - angle);
-  Speed[2].target_speed = 5 * (1 + angle);
-  Speed[3].target_speed = 5 * (1 + angle);
+  Speed[0].target_speed = target_all_speed * (1 - angle);
+  Speed[1].target_speed = target_all_speed * (1 - angle);
+  Speed[2].target_speed = target_all_speed * (1 + angle);
+  Speed[3].target_speed = target_all_speed * (1 + angle);
   // Car_Inverse_kinematics_solution(0, ahead_speed + correct_x_speed, correct_z_speed);//速度解算赋值
 }
 /**
@@ -278,12 +292,20 @@ void car_run(void)
 void car_run_upline(void)
 {
   Top_Line_Search();//对上边线扫线，为上边线数组做准备
-  top_error=Top_Line_Err(110);//对上边线扫线输出一个误差,作归一化处理
-  float kp = 1.0f, kd = 0.5f;//1.0对应速度30  0.9响应10
-  Vy= kp * top_error + kd * (top_error - last_top_error);//输出为Vy速度
+  top_error=Top_Line_Err(95)/25;//对上边线扫线输出一个误差,作归一化处理
+  if (top_error > 1.0f)
+  {
+    top_error = 1.0f;
+  }
+  else if (top_error < -1.0f)
+  {
+    top_error = -1.0f;
+  }
+  float top_kp = 5.0f, top_kd = 1.0f;//1.0对应速度30  0.9响应10
+  Vy= top_kp * top_error + top_kd * (top_error - last_top_error);//输出为Vy速度
   last_top_error = top_error; // 记录下上次误差
-  Vx=20;//给固定的横移速度
-  Car_Inverse_kinematics_solution(Vx, Vy, 0);//速度解算赋值
+  Vx=10;//给固定的横移速度
+  // Car_Inverse_kinematics_solution(Vx, Vy, 0);//速度解算赋值
 }
 /**
  * @brief 距离环pid初始化
@@ -940,57 +962,62 @@ void ramp_cross(int Traverse_distance, int Straight_distance)
   }
 }
 /**
- * @brief 坡道绕行函数，记得要在前面对Angle_ramp,ramp_x,ramp_y清零
+ * @brief 卡片分类函数
  * @param Traverse_distance横移距离
  * @param Straight_distance直行距离
  * @return 无
  */
-void find_classify(int Traverse_distance, int Straight_distance)
+void find_classify(int Traverse_class_distance, int Straight_class_distance)
 {
-    switch(classify_step)
+  delta_class_x=(Traverse_class_distance)/10+3-(int)Card_dis_car_x; //单位为cm
+  delta_class_y=Straight_class_distance/10-32-(int)Card_dis_car_y; //计算出中心坐标,y可能需要调整，参数暂定
+    switch(class_step)
     {
-     case 1://向右横移出赛道
+			case 1://前进道合适区域
       Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
-		 if(Card_dis_car_x<=Traverse_distance+8 && classify_step==1)//要比卡片坐标多移8厘米
+		 if(delta_class_y>3 && class_step==1)//y距离过大，要前进
 		 {
-      Vx=10;//右移出赛道
-		  Vy=0;
+      Vx=0;//前进
+		  Vy=10;
 		 }
-		 else
+		 else if(delta_class_y<0 && class_step==1)//y距离过大，要前进
 		 {
 			 Vx=0;//停车
-		   Vy=0;
+		   Vy=-10;
 		 }
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-      if(abs(Traverse_distance+8-(int)Card_dis_car_x)<2)
+      if(delta_class_y<=3 && delta_class_y>=0)
       {
-        classify_step=2;
+        Vx=0;//停车
+		    Vy=0;
+        class_step=2;//切换至调整x距离
       }
      break;
      case 2:
       Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
-      if(Card_dis_car_y<=Straight_distance-20 && classify_step==2)//25
+      if(delta_class_x>3 && class_step==2)//距离过大，右移
 		 {
-      Vx=0;
-		  Vy=10;//前进
+      Vx=10;//右移
+		  Vy=0;//前进
 		 }
-		 else if(Card_dis_car_y>=Straight_distance-17 && classify_step==2)//28
+		 else if(delta_class_x<0 && class_step==2)//超过，左移
 		 {
+			 Vx=-10;//左移
+		   Vy=0;
+		 }
+     else if(delta_class_x<=3 && delta_class_x>=0 && class_step==2)
+     {
 			 Vx=0;//
-		   Vy=-10;//后退
+		   Vy=0;//停车
+       class_step=3;
 		 }
-     else if(Card_dis_car_y > Straight_distance-20 && Card_dis_car_y < Straight_distance-17 && classify_step==2)
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-      if(abs(Straight_distance-20-(int)Card_dis_car_y)<2)
-      {
-        classify_step=3;
-      }
        break;
       case 3:
        car_stop();//清空速度
        system_delay_ms(200);
 			 classify_correct_finish=1;
-       classify_step=0;//回归到初始状态,需要使用时再赋值
+       class_step=0;//回归到初始状态,需要使用时再赋值
       break;
   }
 }
@@ -1005,7 +1032,7 @@ void car_findcard(int *mode)
   //******************************正常循迹*****************************//
   if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
   {
-    if (now_distance_y > 0 && now_distance_y < 800 && abs(now_distance_x)<450) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
+    if (now_distance_y > 0 && now_distance_y < 800 && abs(now_distance_x)<500) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
     {
       if (only_one) // 只执行一次
       {
@@ -1076,7 +1103,7 @@ void car_findcard(int *mode)
 //******************************向卡片方向转向*****************************//
   if (*mode == Car_turn) 
   {
-    if (fabsf(Angle_Z - turn_angle) < 4) // 陀螺仪转向识别
+    if (fabsf(Angle_Z - turn_angle) <= 3) // 陀螺仪转向识别
     {
       // Vz = 0;//清0Vz
 			*mode = Car_find_card_cor; //模式转变
@@ -1087,7 +1114,7 @@ void car_findcard(int *mode)
 			correct_y=0;//清空修正距离
 			// pick_up_mode=1;//防止卡死
 			correct_art2_flag = OPEN;//打开art2识别中断
-			system_delay_ms(2000);
+      NVIC_SetPriority(LPUART1_IRQn, 2);                             // 降低UART1中断优先级
       arrive_card_flag=OPEN;//打开总钻风微调时的里程计计数
       // fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化UART数据FIFO
 			// uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
@@ -1121,7 +1148,6 @@ void car_findcard(int *mode)
       car_stop();//清空速度
 			system_delay_ms(500);
       arrive_card_flag=CLOSE;//关闭总钻风微调时的里程计计数
-      ahead_distance=correct_y;//记录下修正y所走的距离
       correct_x=0;
       correct_y=0;//清零修正的x，y距离
 			delta_x=0;
@@ -1154,14 +1180,17 @@ void car_findcard(int *mode)
           if(card_classify==1 || card_classify==2 || card_classify==7 || card_classify==13)//交通工具类
           {
             classify_360(Traffic);
+            Traffic_count++;
           }
           else if(card_classify==4 || card_classify==5 || card_classify==6 || card_classify==8 ||card_classify==14)//武器类
           {
             classify_360(Weapon);
+            Weapon_count++;
           }
           else if(card_classify==3 || card_classify==9 || card_classify==10 || card_classify==11 || card_classify==12 || card_classify==15)//物资类
           {
             classify_360(Supply);
+            Supply_count++;
           }
           CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
           Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
@@ -1209,7 +1238,6 @@ void car_findcard(int *mode)
 			now_distance_y=0;
       record_now_distance_x=0;//清空now_distance_x
 			record_now_distance_y=0;//清空now_distance_y,避免直接进入模式2
-      ahead_distance=0;//记录下修正y所走的距离
 			Angle_arrive_card=0;//清零角度
       correct_x=0;
       correct_y=0;//清零修正的x，y距离
@@ -1224,6 +1252,7 @@ void car_findcard(int *mode)
 			// 	uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
 			// uart_rx_interrupt(UART_1, 1);                                  // 开启使能UART1接收中断
       // chance=1;
+      NVIC_SetPriority(LPUART1_IRQn, 0);//恢复art1的中断优先级
       uart_write_string(UART_1, uart_1_begin);
 			arm_pick_flag=ARM_PICK_NOT_DONE;
       target_type = *mode;
@@ -1378,102 +1407,214 @@ void car_new_findcard(int *mode)
 // */
 void card_final_classify(int *classify_step)
 {
- if(classify_step==Fing_banmaxian)//找到斑马线
+ if(*classify_step==Find_banmaxian && banmaxian_finish==NOT_FINISH)         //找到斑马线,且处理还未完成
  {
-   if(abs(Angle_Z-(Now_angle+90))<3)//转到了目标角度
+   if(abs(Angle_Z-(-Now_angle-90))<3)       //转到了目标角度
    {
-     *classify_step=Find_upline;//转变成上边线寻迹
-     once_time=1;//重新打开one_time
-     target_type = *classify_step;
+     *classify_step=Find_upline;            //转变成上边线寻迹
+       once_time=1;                         //重新打开one_time
+       correct_x=0;
+       correct_y=0;                         //清零修正的x，y距离
+			 Angle_arrive_card=0;                 //清零角度
+       arrive_card_flag=CLOSE;              //开启总钻风微调时的里程计计数
+		//  correct_art2_flag=OPEN;             //打开art4的中断识别
+    //  NVIC_SetPriority(LPUART1_IRQn, 2);  // 降低art1的优先级
+     classify_type = *classify_step;
    }
    else
    {
      if(once_time)
      {
-       Now_angle=Angle_Z;//记录下当前角度
-       once_time=0;
+       Now_angle=Angle_Z;                 //记录下当前角度
+       once_time=0;			 
+       correct_x=0;
+       correct_y=0;                       //清零修正的x，y距离
+			 Angle_arrive_card=0;               //清零角度
+       arrive_card_flag=OPEN;             //开启总钻风微调时的里程计计数
      }
-     Turn_Angle_PD(Now_angle+90);//此处可以根据实际情况修改
-     classify_step=Fing_banmaxian;
+      Turn_Angle_PD(-90-Now_angle);       //此处可以根据实际情况修改
+      // Vy=0;
+		  // Vx=Distance_pid(&distance_pid[0], -10, (int)correct_x); //后退
+		  Car_Inverse_kinematics_solution(Vx, Vy, Vz);            //麦轮控制，为target_speed赋值
+     *classify_step=Find_banmaxian;
    }
  }
- if(classify_step==Find_upline)//切换至上边线寻迹
+ if(*classify_step==Find_upline)//切换至上边线寻迹
  {
-   if(now_distance_y > 400 && now_distance_y < 500 && now_distance_x>120)//尝试设定一个判断区域,在最右边第一次看到，在行进过程中，只会在右边，art1识别(可能会用到art4识别)
+   if(now_distance_y > 200 && now_distance_y < 800 && now_distance_x<250 && now_distance_x>80)//art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
    {
-     car_stop();
-     num_card_x = now_distance_x;//记录看到的x坐标
-     num_card_y = now_distance_y;//记录看到的y坐标
-     catch_card_flag=OPEN;//打开卡片捕获的里程计
-     Angle_z=0;           //清零角度
+     num_card_x = now_distance_x;     //记录看到的x坐标
+     num_card_y = now_distance_y;     //记录看到的y坐标
+     catch_card_flag=OPEN;            //打开卡片捕获的里程计
+     Angle_z=0;                       //清零角度
      Card_dis_car_x=0;
-     Card_dis_car_y=0;    //卡片里程计清空
-     classify_step=1;     //卡片分类区域修正
-     *classify_step=Catch_card;//向卡片分类区域前进
-     target_type = *classify_step;
+     Card_dis_car_y=0;                //卡片里程计清空
+     class_step=1;                    //卡片分类区域修正步数初始化
+     *classify_step=Catch_card;       //向卡片分类区域前进
+     classify_type = *classify_step;
+   }
+   else if(Traffic_Finish==FINISH && Supply_Finish==FINISH && Weapon_Finish==FINISH)//三类区域都已经识别完成
+   {
+      *classify_step=Turn_back;        //转回正常寻迹
+      Card_dis_car_x=0;
+      Card_dis_car_y=0;                //卡片里程计清空
    }
    else
    {
     //方案一，上边线巡线，鲁棒性好
-    //  car_run_upline();///上边线寻迹
-     Vx=10;//横移速度为10
-     Turn_Angle_PD(Now_angle+90);//此处可以根据实际情况修改，提供Vz的车头修正速度
-     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-     classify_step=Find_upline;
+     car_run_upline();///上边线寻迹
+     Turn_Angle_PD(-90-Now_angle);                //此处可以根据实际情况修改，提供Vz的车头修正速度
+     Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
+     *classify_step=Find_upline;
    }
  }
- if(classify_step==Catch_card)//识别卡片分类区域
+ if(*classify_step==Catch_card)					//寻找卡片分类区域
  {
-   if(classify_correct_finish==1)//找到了数字分类卡片区域，准备识别
+   if(classify_correct_finish==1)				//到达了数字分类卡片区域，准备识别
    {
-     *classify_step=Watch_card;//识别卡片上的数字
-     num_card_x = 0;          //清零数字卡片的x坐标
-     num_card_y = 0;          //清零数字卡片的y坐标
-     now_distance_x = 0;      //清零当前x坐标
-     now_distance_y = 0;      //清零当前y坐标
-     correct_art2_flag=1;     //打开art4中断标志
-     catch_card_flag=CLOSE;   //关闭卡片捕获的里程计，但是要保存直行的距离Card_dis_car_y(已记录)
-     target_type = *classify_step;
+		 NVIC_SetPriority(LPUART1_IRQn, 2);	//降低art1的中断优先级
+     classify_art2_flag=OPEN;  				 	//打开art4中断标志
+     *classify_step=Watch_card;					//识别卡片上的数字
+     classify_correct_finish=0;					//清除调整完毕的标志位
+     num_card_x = 0;          					//清零记录数字卡片的x坐标
+     num_card_y = 0;          					//清零记录数字卡片的y坐标
+     now_distance_x=0;									//x坐标清零
+		 now_distance_y=0;        				 	//y坐标清零
+		 once_time=1;												//打开once_time
+     classify_type = *classify_step;
    }
    else
    {
-     find_classify((int)num_card_x/10, (int)num_card_y/10);
+     Turn_Angle_PD(-90-Now_angle); //此处可以根据实际情况修改，提供Vz的车头修正速度
+     find_classify(num_card_x, num_card_y);
      *classify_step=Catch_card;
    }
  }
-  if(classify_step==Watch_card)   //识别卡片分类区域
+  if(*classify_step==Watch_card)  //识别卡片分类区域
  {
-   if( classify_correct_finish==1)//找到了数字分类卡片区域，准备识别
+   if(Find_num==READY)        //找到了数字分类卡片区域，准备识别
    {
-     *classify_step=Watch_card;   //识别卡片上的数字
+     *classify_step=Putout_card;  //放卡片
+      card_num=0;                 //清空已识别的数字
+      numcard_classify=0;         //清空已记录的数字
+      Find_num=NOT_READY;        //重置识别完毕的标志位
       once_time=1;                //重新打开once_time
-     catch_card_flag=CLOSE;       //关闭卡片捕获的里程计，但是要保存直行的距离Card_dis_car_y(已记录)
-     target_type = *classify_step;
+     classify_type = *classify_step;
    }
    else
    {
       *classify_step = Watch_card;
-				if(near_card_x!=0 && near_card_y!=0)
+			if(card_num!=0)                 //识别到卡片类型
 				{
 					if(once_time)
 				 {
-          numcard_classify=card_num;//数字类型
-					correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
-					once_time=0;              //只记录一次
-				 }
+           numcard_classify=card_num; //数字类型
+           Find_num=READY;            //识别出了卡片类型
+					 classify_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
+					 once_time=0;               //只记录一次
+         } 
 				}
-          if(numcard_classify==1)//武器放置类
-          {
-            classify_360(Weapon);
-          }
-          else if(numcard_classify==2)//物资放置类
-          {
-            classify_360(Supply);
-          }
-          else if(numcard_classify==2)//交通工具类
-          {
-            classify_360(Traffic);
-          }
+      if(numcard_classify==1)     //武器放置类
+      {
+        classify_360(Weapon);
+        put_out_count=Weapon_count;
+        Weapon_Finish=FINISH;     //完成武器类的舵机转向
+      }
+      else if(numcard_classify==2)//物资放置类
+      {
+        classify_360(Supply);
+        put_out_count=Supply_count;
+        Supply_Finish=FINISH;     //完成物资类的分类
+      }
+      else if(numcard_classify==3)//交通工具类
+      {
+        classify_360(Traffic);
+        put_out_count=Traffic_count;
+        Traffic_Finish=FINISH;         //完成交通类的舵机转向
+      }
    }
  }
+ if(*classify_step==Putout_card)   //识别卡片分类区域
+	{
+		if(put_out_card_flag==FINISH)  //所有卡片均放出
+    {
+      put_out_card_flag=NOT_FINISH;
+      put_out_count=0;				 //清零需要放出的卡片数目
+      *classify_step=Go_back;  //后退
+      classify_type = *classify_step;
+    }
+    else
+    {
+      for(uint8 i=put_out_count; i>0; i--)
+      {
+        arm_control(3); //放卡片
+        if(i==1)        //最后一张
+         put_out_card_flag=FINISH;
+      }
+      *classify_step=Putout_card;  //放卡片
+    }
+	}
+ if(*classify_step==Go_back)   //后退至原本可用art1识别的位置
+	{
+		if(Card_dis_car_y<=2 && Card_dis_car_y>=-1)                 //设置容错区间
+    {
+      *classify_step = Find_upline;                             //继续向右平移找卡片
+      classify_type = *classify_step;
+      NVIC_SetPriority(LPUART1_IRQn, 0);	                      //恢复art1的中断优先级
+      /******************清零各种变量***************/
+      now_distance_x=0;									
+		  now_distance_y=0;        				 	                        //此处清零主要是为了防止直接状态二判断成功，乱识别东西
+      Card_dis_car_x=0;
+      Card_dis_car_y=0;                                         //卡片里程计清空
+      /******************关闭各种标志位*************/
+      catch_card_flag=CLOSE;
+    }
+    else
+    {
+      *classify_step = Go_back;
+      Vx=0;
+      Turn_Angle_PD(-90-Now_angle);                             //此处可以根据实际情况修改，提供Vz的车头修正速度
+      Vy=Distance_pid(&distance_pid[0], 0, (int)Card_dis_car_y);//向后退
+      Car_Inverse_kinematics_solution(Vx, Vy, Vz);              //麦轮控制，为target_speed赋值
+    }
+	}
+  if(*classify_step==Turn_back)//转向回正
+  {
+   if(abs(Angle_Z-Now_angle)<2)
+   {
+     *classify_step=Find_banmaxian;        //返回至初始状态，直到下一次重新进去
+     classify_type = *classify_step;
+     Card_dis_car_x=0;
+     Card_dis_car_y=0;
+     banmaxian_finish=FINISH; //斑马线处理完成
+
+   }
+   else
+   {
+     Vx=0;
+     Vy=0;
+     Turn_Angle_PD(Now_angle);//转向回正
+     *classify_step=Turn_back;
+   }
+  }
 }
+// /**
+// * @brief 左环岛单搬策略
+// * @param Island_step为步数选择
+// * @param
+// * @return 无
+// */
+//void Left_Island_pick_and_move(*Island_step)
+//{
+//  if(Island_step==Arrive_zeropoint)
+//  {
+//    if()
+//    {
+
+//    }
+//    else
+//    {
+
+//    }
+//  }
+//}
