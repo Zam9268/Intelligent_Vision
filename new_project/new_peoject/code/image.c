@@ -57,6 +57,7 @@ uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
 uint8 lower_row_center_threshold = 0;
+uint8 Top_Line_Continues_flag=0;//自下而上扫线的连续性标志位
 int Edge_threshold = 1700; // 边缘检测的阈值，通过按键进行调节，初始值为1700
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
@@ -2241,6 +2242,7 @@ uint8 Surround_Analyse(void)
 void Top_Line_Search(void)
 {
     /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
     lowest_row = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
@@ -2268,6 +2270,11 @@ void Top_Line_Search(void)
                 Island_surrond[i] = 134; // 此时丢线,默认为最低那一行
             }
         }
+    }
+    /*其他处理*/
+    if(lowest_column>=180)
+    {
+        Top_Line_Continues_flag=1;
     }
 }
 
@@ -2356,7 +2363,7 @@ float Island_Surround(uint8 target_row)
             }
         }
 
-        if (flag != 0 && flag <= 60) // 断裂点在图像的左侧
+        if (flag != 0 && flag <= 60 && Top_Line_Continues_flag==1) // 断裂点在图像的左侧，且上边线的连续性检测通过
             Island_State = 7;
     }
     else if (Island_State == 7) /*此时为出环岛的圆弧，图像左半段出现角点*/
