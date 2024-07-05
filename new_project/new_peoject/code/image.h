@@ -76,4 +76,8 @@ void Pespective_point(int camera_x, int camera_y, int *real_x, int *real_y);
 void Top_Add_Line(int x1, int y1, int x2, int y2);
 int Continuity_Change_Left_Island(int start, int end); // 连续性阈值设置为5
 int Continuity_Change_Right_Island(int start, int end);
+void Top_Line_Search_Island(void);
+void Top_Line_Center_Get_Center(void);
+void send_deal(void);
+
 #endif

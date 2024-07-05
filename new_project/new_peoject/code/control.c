@@ -55,8 +55,8 @@ int test_count = 0;
 float dt = 0.005;
 /*******************角度环所需变量***************************/
 float turn_error = 3;      //可接受的角度误差
-float Turn_KP = 0.2;       // 角度PID//
-float Turn_KD = 0.2;       // 角度PID//
+float Turn_KP = 0.5;       // 角度PID//
+float Turn_KD = 0.5;       // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
 /************************************************************/
 //*****************里程计所用变量****************//
@@ -115,6 +115,9 @@ float ahead_distance;     //前进的距离
 uint8 Traffic=1;         //交通工具类
 uint8 Weapon =2;         //武器类
 uint8 Supply =3;		     //物资类
+int Traffic_count=0;     //拾取的交通工具卡片数
+int Weapon_count=0;      //拾取的武器总卡片数
+int Supply_count=0;      //拾取的物资的总卡片数
 /********************************************************************/
 /******************用于总钻风修正的变量*******************/
 int card_center_x;
@@ -145,6 +148,8 @@ int delta_class_x,delta_class_y;
 int classify_art2_flag;
 int classify_type;//用于观察分类的模式
 uint8 Find_num=0;   //识别完毕的标志位
+int put_out_count;  //需要放出的卡片数目
+uint8 put_out_card_flag=0;      //所有卡片是否放出的标志位
 uint8 Traffic_Finish=0;         //交通工具类
 uint8 Weapon_Finish =0;         //武器类
 uint8 Supply_Finish =0;		     //物资类
@@ -1027,7 +1032,7 @@ void car_findcard(int *mode)
   //******************************正常循迹*****************************//
   if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
   {
-    if (now_distance_y > 0 && now_distance_y < 800 && abs(now_distance_x)<450) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
+    if (now_distance_y > 0 && now_distance_y < 800 && abs(now_distance_x)<500) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
     {
       if (only_one) // 只执行一次
       {
@@ -1057,11 +1062,11 @@ void car_findcard(int *mode)
          now_angle = Angle_Z;//记录下转向前的角度
 			   if(delta_card_x<=0)//卡片相对于小车在左边时
         {
-          turn_angle=90-now_angle;//向左转90度 
+          turn_angle=90+now_angle;//向左转90度 
         }
         else
         {
-          turn_angle=-90-now_angle;//向右转向90度
+          turn_angle=-90+now_angle;//向右转向90度
         }
         only_one = 0;     // 只执行一次
         *mode = Car_turn; // 模式转变
@@ -1098,7 +1103,7 @@ void car_findcard(int *mode)
 //******************************向卡片方向转向*****************************//
   if (*mode == Car_turn) 
   {
-    if (fabsf(Angle_Z - turn_angle) < 4) // 陀螺仪转向识别
+    if (fabsf(Angle_Z - turn_angle) <= 3) // 陀螺仪转向识别
     {
       // Vz = 0;//清0Vz
 			*mode = Car_find_card_cor; //模式转变
@@ -1109,7 +1114,7 @@ void car_findcard(int *mode)
 			correct_y=0;//清空修正距离
 			// pick_up_mode=1;//防止卡死
 			correct_art2_flag = OPEN;//打开art2识别中断
-			system_delay_ms(2000);
+      NVIC_SetPriority(LPUART1_IRQn, 2);                             // 降低UART1中断优先级
       arrive_card_flag=OPEN;//打开总钻风微调时的里程计计数
       // fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化UART数据FIFO
 			// uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
@@ -1175,14 +1180,17 @@ void car_findcard(int *mode)
           if(card_classify==1 || card_classify==2 || card_classify==7 || card_classify==13)//交通工具类
           {
             classify_360(Traffic);
+            Traffic_count++;
           }
           else if(card_classify==4 || card_classify==5 || card_classify==6 || card_classify==8 ||card_classify==14)//武器类
           {
             classify_360(Weapon);
+            Weapon_count++;
           }
           else if(card_classify==3 || card_classify==9 || card_classify==10 || card_classify==11 || card_classify==12 || card_classify==15)//物资类
           {
             classify_360(Supply);
+            Supply_count++;
           }
           CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
           Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
@@ -1244,6 +1252,7 @@ void car_findcard(int *mode)
 			// 	uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
 			// uart_rx_interrupt(UART_1, 1);                                  // 开启使能UART1接收中断
       // chance=1;
+      NVIC_SetPriority(LPUART1_IRQn, 0);//恢复art1的中断优先级
       uart_write_string(UART_1, uart_1_begin);
 			arm_pick_flag=ARM_PICK_NOT_DONE;
       target_type = *mode;
@@ -1485,7 +1494,7 @@ void card_final_classify(int *classify_step)
  {
    if(Find_num==READY)        //找到了数字分类卡片区域，准备识别
    {
-     *classify_step=Go_back;      //后退
+     *classify_step=Putout_card;  //放卡片
       card_num=0;                 //清空已识别的数字
       numcard_classify=0;         //清空已记录的数字
       Find_num=NOT_READY;        //重置识别完毕的标志位
@@ -1508,24 +1517,43 @@ void card_final_classify(int *classify_step)
       if(numcard_classify==1)     //武器放置类
       {
         classify_360(Weapon);
+        put_out_count=Weapon_count;
         Weapon_Finish=FINISH;     //完成武器类的舵机转向
       }
       else if(numcard_classify==2)//物资放置类
       {
         classify_360(Supply);
+        put_out_count=Supply_count;
         Supply_Finish=FINISH;     //完成物资类的分类
       }
       else if(numcard_classify==3)//交通工具类
       {
         classify_360(Traffic);
+        put_out_count=Traffic_count;
         Traffic_Finish=FINISH;         //完成交通类的舵机转向
       }
    }
  }
-//  if(*classify_step==Putout_card)   //识别卡片分类区域
-//	{
-//		
-//	}
+ if(*classify_step==Putout_card)   //识别卡片分类区域
+	{
+		if(put_out_card_flag==FINISH)  //所有卡片均放出
+    {
+      put_out_card_flag=NOT_FINISH;
+      put_out_count=0;				 //清零需要放出的卡片数目
+      *classify_step=Go_back;  //后退
+      classify_type = *classify_step;
+    }
+    else
+    {
+      for(uint8 i=put_out_count; i>0; i--)
+      {
+        arm_control(3); //放卡片
+        if(i==1)        //最后一张
+         put_out_card_flag=FINISH;
+      }
+      *classify_step=Putout_card;  //放卡片
+    }
+	}
  if(*classify_step==Go_back)   //后退至原本可用art1识别的位置
 	{
 		if(Card_dis_car_y<=2 && Card_dis_car_y>=-1)                 //设置容错区间
@@ -1556,6 +1584,8 @@ void card_final_classify(int *classify_step)
    {
      *classify_step=Find_banmaxian;        //返回至初始状态，直到下一次重新进去
      classify_type = *classify_step;
+     Card_dis_car_x=0;
+     Card_dis_car_y=0;
      banmaxian_finish=FINISH; //斑马线处理完成
 
    }
@@ -1568,3 +1598,23 @@ void card_final_classify(int *classify_step)
    }
   }
 }
+// /**
+// * @brief 左环岛单搬策略
+// * @param Island_step为步数选择
+// * @param
+// * @return 无
+// */
+//void Left_Island_pick_and_move(*Island_step)
+//{
+//  if(Island_step==Arrive_zeropoint)
+//  {
+//    if()
+//    {
+
+//    }
+//    else
+//    {
+
+//    }
+//  }
+//}

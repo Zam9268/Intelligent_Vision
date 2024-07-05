@@ -86,6 +86,8 @@ extern unsigned int my_sceond_count;
 extern uint8 seconds;
 extern uint8 change;
 extern uint8 chance;
+extern int classify_art2_flag;
+extern int correct_art2_flag;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -150,7 +152,7 @@ int main(void)
         Encoder_Init();            // 编码器初始化
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
-//        my_pwm_gpio();             // 机械臂初始化
+        my_pwm_gpio();             // 机械臂初始化
                                    // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
         pit_ms_init(PIT_CH0, 5);   // 5ms
         pit_ms_init(PIT_CH1, 5);   // 10ms
@@ -198,47 +200,74 @@ int main(void)
                 // ips114_show_uint(0, 80, right_data[0], 3);
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);
+					Top_Line_Center_Get_Center();
                 test();
-//		            test_arm();
-							ips114_show_int(188,60,Edge_threshold,4);
-              ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
-					/*****************测试上边线巡线(仅直道)成功***********************/
-//                car_run_upline();
-//                Turn_Angle_PD(Angle_Z);
-//					      Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
-//                ips114_show_float(0,0,top_error,3,4);//上边线误差
-//                ips114_show_float(0,20,Vx,3,4);
-//		            ips114_show_float(0,40,Vy,3,4);
-					/***************************************************************/
-                // ips114_show_int(0,60,type,4);
-//       switch(car_run_mode)
-// 			 {
-// 			   case 0:
-// 					 if(type==5)
-// 					 {
-//             type_count++;
-//             if(type_count>5)
-//             {
-// 						  car_run_mode=1;//更改寻迹模式
-// 						  now_distance_x=0;
-// 						  now_distance_y=0;
-//             }
-// 					 }
-// 					 else
-// 					 {
-// 					   car_run_mode=0;//
-// 					 }
-// 					 car_run();
-// 					 break;
-// 				 case 1://
-// 					 card_final_classify(&classify_mode);
-//           if(banmaxian_finish==FINISH)
-//              car_run_mode=0;
-//           else
-//              car_run_mode=1;
-// 				 break;	 
-// 			 }				 
-//     ips114_show_int(0,0,correct_art2_flag,4);
+					correct_art2_flag=1;
+//		test_arm();
+//		            ips114_show_int(188,60,Edge_threshold,4);
+//					      ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
+//                ips114_show_int(90,40,now_distance_y,4);//卡片坐标,即时更新
+//					/*****************测试上边线巡线(仅直道)成功***********************/
+////                car_run_upline();
+////                Turn_Angle_PD(Angle_Z);
+////					      Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
+////                ips114_show_float(0,0,top_error,3,4);//上边线误差
+////                ips114_show_float(0,20,Vx,3,4);
+////		            ips114_show_float(0,40,Vy,3,4);
+//					/***************************************************************/
+//                // ips114_show_int(0,60,type,4);
+//	// if(type==5)
+//	// {
+//        //  type_count++;
+//        //  if(type_count>5)
+//        //  {
+// 	//    car_run_mode=1;//更改寻迹模式
+// 	//    now_distance_x=0;
+// 	//    now_distance_y=0;
+//        //  }
+// 	//  }
+//	 if(type==8)
+//	{
+//	 if(once)
+//        {
+//         Angle_ramp=0;
+//         ramp_x=0;
+//         ramp_y=0;
+//         ramp_step=1;
+//	 car_run_mode=2;
+//	 car_stop();
+//	 find_ramp = 1;
+//         once=0;
+//        }
+//	}
+//        switch(car_run_mode)
+// 	{
+//	 case 0:
+// 	   car_findcard(&car_mode);//模式选择
+//	   car_run_mode=0;
+//	 break;
+//	//  case 1://斑马线处理
+// 	//    card_final_classify(&classify_mode);
+//        //    if(banmaxian_finish==FINISH)
+//        //       car_run_mode=0;
+//        //    else
+//        //       car_run_mode=1;
+//	//  break;
+//	 case 2:
+//	  ramp_cross(60, 140);//坡道绕行函数
+//	  Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//	  if(ramp_finish==1)
+//	    car_run_mode=0;
+//          else
+//	    car_run_mode=2;
+// 	 break;	 
+// 	}				 
+//     ips114_show_int(0,0,car_run_mode,4);
+//     ips114_show_int(0,20,target_type,4);
+//     ips114_show_int(0,40,near_card_x/10,4);
+//     ips114_show_int(0,40,near_card_y/10,4);
+//     ips114_show_int(0,60,delta_x,4);
+//     ips114_show_int(0,80,delta_y,4);
 //     ips114_show_int(0,20,classify_type,4);								
 // 		ips114_show_int(0,40,numcard_classify,4);
 // 		ips114_show_int(120,0,near_card_x/10,4);

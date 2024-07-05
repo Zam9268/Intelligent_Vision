@@ -59,6 +59,8 @@
 #define Go_back             5//后退至y处原本的位置
 #define Turn_back           6//返回正常寻迹
 
+#define Arrive_zeropoint    0//到达原点处
+
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
 

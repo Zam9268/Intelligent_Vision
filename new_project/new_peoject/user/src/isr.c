@@ -40,6 +40,8 @@
 #include "take.h"
 #include "imu660ra.h"
 #include "my_key.h"
+#include "image.h"
+
 extern int uart1_flag;
 extern int uart4_flag;
 extern int correct_art2_flag;
@@ -48,6 +50,7 @@ extern char uart_4_begin[];
 extern char uart_4_begin_abc[]; // 外部声明
 extern pid_info Speed[4];       // �ⲿ����
 extern uint8 step;
+extern char send_mode;
 extern char uart_4_begin[];
 extern char uart_4_begin_abc[];
 extern fifo_struct uart_data_fifo; // UART数据FIFO结构体
@@ -91,7 +94,7 @@ void PIT_IRQHandler(void)
         if(key_xiaodou==4)//消抖间隔为20ms
         {
             key_scan();
-					key_xiaodou=0;
+			key_xiaodou=0;
         }
         // ��ȡ������
         //  Read_Encoder();
@@ -130,7 +133,7 @@ void PIT_IRQHandler(void)
         }
         if (correct_art2_flag == 1)
         {
-           uart_write_string(UART_4, uart_4_begin);
+            send_deal();
             //           correct_art2_flag=0;
         }
 		if(classify_art2_flag == 1)

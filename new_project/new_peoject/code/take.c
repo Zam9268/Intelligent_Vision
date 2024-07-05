@@ -154,14 +154,14 @@ void arm_control(uint8 mode)
    gpio_set_level(C11, 0);
    break;
 
- case 3: //捡后续卡片所用的模式
+ case 3: //放出卡片
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(173, 148, 20);//下双臂
-   system_delay_ms(1000);
-   servo_slow_ctrl(173, 80, 50); //动后臂
-   system_delay_ms(1000);
-   servo_slow_ctrl(25, 75, 100); //收前臂 25 75
-   system_delay_ms(1000);
+   servo_slow_ctrl(15, 70, 20);//收前臂
+   system_delay_ms(500);
+   servo_slow_ctrl(15, 45, 50); //动后臂    15 45
+   system_delay_ms(500);
+   servo_slow_ctrl(170, 80, 100); //取出卡片 25 75
+   system_delay_ms(500);
    gpio_set_level(C11, 0);
 
    break;
@@ -223,7 +223,7 @@ void test_arm(void)
 {
 	if(pick_count<5)
 	{
-		arm_control(2);//捡卡片
+		arm_control(3);//放卡片
 	  arm_control(4);//默认模式
 		pick_count++;
 	}

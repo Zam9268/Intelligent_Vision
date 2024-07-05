@@ -20,6 +20,31 @@ uint8 data_length = 0;           // 数据长度
 uint8 transform_counts = 0;      // 转换计数
 char str[] = "why";              // 字符串
 char uart_4_begin[] = "fift";    // UART4开始字符串
+char uart_4_begina[] = "fifta";    // UART4开始字符串310
+char uart_4_beginb[] = "fiftb";    // UART4开始字符串300
+char uart_4_beginc[] = "fiftc";    // UART4开始字符串290
+char uart_4_begind[] = "fiftd";    // UART4开始字符串280
+char uart_4_begine[] = "fifte";    // UART4开始字符串270
+char uart_4_beginz[] = "fiftz";    // UART4开始字符串260
+char uart_4_beging[] = "fiftg";    // UART4开始字符串250
+char uart_4_beginh[] = "fifth";    // UART4开始字符串240
+char uart_4_begini[] = "fifti";    // UART4开始字符串230
+char uart_4_beginj[] = "fiftj";    // UART4开始字符串220
+char uart_4_begink[] = "fiftk";    // UART4开始字符串210
+char uart_4_beginl[] = "fiftl";    // UART4开始字符串200
+char uart_4_beginm[] = "fiftm";    // UART4开始字符串190
+char uart_4_beginn[] = "fiftn";    // UART4开始字符串180
+char uart_4_begino[] = "fifto";    // UART4开始字符串压线
+char uart_4_beginp[] = "fiftp";    // UART4开始字符串
+char uart_4_beginq[] = "fiftq";    // UART4开始字符串
+char uart_4_beginr[] = "fiftr";    // UART4开始字符串
+char uart_4_begins[] = "fifts";    // UART4开始字符串
+char uart_4_begint[] = "fiftt";    // UART4开始字符串
+char uart_4_beginu[] = "fiftu";    // UART4开始字符串
+char uart_4_beginv[] = "fiftv";    // UART4开始字符串
+char uart_4_beginw[] = "fiftw";    // UART4开始字符串
+char uart_4_beginx[] = "fiftx";    // UART4开始字符串
+
 char uart_4_begin_abc[] = "abc"; // UART4开始字符串abc
 /**
  * @brief 初始化通信模块
@@ -143,7 +168,6 @@ void get_uartdata(void)
 }
 extern float Car_dis_x, Car_dis_y; //??????????x??y?????
 extern float Angle_world;          //?????????
-
 int record_now_distance_x;
 unsigned int record_now_distance_y;
 int last_distance_x;          // 上一次接收到的x距离
