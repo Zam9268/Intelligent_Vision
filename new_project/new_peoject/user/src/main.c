@@ -126,22 +126,23 @@ int main(void)
         //----------pid初始化---------------------//
         //    uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13); // 串口一初始化，用于art
         //    Vofa_Init(&vofa1, VOFA_MODE_SKIP);
-        wireless_uart_init(); // 无线串口初始化
-        key_init(20);//按键初始化
-        seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
-        seekfree_assistant_oscilloscope_struct oscilloscope_data;
+        // wireless_uart_init(); // 无线串口初始化
+        // key_init(20);//按键初始化
+        // seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+        // seekfree_assistant_oscilloscope_struct oscilloscope_data;
 
-        oscilloscope_data.data[0] = 0.1111 + 2;
-        oscilloscope_data.data[1] = 0.3333 - 1;
-        oscilloscope_data.data[2] = 4.222;
-        oscilloscope_data.data[3] = 5.222;
-        oscilloscope_data.channel_num = 4;
+//        oscilloscope_data.data[0] = 0.1111 + 2;
+//        oscilloscope_data.data[1] = 0.3333 - 1;
+//        oscilloscope_data.data[2] = 4.222;
+//        oscilloscope_data.data[3] = 5.222;
+//        oscilloscope_data.channel_num = 4;
         // 设置为4个通道，通道数量最大为8个
+        
         My_Communication_Init(); // 通信初始化
         PidInit();               // 增量式pid初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         Distance_PidInit(); // 距离环初始化
-        // correct_art2_flag=OPEN;
+
         ips114_init();      // 屏幕初始化
         ips114_set_dir(IPS114_PORTAIT);
         ips114_set_font(IPS114_6X8_FONT);
@@ -153,7 +154,7 @@ int main(void)
         Camera_Init();             // 摄像头初始化
         my_imu660ra_init();        // 陀螺仪初始化，开机需静置一段时间
         my_pwm_gpio();             // 机械臂初始化
-                                   // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
+        // -- -- -- -- -- --中断初始化-- -- -- -- -- -- -- -- -- - //
         pit_ms_init(PIT_CH0, 5);   // 5ms
         pit_ms_init(PIT_CH1, 5);   // 10ms
         pit_ms_init(PIT_CH2, 100); // 15ms
@@ -165,7 +166,7 @@ int main(void)
         /*视觉处理部分代码初始化*/
         Last_Longest_White_Column_Left[1] = 94;
         Longest_White_Column_Left[1] = 94;
-			// correct_art2_flag=OPEN;
+                   
         // Road_Type = STRAIGHT_ROAD;
         //             Speed[3].target_speed=30.0;
         //             Speed[2].target_speed=30.0;
@@ -176,8 +177,8 @@ int main(void)
         int one_time = 1;
         uint8 temp = 0;
         uint8 type_count=0;
-	      int car_run_mode=0;
-	      find_ramp = OPEN;
+	int car_run_mode=0;
+	//       find_ramp = OPEN;
         //    float zuobiao_x=0;
         //	  float zuobiao_y=0;
         //    int test_delta_card_x,test_delta_card_y;
@@ -200,20 +201,38 @@ int main(void)
                 // ips114_show_uint(0, 80, right_data[0], 3);
                 // ips114_show_uint(0, 100, right_data[1], 3);
                 // ips114_show_uint(0, 120, right_data[2], 3);
-					Top_Line_Center_Get_Center();
-                test();
-					correct_art2_flag=1;
+					// Top_Line_Center_Get_Center();
+        test();
+	car_findcard(&car_mode);//模式选择
+//					correct_art2_flag=1;
 //		test_arm();
-//		            ips114_show_int(188,60,Edge_threshold,4);
-//					      ips114_show_int(90,20,now_distance_x,4);//卡片坐标,即时更新
-//                ips114_show_int(90,40,now_distance_y,4);//卡片坐标,即时更新
+					gpio_set_level(C11, 1);
+//		ips114_show_int(188,60,Edge_threshold,4);
+       ips114_show_float(0,0,Angle_Z,3,4);//角度
+       ips114_show_int(0,20,target_type,4);//卡片坐标,即时更新
+       ips114_show_float(0,40,Vz,3,4);
+			  ips114_show_int(0,60,Vx,3);//第一次捕捉到卡片的y坐标
+				ips114_show_int(0,80,Vy,3);//第一次捕捉到卡片的y坐标
+				ips114_show_int(120,0,card_center_x,4);//卡片坐标,即时更新
+        ips114_show_int(120,20,card_center_y,4);//卡片坐标,即时更新
+        ips114_show_int(120,40,correct_x,4);//卡片坐标,即时更新
+        ips114_show_int(120,60,correct_y,4);//卡片坐标,即时更新
+        ips114_show_int(120,80,delta_x,4);//卡片坐标,即时更新
+        ips114_show_int(120,100,delta_y,4);//卡片坐标,即时更新
+        
+	ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
+        ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
+        ips114_show_int(90,40,correct_x_flag,4);//卡片坐标,即时更新
+        ips114_show_int(90,60,correct_y_flag,4);//卡片坐标,即时更新
+        ips114_show_int(90,80,CSI_correct_flag,4);//卡片坐标,即时更新
+
 //					/*****************测试上边线巡线(仅直道)成功***********************/
-////                car_run_upline();
-////                Turn_Angle_PD(Angle_Z);
-////					      Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
-////                ips114_show_float(0,0,top_error,3,4);//上边线误差
-////                ips114_show_float(0,20,Vx,3,4);
-////		            ips114_show_float(0,40,Vy,3,4);
+        //        car_run_upline();
+        //        Turn_Angle_PD(Angle_Z);
+        //        Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
+        //        ips114_show_float(0,0,top_error,3,4);//上边线误差
+        //        ips114_show_float(0,20,Vx,3,4);
+	// 	ips114_show_float(0,40,Vy,3,4);
 //					/***************************************************************/
 //                // ips114_show_int(0,60,type,4);
 //	// if(type==5)
@@ -319,7 +338,7 @@ int main(void)
 //                ips114_show_int(90,0,ramp_step,4);
 //                ips114_show_float(0,60,Vx,3,4);
 //                ips114_show_float(0,80,Vy,3,4);//x,y速度
-                //                car_run();
+//                   car_run();
 
                 //*********************测试总的车辆行进打包函数**********************//
                 //    car_findcard(&car_mode);//模式选择
@@ -354,9 +373,9 @@ int main(void)
                 // //**************************观察行进变量*****************************//
                 //                   ips114_show_int(0,60,card_y[0],3);//第一次捕捉到卡片的y坐标
                 //    ips114_show_int(120, 60, target_type, 3); // 用于观测行进函数的步数
-                // 							 ips114_show_int(120, 80, correct_art2_flag, 3); // 用于观测行进函数的步数
-                //            	 	 ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
-                //           			 ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
+                //    ips114_show_int(120, 80, correct_art2_flag, 3); // 用于观测行进函数的步数
+                //    ips114_show_int(90,80,delta_card_y,3);//卡片y坐标与里程计的差值
+                //     ips114_show_int(90,100,delta_card_x,3);//卡片x坐标与里程计的差值
                 // //*******************************************************************//
                 // //**************************观察行进变量*****************************//
                 // ips114_show_int(0, 0, pick_up_mode, 3);                // 观察摄像头模式
@@ -418,17 +437,18 @@ int main(void)
                 // gpio_set_level(C11, 1);
                 //          test_arm();
                 //*********************测试总钻风/art校正********************************//
+                
                 //  if(near_card_x!=0 && near_card_y!=0)
-                //	{
-                //	  if(once)
-                //	  {
-                //	   card_center_x=near_card_x;
-                //	   card_center_y=near_card_y;
-                //     card_classify=card_type;
-                //	   correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
-                //	   once=0;//只记录一次
-                //	  }
-                //	}
+                // 	{
+                // 	  if(once)
+                // 	  {
+                // 	   card_center_x=near_card_x;
+                // 	   card_center_y=near_card_y;
+		// 									card_classify=card_type;
+                // 	   correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
+                // 	   once=0;//只记录一次
+                // 	  }
+                // 	}
                 //        if(card_classify==1 || card_classify==2 || card_classify==7 || card_classify==13)//交通工具类
                 //        {
                 //           classify_360(Traffic);
@@ -441,11 +461,18 @@ int main(void)
                 //        {
                 //            classify_360(Supply);
                 //        }
-                //				CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
-                //        Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-                //				  ips114_show_int(90,0, card_classify,4);
-                //          ips114_show_int(90,20,card_center_x,4);
-                //          ips114_show_int(90,40,card_center_y,4);//显示卡片中心坐标
+                // 	CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
+                //         Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+		// 									    ips114_show_float(0,0,Vx,3,4);
+		// 									    ips114_show_float(0,20,Vy,3,4);
+		// 									    ips114_show_int(0,40, correct_x,4);
+		// 									    ips114_show_int(0,60, correct_y,4);
+                //                                                                             ips114_show_int(0,80, delta_x,4);
+                //                                                                             ips114_show_int(0,100, delta_y,4);
+                // 				  ips114_show_int(90,0, near_card_x,4);
+		// 									    ips114_show_int(90,20, near_card_y,4);
+                //           ips114_show_int(90,40,card_center_x,4);
+                //           ips114_show_int(90,60,card_center_y,4);//显示卡片中心坐标
                 //  ips114_show_int(90,40,delta_x,4);
                 //  ips114_show_int(90,60,delta_y,4);//显示delta
                 // ips114_show_int(90, 80, correct_x_flag, 4);  // 显示x调整标志位
