@@ -985,30 +985,45 @@ uint8 Get_DownCenterThreshold(void)
  * @param none
  * @return none
  */
-
+float left_k = 0.00, right_k = 0.00; // 设左右边界的斜率
 void Outer_Analyse(void)
 {
     //????????��???????????
-    /*???????????��?????*/
+    /*???????????��?????
+    通过判断最窄路宽来确定是不是环岛和弯道
+    */
     uint8 left_c = Continuity_Change_Left_Island(IMAGE_HEIGHT - 10, 10);
     uint8 right_c = Continuity_Change_Right_Island(IMAGE_HEIGHT - 10, 10);
+    uint8 left_up_c=Continuity_Change_Left_Island_Up(IMAGE_HEIGHT-10,10);
+    uint8 right_up_c=Continuity_Change_Right_Island_Up(IMAGE_HEIGHT-10,10);
+    // ips114_draw_line(188,0,left_line[left_c],left_c,RGB565_RED);
+    // ips114_draw_line(188,0,left_line[left_up_c],right_c,RGB565_RED);
     /*如果左右边线有连续的话，就求其斜率*/
-    float left_k = 0.00, right_k = 0.00; // 设左右边界的斜率
+
+    left_k=0.00;right_k=0.00;
     uint8 temp;//中间变量
     if(left_c==0)//如果是连续的话
     {
-        uint8 deta_c_x=abs(Search_Stop_Line-Boundry_Start_Left);
-        uint8 deta_c_y=abs(left_line[Search_Stop_Line]-left_line[Boundry_Start_Left]);
-        left_k=(float)deta_c_y/deta_c_x;
+        int deta_c_x=abs(Search_Stop_Line-Boundry_Start_Left);
+        int deta_c_y=(left_line[Search_Stop_Line]-left_line[Boundry_Start_Left]);
+        left_k=(float)(deta_c_x*100/deta_c_y)*0.01;
     }
-    if(left_r!=0)
+    if(right_c==0)
     {
-        uint8 detar_x=abs(Search_Stop_Line-Boundry_Start_Right);
-        uint8 detar_y=abs(right_line[Search_Stop_Line]-right_line[Boundry_Start_Right]);
-        right_k=(float)detar_y/detar_x;
+        int detar_x=abs(Search_Stop_Line-Boundry_Start_Right);
+        int detar_y=(right_line[Search_Stop_Line]-right_line[Boundry_Start_Right]);
+        ips114_show_int(188,60,detar_y,3);
+        right_k=(float)(detar_x*100/detar_y)*0.01;
     }
-    ips114_show_uint(188, 90, left_c, 3);
-    ips114_show_uint(188, 100, right_c, 3);
+    
+    
+
+    /*test*/
+    
+
+    ips114_show_uint(188,40,left_c,3);
+   ips114_show_uint(188,50,left_up_c,3);
+   
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (Left_Lost_Flag[i] == 1)
@@ -1023,25 +1038,53 @@ void Outer_Analyse(void)
             Boundry_Start_Right = i;                 // Record the starting point of the right boundary
         Road_Wide[i] = right_line[i] - left_line[i]; // Record the road width
     }
-
-    if (Road_Type != RAMP || Road_Type != LEFT_HUANDAO || Road_Type != RIGHT_HUANDAO) // 元素排斥
+    uint8 min_road_wide=188;
+    uint8 min_road_wide_index=0;
+    for(uint8 i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-1-Search_Stop_Line;i--)
+    {
+        if(Road_Wide[i]<min_road_wide && Road_Wide[i]!=0)
+        {
+            min_road_wide=Road_Wide[i];
+            min_road_wide_index=i;
+        }
+    }
+    ips114_show_uint(188,30,Road_Wide[right_c],3);
+    ips114_show_uint(188, 90, Left_Lost_Time, 3);
+    ips114_show_uint(188, 100, Right_Lost_Time, 3);
+    if (Road_Type != RAMP) // 元素排斥
     {
         if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c == 0 && right_c == 0)
             Road_Type = STRAIGHT_ROAD;
-        if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && left_line[120 - Search_Stop_Line] >= 120)
-            Road_Type = RIGHT_TURN;
-        if (Right_Lost_Time < 15 && Left_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
-            Road_Type = LEFT_TURN;
-        if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100)
-        {
-            Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
-            left_island_flag = 1;
-        }
-        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120)
+        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 20 && Both_Lost_Time < 5 && (abs(min_road_wide_index-right_c)>5)||(right_c==0||right_line[right_c]>=170))
+            
+            {
+                if(Right_Lost_Time!=1)
+                {
+                    Road_Type = RIGHT_TURN;
+                }
+                
+            }
+        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120
+        && abs(min_road_wide_index-right_c)<=5)
         {
             Road_Type = RIGHT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             right_island_flag = 1;
         }
+        if (Right_Lost_Time <=5 && Left_Lost_Time >= 20 && Both_Lost_Time < 15&& (abs(min_road_wide_index-left_c)>5)||(left_c==0||left_line[left_c]>=170))
+            
+            {
+                if(Left_Lost_Time!=1)
+                {
+                    Road_Type = LEFT_TURN;
+                }
+            }
+        else if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100
+        && abs(min_road_wide_index-left_c)<=5)
+        {
+            Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
+            left_island_flag = 1;
+        }
+        
         if (Right_Lost_Time >= 30 && Left_Lost_Time >= 30 && Both_Lost_Time >= 30)
             Road_Type = CROSSING;
     }
@@ -1050,9 +1093,36 @@ void Outer_Analyse(void)
 
     // if (Road_Type == STRAIGHT_ROAD)
     // Ramp_Detect();
-    Zebra_Stripes_Detect();
+    Zebra_Stripes_Detect_new();
     // if (Road_Type == RAMP)
     //     Ramp_to_Straight_Detect(); //??????
+
+    /*避障判断放最后*/
+    uint8 wheter_luzhang=0;
+    if(abs(left_c-left_up_c)>=20)
+    {
+        if(Road_Type==STRAIGHT_ROAD && left_c >=2)
+        {
+            wheter_luzhang=Continuity_Change_Left_Island(left_c-2,left_up_c+2);
+            if(wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD)
+            {
+                Road_Type=LEFT_LUZHANG;
+            }
+        }
+    }
+    uint8 new_wheter_luzhang=0;
+    if(abs(right_c-right_up_c)>=20)
+    {
+        if(Road_Type==STRAIGHT_ROAD && right_c >=2)
+        {
+            new_wheter_luzhang=Continuity_Change_Right_Island(right_c-2,right_up_c+2);
+            if(new_wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD)
+            {
+                Road_Type=RIGHT_LUZHANG;
+            }
+        }
+    }
+		ips114_show_uint(188,120,new_wheter_luzhang,3);
 }
 
 /**
@@ -1163,6 +1233,69 @@ int Continuity_Change_Left_Island(int start, int end) // 连续性阈值设置�
     for (i = start; i >= end; i--)
     {
         if (abs(left_line[i] - left_line[i - 1]) >= 5) // 连续判断阈值是5,可更改
+        {
+            continuity_change_flag = i;
+            break;
+        }
+    }
+    return continuity_change_flag;
+}
+
+
+int Continuity_Change_Left_Island_Up(int start, int end) // 连续性阈值设置为5
+{
+    int i;
+    int t;
+    int continuity_change_flag = 0;
+    if (Left_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没必要判断了
+        return 1;
+    if (Search_Stop_Line <= 5) // 搜所截止行很矮
+        return 1;
+    if (start >= MT9V03X_H - 1 - 5) // 数组越界保护
+        start = MT9V03X_H - 1 - 5;
+    if (end <= 5)
+        end = 5;
+    if (start < end) // 都是从下往上计算的，反了就互换一下
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+
+    for (i = end; i <= start; i++)
+    {
+        if (abs(left_line[i] - left_line[i + 1]) >= 5) // 连续判断阈值是5,可更改
+        {
+            continuity_change_flag = i;
+            break;
+        }
+    }
+    return continuity_change_flag;
+}
+
+int Continuity_Change_Right_Island_Up(int start, int end) // 连续性阈值设置为5
+{
+    int i;
+    int t;
+    int continuity_change_flag = 0;
+    if (Left_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没必要判断了
+        return 1;
+    if (Search_Stop_Line <= 5) // 搜所截止行很矮
+        return 1;
+    if (start >= MT9V03X_H - 1 - 5) // 数组越界保护
+        start = MT9V03X_H - 1 - 5;
+    if (end <= 5)
+        end = 5;
+    if (start < end) // 都是从下往上计算的，反了就互换一下
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+
+    for (i = end; i <= start; i++)
+    {
+        if (abs(right_line[i] - right_line[i + 1]) >= 5) // 连续判断阈值是5,可更改
         {
             continuity_change_flag = i;
             break;
@@ -2984,7 +3117,7 @@ void Zebra_Stripes_Detect_new(void)
 
     for (uint8 i = 30; i <= IMAGE_HEIGHT - 31; i++)
     {
-        if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])))
+        if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])) && abs(left_line[i] - right_line[i])<=20)
         {
             zebra_count++; // 多计算几行特殊行，这样就防止误判
         }
@@ -3020,17 +3153,21 @@ void test2(void)
         type = 7;
     else if (Road_Type == RAMP)
         type = 8;
+    else if(Road_Type==LEFT_LUZHANG)
+        type=9;
+    else if(Road_Type==RIGHT_LUZHANG)
+        type=10;
     if (Road_Type == CROSSING)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
         Island_Detect();
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    {
-        // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
-        // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
-        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-        // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-    }
+    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    // {
+    //     // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
+    //     // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+    //     // ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    //     // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    // }
     ips114_show_uint(188, 80, Island_State, 2);
     //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     //    {
@@ -3076,15 +3213,15 @@ void test2(void)
     20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
-    for (uint8 i = 0; i < 188; i++)
-    {
-        ips114_draw_point(i, Island_surrond[i] + 2, RGB565_RED);
-    }
+    // for (uint8 i = 0; i < 188; i++)
+    // {
+    //     ips114_draw_point(i, Island_surrond[i] + 2, RGB565_RED);
+    // }
     ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
 
-    ips114_show_int(188, 30, lowest_row, 3);
-    ips114_show_uint(188, 40, lowest_column, 3);
+    // ips114_show_int(188, 30, lowest_row, 3);
+    // ips114_show_uint(188, 40, lowest_column, 3);
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
 
     // // ips114_show_int(188, 90, Left_Lost_Time, 3);
@@ -3138,13 +3275,13 @@ void test(void)
         {
             output_address = Scharr_Edge(*mt9v03x_image, Edge_threshold); // 使用扫描边缘的方式获取图像
             my_threshold = Image_Get_Down();
-            ips114_show_uint(188, 120, my_threshold, 4);
+            // ips114_show_uint(188, 120, my_threshold, 4);
             memcpy(Image_Use, output_address, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8));
             Easy_Filtering(110, 60, 30, 130, 5);
             //            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             lower_row_center_threshold = Get_DownCenterThreshold();
-            Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
+            Center_line_deal_plus(5, 183); // 不能设置太高或太低的边界，否则会导致错误
             Outer_Analyse();
             // Top_Line_Search();
             // new_island_err = Top_Line_Err(80);

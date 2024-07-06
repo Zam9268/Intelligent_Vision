@@ -22,7 +22,9 @@ typedef enum
     LEFT_HUANDAO,
     RIGHT_HUANDAO,
     RAMP,
-    BANMAXIAN
+    BANMAXIAN,
+    LEFT_LUZHANG,
+    RIGHT_LUZHANG
 } RoadType; // 定义赛道元素类型枚举
 
 // W矩阵（相机坐标转换为现实坐标）[[2.640546, 0.1814489, 11.4467], [-1.812613e-07, 2.469554, 1.842148], [1.007809e-09, -0.005289703, 1]]
@@ -77,7 +79,10 @@ void Top_Add_Line(int x1, int y1, int x2, int y2);
 int Continuity_Change_Left_Island(int start, int end); // 连续性阈值设置为5
 int Continuity_Change_Right_Island(int start, int end);
 void Top_Line_Search_Island(void);
+uint8 Surround_Continus_detect(uint8 start_column, uint8 end_column);
 void Top_Line_Center_Get_Center(void);
 void send_deal(void);
+int Continuity_Change_Left_Island_Up(int start, int end); // 连续性阈值设置为5;
+int Continuity_Change_Right_Island_Up(int start, int end);
 
 #endif

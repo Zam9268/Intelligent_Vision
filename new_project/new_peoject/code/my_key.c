@@ -69,7 +69,7 @@ typedef enum
 
 void my_key_handle(void)
 {
-    if(keys[0].`==1)
+    if(keys[0].single_flag==1)
     {
         Edge_threshold+=100;//阈值连接增加100
         keys[0].single_flag=0;//清除标志位
@@ -96,7 +96,6 @@ void my_key_handle(void)
         }
         else if(second_menu==1&&electric_menu==1)
         {
-            electric_mode=1;
         }
         else if(second_menu==1&&visual_menu==1)
         {
@@ -106,9 +105,8 @@ void my_key_handle(void)
     else if(keys[2].single_flag==1)
     {
         keys[2].single_flag=0;
-        if()
     }
-    else if(keys[3].single_flag=1)
+    else if(keys[3].single_flag==1)
     {
         keys[3].single_flag=0;
     }
