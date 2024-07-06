@@ -1006,6 +1006,7 @@ void Outer_Analyse(void)
         uint8 detar_x=abs(Search_Stop_Line-Boundry_Start_Right);
         uint8 detar_y=abs(right_line[Search_Stop_Line]-right_line[Boundry_Start_Right]);
         right_k=(float)detar_y/detar_x;
+        
     }
     ips114_show_uint(188, 90, left_c, 3);
     ips114_show_uint(188, 100, right_c, 3);
