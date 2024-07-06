@@ -93,7 +93,7 @@ extern unsigned int now_distance_y; // the distance made by the target detection
 extern uint8 init_flag;             // the flag of the initialization
 extern uint8 seconds;
 extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始就误判坡道标志位
-
+extern uint8 Longest_Column_Fixed;
 extern char uart_4_begina[]; // UART4开始字符串310
 extern char uart_4_beginb[]; // UART4开始字符串300
 extern char uart_4_beginc[]; // UART4开始字符串290
@@ -416,22 +416,35 @@ begin:
     /* Find the longest white column */
     Last_Longest_White_Column_Left[0] = Longest_White_Column_Left[0]; // Record the longest white column in the previous iteration
     Last_Longest_White_Column_Left[1] = Longest_White_Column_Left[1]; // record the column number of the longest white column in the previous iteration
-    Longest_White_Column_Left[0] = 0;                                 // Clear the information of the longest white column
-    for (uint8 i = start_column; i <= end_column; i++)
-    {
-        if (White_Column[i] > Longest_White_Column_Left[0]) // Replace the longest white column with the maximum value
-        {
-            Longest_White_Column_Left[0] = White_Column[i]; // Record the length of the corresponding longest white column
-            Longest_White_Column_Left[1] = i;               // Record the column number where the corresponding longest white column is located
-        }
-    }
+    Longest_White_Column_Left[0] = 0;        
+		// Clear the information of the longest white column
+		if(Longest_Column_Fixed==1)
+		{
+			Longest_White_Column_Left[1]=94;
+			Longest_White_Column_Left[0] = 117;
+		}
+    else
+		{
+			for (uint8 i = start_column; i <= end_column; i++)
+			{
+					if (White_Column[i] > Longest_White_Column_Left[0]) // Replace the longest white column with the maximum value
+					{
+							Longest_White_Column_Left[0] = White_Column[i]; // Record the length of the corresponding longest white column
+							Longest_White_Column_Left[1] = i;               // Record the column number where the corresponding longest white column is located
+					}
+			}
+		}
     Search_Stop_Line = Longest_White_Column_Left[0]; // Set the stop line for searching to the length of the longest white column
     /* To prevent significant changes in the position of the longest white column at the turning point, set a verification for the change */
-    if (abs(Longest_White_Column_Left[1] - Last_Longest_White_Column_Left[1]) >= 60) // If the longest white column position changes by more than 60 columns
-    {
-        Longest_White_Column_Left[0] = Last_Longest_White_Column_Left[0]; // Then the longest white column is set to the previous value
-        Longest_White_Column_Left[1] = Last_Longest_White_Column_Left[1];
-    }
+    if(Longest_Column_Fixed!=1)
+		{
+			if (abs(Longest_White_Column_Left[1] - Last_Longest_White_Column_Left[1]) >= 60) // If the longest white column position changes by more than 60 columns
+			{
+					Longest_White_Column_Left[0] = Last_Longest_White_Column_Left[0]; // Then the longest white column is set to the previous value
+					Longest_White_Column_Left[1] = Last_Longest_White_Column_Left[1];
+			}
+		}
+		
 
     /* Start searching for boundaries */
     int right_border, left_border; // Define intermediate variables for boundaries
@@ -1104,7 +1117,7 @@ void Outer_Analyse(void)
         if(Road_Type==STRAIGHT_ROAD && left_c >=2)
         {
             wheter_luzhang=Continuity_Change_Left_Island(left_c-2,left_up_c+2);
-            if(wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD)
+            if(wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD && Road_Wide[(left_c+left_up_c)/2]>=20)
             {
                 Road_Type=LEFT_LUZHANG;
             }
@@ -1113,7 +1126,7 @@ void Outer_Analyse(void)
     uint8 new_wheter_luzhang=0;
     if(abs(right_c-right_up_c)>=20)
     {
-        if(Road_Type==STRAIGHT_ROAD && right_c >=2)
+        if(Road_Type==STRAIGHT_ROAD && right_c >=2 && Road_Wide[(right_c+right_up_c)/2]>=20)
         {
             new_wheter_luzhang=Continuity_Change_Right_Island(right_c-2,right_up_c+2);
             if(new_wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD)
@@ -3161,13 +3174,13 @@ void test2(void)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
         Island_Detect();
-    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    // {
-    //     // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
-    //     // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
-    //     // ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-    //     // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-    // }
+    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    {
+        // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
+        // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+        // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    }
     ips114_show_uint(188, 80, Island_State, 2);
     //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     //    {

@@ -55,8 +55,8 @@ int test_count = 0;
 float dt = 0.005;
 /*******************角度环所需变量***************************/
 float turn_error = 3;      //可接受的角度误差
-float Turn_KP = 1.0;       // 角度PID//
-float Turn_KD = 0.6;       // 角度PID//
+float Turn_KP = 0.5;       // 角度PID//
+float Turn_KD = 0.5;       // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
 /************************************************************/
 //*****************里程计所用变量****************//
@@ -143,13 +143,15 @@ int card_car_other_angle=0;//由上面两个差值解算出的角度
 float top_error,last_top_error;         //与目标行数的加权误差
 /************************************************************************/
 //*********斑马线分类函数***************/
+int car_run_mode=0; //总的行进函数的选择
+uint8 banmaxian_allow_flag=READY;
 int once_time=1;
 int classify_mode = 0;
 float Now_angle;
 int num_card_x,num_card_y;
-uint8 class_step;
-uint8 classify_correct_finish;
-uint8 numcard_classify;
+uint8 class_step=1;
+uint8 classify_correct_finish=0;
+uint8 numcard_classify=0;
 int delta_class_x,delta_class_y;
 int classify_art2_flag;
 int classify_type;//用于观察分类的模式
@@ -160,6 +162,7 @@ uint8 Traffic_Finish=0;         //交通工具类
 uint8 Weapon_Finish =0;         //武器类
 uint8 Supply_Finish =0;		     //物资类
 int banmaxian_finish;          //斑马线处理完成与否的标志位
+uint8 Longest_Column_Fixed=0;
 /*************************************/
 /*************************各种pid*****************************/
 int pid_motor[4];
@@ -298,7 +301,7 @@ void car_run(void)
 void car_run_upline(void)
 {
   Top_Line_Search();//对上边线扫线，为上边线数组做准备
-  top_error=Top_Line_Err(95)/25;//对上边线扫线输出一个误差,作归一化处理
+  top_error=Top_Line_Err(105)/25;//对上边线扫线输出一个误差,作归一化处理
   if (top_error > 1.0f)
   {
     top_error = 1.0f;
@@ -864,8 +867,11 @@ float Distance_pid(pid_info *pid, int target_diantance, int actual_distance)
 **************************************************************************/
 void CSI_dis_new_correct(int cor_x, int cor_y)
 {
-  delta_x = (cor_x-10)/10-(int)correct_x; //单位为cm
-  delta_y = cor_y/10-(int)correct_y; //计算出中心坐标,y可能需要调整，参数暂定
+	if(cor_x!=0 && cor_y!=0)
+	{
+  delta_x = (cor_x-15)/10-(int)correct_x; //单位为cm
+  delta_y = (cor_y)/10-(int)correct_y; //计算出中心坐标,y可能需要调整，参数暂定
+	}
   //调整x方向
 switch (correct_step)
  {
@@ -873,17 +879,17 @@ switch (correct_step)
  case 1:                                                       //调整垂直方向
     if(abs(delta_y)>0 && correct_y_flag==0 && correct_step==1)//y距离过大，需要矫正，默认为第一步
    {
-		 if(delta_y>23)
+		 if(delta_y>20)
 		 {
 			 Vx=0;//水平不动
 			 Vy=5;//向前移动
 		 }
-		 else if(delta_y<18)
+		 else if(delta_y<16)
 		 {
 			 Vx=0;//水平不动
 			 Vy=-5;//向后移动
 		 }
-     else if(delta_y<=23 && delta_y>=18)//已调整完毕 
+     else if(delta_y<=20 && delta_y>=16)//已调整完毕 
    {
      Vx=0;
      Vy=0;//速度清零
@@ -1012,12 +1018,12 @@ void find_classify(int Traverse_class_distance, int Straight_class_distance)
 		 if(delta_class_y>3 && class_step==1)//y距离过大，要前进
 		 {
       Vx=0;//前进
-		  Vy=10;
+		  Vy=5;
 		 }
-		 else if(delta_class_y<0 && class_step==1)//y距离过大，要前进
+		 else if(delta_class_y<0 && class_step==1)//y距离过小，要后退
 		 {
 			 Vx=0;//停车
-		   Vy=-10;
+		   Vy=-5;
 		 }
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
       if(delta_class_y<=3 && delta_class_y>=0)
@@ -1031,12 +1037,12 @@ void find_classify(int Traverse_class_distance, int Straight_class_distance)
       Turn_Angle_PD(Angle_Z);//锁住现在车头的位置，提供速度Vz
       if(delta_class_x>3 && class_step==2)//距离过大，右移
 		 {
-      Vx=10;//右移
+      Vx=5;//右移
 		  Vy=0;//前进
 		 }
 		 else if(delta_class_x<0 && class_step==2)//超过，左移
 		 {
-			 Vx=-10;//左移
+			 Vx=-5;//左移
 		   Vy=0;
 		 }
      else if(delta_class_x<=3 && delta_class_x>=0 && class_step==2)
@@ -1061,13 +1067,22 @@ void find_classify(int Traverse_class_distance, int Straight_class_distance)
  * @param
  * @return 无
  */
+extern int car_run_mode;
 void car_findcard(int *mode)
 {
   //******************************正常循迹*****************************//
   if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
   {
-    if (now_distance_y > 0 && now_distance_y < 800 && abs(now_distance_x)<500) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
+    if (now_distance_y > 0 && now_distance_y < 1000 && abs(now_distance_x)<450) // art识别到卡片，设定识别区间，不能离赛道太远避免识别杂物
     {
+      if(abs(now_distance_x)>400 && type==5)
+      {
+        banmaxian_allow_flag =READY;//开启斑马线
+				car_run_mode = 1;
+         *mode = Car_go;
+      }
+      else
+      {
       if (only_one) // 只执行一次
       {
 				Card_dis_car_y=0;//底座坐标清零
@@ -1078,6 +1093,7 @@ void car_findcard(int *mode)
         only_one = 0;//测试使用
         *mode = Car_find_card_y;//转变小车运动模式
 				target_type = *mode;//测试变量使用
+      }
       }			
      }
 		else
@@ -1118,7 +1134,7 @@ void car_findcard(int *mode)
 			else
         delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
         //因为车身姿态与采样频率8596的问题，有且只有一个相交点，给出在符合角度的波动区间
-      if(delta_angle-Angle_z<15 && delta_angle-Angle_z>-15)//当底盘坐标需要偏角较大的时候,一般在弯道
+      if(delta_angle-Angle_z<20 && delta_angle-Angle_z>-20)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
 				system_delay_ms(1000);
@@ -1130,9 +1146,10 @@ void car_findcard(int *mode)
 //******************************向卡片方向转向*****************************//
   if (*mode == Car_turn) 
   {
-    if (fabsf(Angle_Z - turn_angle) <= 3) // 陀螺仪转向识别
+    if (fabsf(Angle_Z - turn_angle) <= 4) // 陀螺仪转向识别
     {
-      // Vz = 0;//清0Vz
+			
+      Vz = 0;//清0Vz
 			*mode = Car_find_card_cor; //模式转变
       only_one=1;
 			car_stop();//清空速度
@@ -1141,7 +1158,7 @@ void car_findcard(int *mode)
 			delta_x=0;
 			delta_y=0;
       Angle_arrive_card=0;//清零角度
-			pick_up_mode=OPEN;//防止卡死
+			// pick_up_mode=OPEN;//防止卡死
 			correct_art2_flag = OPEN;//打开art2识别中断
       NVIC_SetPriority(LPUART1_IRQn, 2);                                // 降低UART1中断优先级
       arrive_card_flag=OPEN;//打开总钻风微调时的里程计计数
@@ -1151,6 +1168,7 @@ void car_findcard(int *mode)
     }
     else
     {
+      banmaxian_allow_flag =NOT_READY;//关闭斑马线
       Turn_Angle_PD(turn_angle);//准备Vz转速
       Vx=0;
       Vy=0;//x,y静止
@@ -1202,7 +1220,7 @@ void car_findcard(int *mode)
 //          }
 				}
           CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
-          Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
+          //Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
           Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
           if(card_classify==1 || card_classify==2 || card_classify==7 || card_classify==13)//交通工具类
           {
@@ -1245,13 +1263,13 @@ void car_findcard(int *mode)
     {
     if (fabsf(Angle_Z - now_angle) <= 4) // 陀螺仪转向识别
     {
-      pick_up_mode=0;     //摄像头变为寻迹模式
+      // pick_up_mode=0;     //摄像头变为寻迹模式
 			*mode = Car_go; //重新变为寻迹
+			Center_line_deal_plus(80,100);
 			car_stop();//清空速度
-			system_delay_ms(1000);//停车0.5s
+//			system_delay_ms(1000);//停车0.5s
 			/*****清空标志位****/
-      
-      test();
+      banmaxian_allow_flag =READY;
 			catch_card_flag=0;  //退出里程计第二种模式
 			CSI_correct_flag=0; //总钻风微调标志清零
       find_car_flag=0;    //找到卡片标志位清零
@@ -1260,6 +1278,7 @@ void car_findcard(int *mode)
 			pick_up_mode=CLOSE;
 			ahead_flag=0;
 			/****清空各种坐标和角度****/
+			Longest_Column_Fixed=1;
 			now_distance_x=0;
 			now_distance_y=0;
       record_now_distance_x=0;//清空now_distance_x
@@ -1377,7 +1396,8 @@ void car_new_findcard(int *mode)
 		{
 			*mode = Car_find_card_cor;
       CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正，准备x,y速度
-      Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
+			Vz=0;
+//      Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
 //			system_delay_ms(200);
 		}
@@ -1430,7 +1450,7 @@ void card_final_classify(int *classify_step)
 {
  if(*classify_step==Find_banmaxian && banmaxian_finish==NOT_FINISH)         //找到斑马线,且处理还未完成
  {
-   if(abs(Angle_Z-(-Now_angle-90))<3)       //转到了目标角度
+   if(abs(Angle_Z-(Now_angle-90))<3)       //转到了目标角度
    {
      *classify_step=Find_upline;            //转变成上边线寻迹
        once_time=1;                         //重新打开one_time
@@ -1438,8 +1458,6 @@ void card_final_classify(int *classify_step)
        correct_y=0;                         //清零修正的x，y距离
 			 Angle_arrive_card=0;                 //清零角度
        arrive_card_flag=CLOSE;              //开启总钻风微调时的里程计计数
-		//  correct_art2_flag=OPEN;             //打开art4的中断识别
-    //  NVIC_SetPriority(LPUART1_IRQn, 2);  // 降低art1的优先级
      classify_type = *classify_step;
    }
    else
@@ -1453,16 +1471,14 @@ void card_final_classify(int *classify_step)
 			 Angle_arrive_card=0;               //清零角度
        arrive_card_flag=OPEN;             //开启总钻风微调时的里程计计数
      }
-      Turn_Angle_PD(-90-Now_angle);       //此处可以根据实际情况修改
-      // Vy=0;
-		  // Vx=Distance_pid(&distance_pid[0], -10, (int)correct_x); //后退
+      Turn_Angle_PD(-90+Now_angle);       //此处可以根据实际情况修改
 		  Car_Inverse_kinematics_solution(Vx, Vy, Vz);            //麦轮控制，为target_speed赋值
      *classify_step=Find_banmaxian;
    }
  }
  if(*classify_step==Find_upline)//切换至上边线寻迹
  {
-   if(now_distance_y > 200 && now_distance_y < 800 && now_distance_x<250 && now_distance_x>80)//art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
+   if(now_distance_y > 200 && now_distance_y < 800 && now_distance_x<450 && now_distance_x>70)//art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
    {
      num_card_x = now_distance_x;     //记录看到的x坐标
      num_card_y = now_distance_y;     //记录看到的y坐标
@@ -1484,7 +1500,7 @@ void card_final_classify(int *classify_step)
    {
     //方案一，上边线巡线，鲁棒性好
      car_run_upline();///上边线寻迹
-     Turn_Angle_PD(-90-Now_angle);                //此处可以根据实际情况修改，提供Vz的车头修正速度
+     Turn_Angle_PD(-90+Now_angle);                //此处可以根据实际情况修改，提供Vz的车头修正速度
      Car_Inverse_kinematics_solution(Vx, Vy, Vz); //麦轮控制，为target_speed赋值
      *classify_step=Find_upline;
    }
@@ -1495,6 +1511,9 @@ void card_final_classify(int *classify_step)
    {
 		 NVIC_SetPriority(LPUART1_IRQn, 2);	//降低art1的中断优先级
      classify_art2_flag=OPEN;  				 	//打开art4中断标志
+     Find_num=NOT_READY;                //清零Find_num
+     card_num=0;                        //清零之前记录的卡片类型
+     numcard_classify=0;                //清零记录的数字类型
      *classify_step=Watch_card;					//识别卡片上的数字
      classify_correct_finish=0;					//清除调整完毕的标志位
      num_card_x = 0;          					//清零记录数字卡片的x坐标
@@ -1506,7 +1525,7 @@ void card_final_classify(int *classify_step)
    }
    else
    {
-     Turn_Angle_PD(-90-Now_angle); //此处可以根据实际情况修改，提供Vz的车头修正速度
+     Turn_Angle_PD(-90+Now_angle); //此处可以根据实际情况修改，提供Vz的车头修正速度
      find_classify(num_card_x, num_card_y);
      *classify_step=Catch_card;
    }
@@ -1516,6 +1535,8 @@ void card_final_classify(int *classify_step)
    if(Find_num==READY)        //找到了数字分类卡片区域，准备识别
    {
      *classify_step=Putout_card;  //放卡片
+      car_stop();
+      system_delay_ms(1000);       //等舵机转到对应角度
       card_num=0;                 //清空已识别的数字
       numcard_classify=0;         //清空已记录的数字
       Find_num=NOT_READY;        //重置识别完毕的标志位
@@ -1569,6 +1590,7 @@ void card_final_classify(int *classify_step)
       for(uint8 i=put_out_count; i>0; i--)
       {
         arm_control(3); //放卡片
+				arm_control(4);//默认模式
         if(i==1)        //最后一张
          put_out_card_flag=FINISH;
       }
@@ -1579,7 +1601,6 @@ void card_final_classify(int *classify_step)
 	{
 		if(Card_dis_car_y<=2 && Card_dis_car_y>=-1)                 //设置容错区间
     {
-      *classify_step = Find_upline;                             //继续向右平移找卡片
       classify_type = *classify_step;
       NVIC_SetPriority(LPUART1_IRQn, 0);	                      //恢复art1的中断优先级
       /******************清零各种变量***************/
@@ -1589,6 +1610,10 @@ void card_final_classify(int *classify_step)
       Card_dis_car_y=0;                                         //卡片里程计清空
       /******************关闭各种标志位*************/
       catch_card_flag=CLOSE;
+			if(Traffic_Finish==FINISH && Supply_Finish==FINISH && Weapon_Finish==FINISH)
+				*classify_step=Turn_back;
+			else
+			*classify_step = Find_upline;                             //继续向右平移找卡片
     }
     else
     {
@@ -1605,6 +1630,7 @@ void card_final_classify(int *classify_step)
    {
      *classify_step=Find_banmaxian;        //返回至初始状态，直到下一次重新进去
      classify_type = *classify_step;
+     car_run_mode=3;
      Card_dis_car_x=0;
      Card_dis_car_y=0;
      banmaxian_finish=FINISH; //斑马线处理完成
@@ -1615,6 +1641,7 @@ void card_final_classify(int *classify_step)
      Vx=0;
      Vy=0;
      Turn_Angle_PD(Now_angle);//转向回正
+		 Car_Inverse_kinematics_solution(Vx, Vy, Vz);              //麦轮控制，为target_speed赋值
      *classify_step=Turn_back;
    }
   }

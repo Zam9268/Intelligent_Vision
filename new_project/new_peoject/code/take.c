@@ -37,7 +37,7 @@ void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(29)); //150 91 29(正面)
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(35)); //155 96 35(正面)
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
  gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
@@ -156,14 +156,16 @@ void arm_control(uint8 mode)
 
  case 3: //放出卡片
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(15, 70, 20);//收前臂
-   system_delay_ms(500);
-   servo_slow_ctrl(15, 45, 50); //动后臂    15 45
-   system_delay_ms(500);
-   servo_slow_ctrl(170, 80, 100); //取出卡片 25 75
-   system_delay_ms(500);
-   gpio_set_level(C11, 0);
-
+   servo_slow_ctrl(15, 90, 20);//收前臂
+   system_delay_ms(300);
+   servo_slow_ctrl(15, 42, 50); //动后臂    15 45
+   system_delay_ms(300);
+    servo_slow_ctrl(20, 70, 50); //动后臂    15 45
+    system_delay_ms(300);
+   servo_slow_ctrl(170, 70, 100); //取出卡片 25 75
+   system_delay_ms(300);
+   servo_slow_ctrl(170, 150, 100); //取出卡片 25 75
+   system_delay_ms(300);
    break;
 
  case 4: //机械臂默认模式
@@ -214,7 +216,7 @@ void test_arm(void)
 {
 	if(pick_count<5)
 	{
-		arm_control(2);//放卡片
+		arm_control(3);//放卡片
 	  arm_control(4);//默认模式
 		pick_count++;
 	}

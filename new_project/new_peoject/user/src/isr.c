@@ -60,6 +60,7 @@ int arm_flag = 0;
 unsigned int init_count = 0;
 extern uint8 init_flag;
 unsigned int my_sceond_count = 0;
+extern uint8 Longest_Column_Fixed;
 uint8 seconds = 0;
 uint8 ramp_begin_detect_flag = 0;
 uint8 change = 0;
@@ -105,6 +106,16 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH2))
     {
+			if(Longest_Column_Fixed==1)
+			{
+				static uint8 counnt=0;
+				counnt++;
+				if(counnt==20)
+				{
+					counnt=0;
+					Longest_Column_Fixed=0;
+				}
+			}
         if (init_flag == 0) // 开机后计时1s，用于定时初始化（防止开机就�?坡道�?
         {
             init_count++;
