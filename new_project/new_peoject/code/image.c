@@ -39,15 +39,18 @@ uint8 card_right_up_find_flag = 0;         // the right up corner of the card ly
 uint8 left_island_flag, right_island_flag; // the flag of the island on the left and right
 uint8 ramp_flag = 0;                       // the flag of the ramp
 uint8 Island_State = 0;                    // record the state of the island on the left or right
+uint8 Cross_State = 0;                     // record the state of the cross road
+uint8 Cross_Handle_Flag = 1;               // record the flag of the cross road
 uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
 uint8 start_row = 0;                       // record the start row
 uint8 my_threshold = 0;
 uint8 lowest_column = 0;
 uint8 lowest_row = 0;
+uint8 Top_line_lost_time = 0; // 顶部线丢线的个数
 uint8 ramp_change_flagh = 0;
-uint8 zebra_flag = 0;              // 斑马线判断标志位
-uint8 zebra_flag_new = 0;          // 用于第二种斑马线的判断
+uint8 zebra_flag = 0;     // 斑马线判断标志位
+uint8 zebra_flag_new = 0; // 用于第二种斑马线的判断
 uint8 Island_surrond[IMAGE_WIDTH] = {0};
 uint8 straight_card_left_down_point[2] = {0};
 uint8 straight_card_left_up_point[2] = {0}; // 如果想要找左上角的坐标，就必须要用距离小值的方法进行求解
@@ -55,9 +58,8 @@ uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
 uint8 lower_row_center_threshold = 0;
-uint8 state3_left_up_guai[2] = {0};
-char send_mode='a';
-int Edge_threshold = 1700; // 边缘检测的阈值，通过按键进行调节，初始值为1700
+uint8 Top_Line_Continues_flag = 0; // 自下而上扫线的连续性标志位
+int Edge_threshold = 1700;         // 边缘检测的阈值，通过按键进行调节，初始值为1700
 int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
@@ -70,14 +72,15 @@ int island_state3_real_x = 0;
 int island_state3_real_y = 0; // 环岛状态3的固定点坐标
 int camera_island_state3_x = 0;
 int camera_island_state3_y = 0; // 环岛状态3的固定点相机坐标
-int real_x,real_y;
+int real_x, real_y;
 float Left_derivative[IMAGE_HEIGHT] = {0.0};
 float Right_derivative[IMAGE_HEIGHT] = {0.0};
-int center[IMAGE_HEIGHT];         // record the center line's column
+int center[IMAGE_HEIGHT]; // record the center line's column
 float err = 0.00;
 float last_err = 0.00;
 float island_err = 0.00; // 记录环岛时的误差
 float new_island_err = 0.00;
+float crossing_arround_err = 0.00; // 记录十字巡上边线时的误差
 /*the following is the information for receiving data through the serial port*/
 extern uint8 right_data[64];        // store the data received from the serial port,it only store 64 bytes
 extern uint32 fifo_data_count;      // the number of data lied in the buffer
@@ -91,22 +94,21 @@ extern uint8 init_flag;             // the flag of the initialization
 extern uint8 seconds;
 extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始就误判坡道标志位
 
-extern char uart_4_begina[];    // UART4开始字符串310
-extern char uart_4_beginb[];    // UART4开始字符串300
-extern char uart_4_beginc[];    // UART4开始字符串290
-extern char uart_4_begind[];    // UART4开始字符串280
-extern char uart_4_begine[];    // UART4开始字符串270
-extern char uart_4_beginz[];    // UART4开始字符串260
-extern char uart_4_beging[];    // UART4开始字符串250
-extern char uart_4_beginh[];    // UART4开始字符串240
-extern char uart_4_begini[];    // UART4开始字符串230
-extern char uart_4_beginj[];    // UART4开始字符串220
-extern char uart_4_begink[];    // UART4开始字符串210
-extern char uart_4_beginl[];    // UART4开始字符串200
-extern char uart_4_beginm[];    // UART4开始字符串190
-extern char uart_4_beginn[];    // UART4开始字符串180
-extern char uart_4_begino[];    // UART4开始字符串压线
-
+extern char uart_4_begina[]; // UART4开始字符串310
+extern char uart_4_beginb[]; // UART4开始字符串300
+extern char uart_4_beginc[]; // UART4开始字符串290
+extern char uart_4_begind[]; // UART4开始字符串280
+extern char uart_4_begine[]; // UART4开始字符串270
+extern char uart_4_beginz[]; // UART4开始字符串260
+extern char uart_4_beging[]; // UART4开始字符串250
+extern char uart_4_beginh[]; // UART4开始字符串240
+extern char uart_4_begini[]; // UART4开始字符串230
+extern char uart_4_beginj[]; // UART4开始字符串220
+extern char uart_4_begink[]; // UART4开始字符串210
+extern char uart_4_beginl[]; // UART4开始字符串200
+extern char uart_4_beginm[]; // UART4开始字符串190
+extern char uart_4_beginn[]; // UART4开始字符串180
+extern char uart_4_begino[]; // UART4开始字符串压线
 
 // Corresponding image height weight array (counting from bottom to top)
 const uint8 Weight[IMAGE_HEIGHT] =
@@ -988,10 +990,25 @@ void Outer_Analyse(void)
 {
     //????????��???????????
     /*???????????��?????*/
-    uint8 left_c=Continuity_Change_Left_Island(IMAGE_HEIGHT-10,10);
-    uint8 right_c=Continuity_Change_Right_Island(IMAGE_HEIGHT-10,10);
-    ips114_show_uint(188,90,left_c,3);
-    ips114_show_uint(188,100,right_c,3);
+    uint8 left_c = Continuity_Change_Left_Island(IMAGE_HEIGHT - 10, 10);
+    uint8 right_c = Continuity_Change_Right_Island(IMAGE_HEIGHT - 10, 10);
+    /*如果左右边线有连续的话，就求其斜率*/
+    float left_k = 0.00, right_k = 0.00; // 设左右边界的斜率
+    uint8 temp;//中间变量
+    if(left_c==0)//如果是连续的话
+    {
+        uint8 deta_c_x=abs(Search_Stop_Line-Boundry_Start_Left);
+        uint8 deta_c_y=abs(left_line[Search_Stop_Line]-left_line[Boundry_Start_Left]);
+        left_k=(float)deta_c_y/deta_c_x;
+    }
+    if(left_r!=0)
+    {
+        uint8 detar_x=abs(Search_Stop_Line-Boundry_Start_Right);
+        uint8 detar_y=abs(right_line[Search_Stop_Line]-right_line[Boundry_Start_Right]);
+        right_k=(float)detar_y/detar_x;
+    }
+    ips114_show_uint(188, 90, left_c, 3);
+    ips114_show_uint(188, 100, right_c, 3);
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (Left_Lost_Flag[i] == 1)
@@ -1009,9 +1026,9 @@ void Outer_Analyse(void)
 
     if (Road_Type != RAMP || Road_Type != LEFT_HUANDAO || Road_Type != RIGHT_HUANDAO) // 元素排斥
     {
-        if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c==0 && right_c==0)
+        if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c == 0 && right_c == 0)
             Road_Type = STRAIGHT_ROAD;
-        if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
+        if (Left_Lost_Time < 15 && Right_Lost_Time >= 30 && Both_Lost_Time < 15 && left_line[120 - Search_Stop_Line] >= 120)
             Road_Type = RIGHT_TURN;
         if (Right_Lost_Time < 15 && Left_Lost_Time >= 30 && Both_Lost_Time < 15 && Search_Stop_Line <= 100)
             Road_Type = LEFT_TURN;
@@ -1020,7 +1037,7 @@ void Outer_Analyse(void)
             Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             left_island_flag = 1;
         }
-        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100)
+        if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120)
         {
             Road_Type = RIGHT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             right_island_flag = 1;
@@ -1032,7 +1049,7 @@ void Outer_Analyse(void)
     /*校准代码*/
 
     // if (Road_Type == STRAIGHT_ROAD)
-        // Ramp_Detect();
+    // Ramp_Detect();
     Zebra_Stripes_Detect();
     // if (Road_Type == RAMP)
     //     Ramp_to_Straight_Detect(); //??????
@@ -2001,6 +2018,13 @@ void Cross_Detect(void)
                 Lengthen_Right_Boundry(Right_Up_Find - 1, IMAGE_HEIGHT - 1); // lengthen the right boundary
             }
         }
+
+        /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
+        if (Cross_State == 0) // 当十字状态置为0的时候
+        {
+            Cross_State = 1; // 十字状态置为1
+            Cross_Handle_Flag = 1;
+        }
     }
 }
 
@@ -2194,8 +2218,7 @@ void Top_Add_Line(int x1, int y1, int x2, int y2)
     }
 }
 
-
-uint8 Surround_Continus_detect(uint8 start_column,uint8 end_column)
+uint8 Surround_Continus_detect(uint8 start_column, uint8 end_column)
 {
     uint8 rrtern = 0;
     if (start_column >= IMAGE_WIDTH - 5)
@@ -2213,14 +2236,13 @@ uint8 Surround_Continus_detect(uint8 start_column,uint8 end_column)
         start_column = end_column;
         end_column = temp;
     }
-    for(uint8 i=start_column;i<end_column;i++)
+    for (uint8 i = start_column; i < end_column; i++)
     {
-        if((abs(Island_surrond[i]-Island_surrond[i-1])<5)&&(abs(Island_surrond[i-1]-Island_surrond[i-2])<5)&& (abs(Island_surrond[i]-Island_surrond[i+1])>=10)
-         && (abs(Island_surrond[i]-Island_surrond[i+2])>=10))
-         {
-            rrtern=i;
+        if ((abs(Island_surrond[i] - Island_surrond[i - 1]) < 5) && (abs(Island_surrond[i - 1] - Island_surrond[i - 2]) < 5) && (abs(Island_surrond[i] - Island_surrond[i + 1]) >= 10) && (abs(Island_surrond[i] - Island_surrond[i + 2]) >= 10))
+        {
+            rrtern = i;
             break;
-         }
+        }
     }
     return rrtern;
 }
@@ -2295,6 +2317,7 @@ uint8 Surround_Analyse(void)
 void Top_Line_Search(void)
 {
     /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
     lowest_row = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
@@ -2319,19 +2342,17 @@ void Top_Line_Search(void)
             }
             else if (j <= 75)
             {
-							Island_surrond[i] = 119; // 此时丢线,默认为最低那一行
+                Island_surrond[i] = 119; // 此时丢线,默认为最低那一行
             }
         }
     }
 }
 
-
-
-
 void Top_Line_Search_Island(void)
 {
     /*使用前要先将坐标全部清零*/
     lowest_row = 0;
+    Top_line_lost_time = 0;
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
         Island_surrond[i] = 0;
@@ -2346,7 +2367,7 @@ void Top_Line_Search_Island(void)
             if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
             {
                 Island_surrond[i] = j + 1;
-                if (j + 1 > lowest_row && i>=5 && abs(j+1-Island_surrond[i-1])<=5 && abs(j+1-Island_surrond[i-2])<=5)
+                if (j + 1 > lowest_row && i >= 5 && abs(j + 1 - Island_surrond[i - 1]) <= 5 && abs(j + 1 - Island_surrond[i - 2]) <= 5)
                 {
                     lowest_row = j + 1;
                     lowest_column = i;
@@ -2355,42 +2376,57 @@ void Top_Line_Search_Island(void)
             }
             else if (j <= 2)
             {
-							Island_surrond[i] = 2; // 此时丢线,默认为最低那一行
+                Island_surrond[i] = 2; // 此时丢线,默认为最低那一行
+                Top_line_lost_time++;  // 丢线计数加1
             }
         }
     }
 }
 
-
 void Top_Line_Center_Get_Center(void)
 {
     Top_Line_Search_Island();
-    uint8 data_send[3]={0};
-    data_send[0]=0x87;//选择路边识别模式
-    
-    Pespective_point(lowest_column,lowest_row,&real_x,&real_y);//100--5cm
-    uint8 my_deta_column=abs(lowest_column-180);
-    real_y=-(int)(my_deta_column*0.5)+real_y;
-    ips114_show_int(188,60,real_y,3);
+    uint8 data_send[3] = {0};
+    data_send[0] = 0x87; // 选择路边识别模式
+
+    Pespective_point(lowest_column, lowest_row, &real_x, &real_y); // 100--5cm
+    uint8 my_deta_column = abs(lowest_column - 180);
+    real_y = -(int)(my_deta_column * 0.5) + real_y;
+    ips114_show_int(188, 60, real_y, 3);
 }
 
 void send_deal(void)
 {
-    if(real_y>=310 && real_y <=320) uart_write_string(UART_4, uart_4_begina);
-    else if(real_y>300 && real_y<=310) uart_write_string(UART_4, uart_4_beginb);
-    else if(real_y>290 && real_y<=300) uart_write_string(UART_4, uart_4_beginc);
-    else if(real_y>280 && real_y<=290) uart_write_string(UART_4, uart_4_begind);
-    else if(real_y>270 && real_y<=280) uart_write_string(UART_4, uart_4_begine);
-    else if(real_y>260 && real_y<=270) uart_write_string(UART_4, uart_4_beginz);
-    else if(real_y>250 && real_y<=260) uart_write_string(UART_4, uart_4_beging);
-    else if(real_y>240 && real_y<=250) uart_write_string(UART_4, uart_4_beginh);
-    else if(real_y>230 && real_y<=240) uart_write_string(UART_4, uart_4_begini);
-    else if(real_y>220 && real_y<=230) uart_write_string(UART_4, uart_4_beginj);
-    else if(real_y>210 && real_y<=220) uart_write_string(UART_4, uart_4_begink);
-    else if(real_y>200 && real_y<=210) uart_write_string(UART_4, uart_4_beginl);
-    else if(real_y>190 && real_y<=200) uart_write_string(UART_4, uart_4_beginm);
-    else if(real_y>180 && real_y<=190) uart_write_string(UART_4, uart_4_beginn);
-    else if(real_y<=180) uart_write_string(UART_4, uart_4_begino);
+    if (real_y >= 310 && real_y <= 320)
+        uart_write_string(UART_4, uart_4_begina);
+    else if (real_y > 300 && real_y <= 310)
+        uart_write_string(UART_4, uart_4_beginb);
+    else if (real_y > 290 && real_y <= 300)
+        uart_write_string(UART_4, uart_4_beginc);
+    else if (real_y > 280 && real_y <= 290)
+        uart_write_string(UART_4, uart_4_begind);
+    else if (real_y > 270 && real_y <= 280)
+        uart_write_string(UART_4, uart_4_begine);
+    else if (real_y > 260 && real_y <= 270)
+        uart_write_string(UART_4, uart_4_beginz);
+    else if (real_y > 250 && real_y <= 260)
+        uart_write_string(UART_4, uart_4_beging);
+    else if (real_y > 240 && real_y <= 250)
+        uart_write_string(UART_4, uart_4_beginh);
+    else if (real_y > 230 && real_y <= 240)
+        uart_write_string(UART_4, uart_4_begini);
+    else if (real_y > 220 && real_y <= 230)
+        uart_write_string(UART_4, uart_4_beginj);
+    else if (real_y > 210 && real_y <= 220)
+        uart_write_string(UART_4, uart_4_begink);
+    else if (real_y > 200 && real_y <= 210)
+        uart_write_string(UART_4, uart_4_beginl);
+    else if (real_y > 190 && real_y <= 200)
+        uart_write_string(UART_4, uart_4_beginm);
+    else if (real_y > 180 && real_y <= 190)
+        uart_write_string(UART_4, uart_4_beginn);
+    else if (real_y <= 180)
+        uart_write_string(UART_4, uart_4_begino);
 }
 
 float Top_Line_Err(uint8 target_row)
@@ -2425,7 +2461,7 @@ float Island_Surround(uint8 target_row)
     Top_Line_Search_Island(); // 扫线
     /*第二部分：状态机执行*/
     // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
-    uint8 new_con=Surround_Continus_detect(5,lowest_column-10);//不能将丢线部分也纳入
+    uint8 new_con = Surround_Continus_detect(5, lowest_column - 10); // 不能将丢线部分也纳入
     if (Island_State == 0)
     {
         /*找拐点*/
@@ -2479,8 +2515,8 @@ float Island_Surround(uint8 target_row)
             }
         }
 
-        // if (flag != 0 && flag <= 60) // 断裂点在图像的左侧
-        //     Island_State = 7;
+        if (flag != 0 && flag <= 60 && Top_Line_Continues_flag == 1) // 断裂点在图像的左侧，且上边线的连续性检测通过
+            Island_State = 7;
     }
     else if (Island_State == 7) /*此时为出环岛的圆弧，图像左半段出现角点*/
     {
@@ -2539,7 +2575,7 @@ float Island_Surround(uint8 target_row)
     /*第三部分：状态机切换
     有些部分是通过控制部分进行切换的，例如从状态8到9是通过控制切换的
     */
-    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0 && continuious_flag !=0 && continuious_flag <= 30) // 利用最后一个点（或者利用最长白列求解）
+    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0 && continuious_flag != 0 && continuious_flag <= 30) // 利用最后一个点（或者利用最长白列求解）
     {
         Island_State = 6; // 进入下一个状态
     }
@@ -2571,14 +2607,14 @@ float Island_Surround(uint8 target_row)
     {
         island_err = 15.0; // island_err的最小值
     }
-    else if(island_err<=-15.0)
+    else if (island_err <= -15.0)
     {
-        island_err=-15.0;
+        island_err = -15.0;
     }
 
     /*显示变量部分*/
-    ips114_show_uint(188,100,continuious_flag,3);
-    ips114_show_uint(188,40,new_con,3);
+    ips114_show_uint(188, 100, continuious_flag, 3);
+    ips114_show_uint(188, 40, new_con, 3);
     return island_err;
 }
 
@@ -2820,9 +2856,9 @@ void Island_Detect(void)
         // Left_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], left_line[117], 117);
         // else // 找不到的话启动planb，这个拐点一般都是能找到的
         // {
-        for(uint8 i=0;i<188;i++)
+        for (uint8 i = 0; i < 188; i++)
         {
-            ips114_draw_point(i,Island_surrond[i],RGB565_RED);
+            ips114_draw_point(i, Island_surrond[i], RGB565_RED);
         }
         // for (uint8 i = IMAGE_HEIGHT - 5; i >= 5; i--)
         // {
@@ -2915,11 +2951,25 @@ void Zebra_Stripes_Detect(void)
             Road_Type = BANMAXIAN;
             zebra_flag = 1;
             if (Road_Type == STRAIGHT_ROAD)
-               Road_Type = BANMAXIAN; // 如果当前道路类型为直行，则将道路类型设置为斑马线
+                Road_Type = BANMAXIAN; // 如果当前道路类型为直行，则将道路类型设置为斑马线
         }
     }
 }
 
+void Crossing_picking_detect(void)
+{
+    if (Cross_Handle_Flag != 1)
+        return;
+    switch (Cross_State)
+    {
+    case 2: // 状态2，捡完所以卡片，开始巡边线
+    {
+        Top_Line_Search(); // 扫线
+        crossing_arround_err = Top_Line_Err(80);
+    }
+    break;
+    }
+}
 /*为了防止上面那个放案用不了，就多写了一种方案进行判别：
 这种方法更加灵活，且运算起来更快*/
 void Zebra_Stripes_Detect_new(void)
@@ -2981,7 +3031,7 @@ void test2(void)
         ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
         // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
     }
-    ips114_show_uint(188,80,Island_State,2);
+    ips114_show_uint(188, 80, Island_State, 2);
     //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
     //    {
     //        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
@@ -3026,13 +3076,13 @@ void test2(void)
     20
     */
     // ips114_show_float(188, 0, my_err, 2, 2);
-		for(uint8 i=0;i<188;i++)
-		{
-			ips114_draw_point(i,Island_surrond[i]+2,RGB565_RED);
-		}
+    for (uint8 i = 0; i < 188; i++)
+    {
+        ips114_draw_point(i, Island_surrond[i] + 2, RGB565_RED);
+    }
     ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
-    
+
     ips114_show_int(188, 30, lowest_row, 3);
     ips114_show_uint(188, 40, lowest_column, 3);
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
