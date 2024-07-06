@@ -1197,6 +1197,7 @@ void car_findcard(int *mode)
             card_classify=card_type;
 					  correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
 					  only_one=0;//只记录一次
+            
 				   }
 //          }
 				}
