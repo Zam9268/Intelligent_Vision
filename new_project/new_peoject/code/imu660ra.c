@@ -14,6 +14,7 @@ float Angle_z=0;
 float Angle_world;//用于计算卡片全局坐标的车辆角度
 float Angle_arrive_card;//用于总钻风微调
 float Angle_ramp;
+float Angle_Island;
 float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
@@ -95,6 +96,7 @@ void Get_angle()
 	 Angle_world=-Angle_Z;//顺时针角度为正
 	 Angle_arrive_card+=fil_Gyro_z*dt;//用于总钻风调整
 	 Angle_ramp+=fil_Gyro_z*dt;//用于坡道绕行
+	 Angle_Island-=fil_Gyro_z*dt;//用于环岛分类
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
 }

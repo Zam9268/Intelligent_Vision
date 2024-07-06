@@ -133,7 +133,8 @@ void PIT_IRQHandler(void)
         }
         if (correct_art2_flag == 1)
         {
-            send_deal();
+            // send_deal();
+            uart_write_string(UART_4, uart_4_begin);
             //           correct_art2_flag=0;
         }
 		if(classify_art2_flag == 1)

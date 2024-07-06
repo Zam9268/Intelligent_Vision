@@ -37,7 +37,7 @@ void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(173)); //云台舵机度数15  75  135(侧面) 173 113 53(正面)
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(29)); //150 91 29(正面)
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
  gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
@@ -143,7 +143,7 @@ void arm_control(uint8 mode)
    gpio_set_level(C11, 1);
    servo_slow_ctrl(175, 80, 50);
    system_delay_ms(300);
-   servo_slow_ctrl(170, 150, 50);
+   servo_slow_ctrl(170, 153, 50);
    system_delay_ms(300);
    servo_slow_ctrl(165, 100, 50);
    system_delay_ms(300);
@@ -174,14 +174,8 @@ void arm_control(uint8 mode)
    break;
 
  case 5: //侧面舵机关门
-	 gpio_set_level(C10, 1);//侧面电磁铁上电
 	 servo3_duty = 135;
    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_duty));
-   system_delay_ms(1000);
-   side_servo_slow_ctrl(20, 100);//侧面舵机控制
-   system_delay_ms(1000);
- 	side_servo_slow_ctrl(30, 10);//侧面舵机控制，默认角度
-	system_delay_ms(1000);
   break;
   case 6: //模式6侧边舵机拾取
   gpio_set_level(C10, 0);//电磁铁断电
@@ -206,15 +200,12 @@ void classify_360(uint8 card_classify_type)
   {
   case 1:
     pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_A_angle));
-    system_delay_ms(300);
     break;
   case 2:
     pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_B_angle));
-    system_delay_ms(300);
     break;
   case 3:
     pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_C_angle));
-    system_delay_ms(300);
     break;  
   }
 }
@@ -223,7 +214,7 @@ void test_arm(void)
 {
 	if(pick_count<5)
 	{
-		arm_control(3);//放卡片
+		arm_control(2);//放卡片
 	  arm_control(4);//默认模式
 		pick_count++;
 	}

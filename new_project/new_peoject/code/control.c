@@ -55,29 +55,35 @@ int test_count = 0;
 float dt = 0.005;
 /*******************角度环所需变量***************************/
 float turn_error = 3;      //可接受的角度误差
-float Turn_KP = 0.5;       // 角度PID//
-float Turn_KD = 0.5;       // 角度PID//
+float Turn_KP = 1.0;       // 角度PID//
+float Turn_KD = 0.6;       // 角度PID//
 // float Turn_KI[1] = {30};  //角度PID//5
 /************************************************************/
 //*****************里程计所用变量****************//
 float Car_dis_x1,Car_dis_y1;//
 float Car_dis_x2, Car_dis_y2;
 
+uint8 Island_classify_flag=0;
+
 float Vx_1, Vx_2, Vy_1, Vy_2;//对里程的cos，sin分解
 float Vx_car_1, Vx_car_2, Vy_car_1, Vy_car_2;//对底盘坐标的cos，sin分解
 float Vx_correct_1,Vx_correct_2,Vy_correct_1,Vy_correct_2;//用于总钻风微调的里程计
-float Vx_ramp_1,Vx_ramp_2,Vy_ramp_1,Vy_ramp_2;//用于坡道绕行
+float Vx_ramp_1,Vx_ramp_2,Vy_ramp_1,Vy_ramp_2;        //用于坡道绕行
+float Vx_Island_1,Vx_Island_2,Vy_Island_1,Vy_Island_2;//用于环岛分类
 
 float Vx_correct,Vy_correct;//用于总钻风的里程计
-float Vx_world, Vy_world;  //世界坐标上的x，y
-float Vx_card, Vy_card;    //相对于车底盘的更新坐标
-float Vx_ramp,Vy_ramp;     //坡道绕行时使用的速度
+float Vx_world, Vy_world;   //世界坐标上的x，y
+float Vx_card, Vy_card;     //相对于车底盘的更新坐标
+float Vx_ramp,Vy_ramp;      //坡道绕行时使用的速度
+float Vx_Island,Vy_Island; //环岛分类合成的速度
 
 float Card_dis_car_x=0;
 float Card_dis_car_y=0;     //相对于车的更新坐标
 float Car_dis_x, Car_dis_y; //x轴，y轴行走距离
 float correct_x,correct_y;  //修正的x和y
 float ramp_x,ramp_y;        //坡道绕行的里程计
+float Island_x,Island_y;    //环岛绕行的里程计
+
 //***********************************************//
 int   car_world_distance;//车辆在全局坐标上与原点的距离
 float car_world_angle;//卡片世界坐标解算出的世界方位角
@@ -263,7 +269,7 @@ void car_run(void)
   move_error = err_watch / 94.0f; // 横向比例系数,作归一化处理，94为188/2，半个屏幕的宽
 
   float kp = 1.0f, kd = 0.5f;//1.0对应速度30  0.9响应10
-  float target_all_speed = 5;
+  float target_all_speed = 10;
 
   angle = kp * move_error + kd * (move_error - last_error1); // 原本的+=，现在改成=      2024/3/26
 
@@ -660,6 +666,7 @@ void Encoder_odometer(void)
   static float Angle_bias = 0; // 用于识别到卡片时候的角度误差
   static float Angle_correct_bias;//用于总钻风修正
   static float Angle_ramp_bias;   //用于坡道绕行
+  static float Angle_Island_bias; //用于环岛分类
   static float V_enco[4] = {0}, Vx_enco = 0, Vy_enco = 0;
 
   Angle_Bias = Angle_Z * PI / 180; // 转换成弧度制，Angle_Z为转向角度
@@ -787,6 +794,33 @@ if (find_ramp == OPEN)             //坡道调整
   ramp_x += Vx_ramp * 0.005;
   ramp_y += Vy_ramp * 0.005;//分解出卡片所需的里程，用于找卡片
 }
+/***************************环岛分类时使用***************************************/
+if (Island_classify_flag == OPEN)             //坡道调整
+{
+    Angle_Island_bias = Angle_Island * PI / 180;
+
+  if (Angle_Island_bias >= 0)//旋转角度(参照x轴)大于0时
+  {
+    Vx_Island_1 = Vx_enco * sin(Angle_Island_bias);
+    Vx_Island_2 = Vx_enco * cos(Angle_Island_bias);
+    Vy_Island_1 = Vy_enco * cos(Angle_Island_bias);
+    Vy_Island_2 = Vy_enco * sin(Angle_Island_bias); //用于坡道调整
+    Vx_Island = Vx_Island_2 - Vy_Island_2;//简单的分解计算
+    Vy_Island = Vx_Island_1 + Vy_Island_1;
+  }
+  if (Angle_Island_bias < 0)
+  {
+    Angle_Island_bias = -Angle_Island_bias;
+    Vx_Island_1 = Vx_enco * sin(Angle_Island_bias);
+    Vx_Island_2 = Vx_enco * cos(Angle_Island_bias);
+    Vy_Island_1 = Vy_enco * cos(Angle_Island_bias);
+    Vy_Island_2 = Vy_enco * sin(Angle_Island_bias); //用于总钻风微调
+    Vx_Island = Vx_Island_2 + Vy_Island_2;//简单的分解计算
+    Vy_Island = -Vx_Island_1 + Vy_Island_1;
+  }
+  Island_x += Vx_Island * 0.005;
+  Island_y += Vy_Island * 0.005;//分解出卡片所需的里程，用于找卡片
+}
 }
 
 /**
@@ -830,16 +864,16 @@ float Distance_pid(pid_info *pid, int target_diantance, int actual_distance)
 **************************************************************************/
 void CSI_dis_new_correct(int cor_x, int cor_y)
 {
-  delta_x = cor_x/10-(int)correct_x; //单位为mm
+  delta_x = (cor_x-10)/10-(int)correct_x; //单位为cm
   delta_y = cor_y/10-(int)correct_y; //计算出中心坐标,y可能需要调整，参数暂定
   //调整x方向
 switch (correct_step)
  {
 
- case 1:                  //调整水平方向
-    if(abs(delta_y)>21 && correct_y_flag==0 && correct_step==1)//y距离过大，需要矫正，默认为第一步
+ case 1:                                                       //调整垂直方向
+    if(abs(delta_y)>0 && correct_y_flag==0 && correct_step==1)//y距离过大，需要矫正，默认为第一步
    {
-		 if(delta_y>21)
+		 if(delta_y>23)
 		 {
 			 Vx=0;//水平不动
 			 Vy=5;//向前移动
@@ -849,14 +883,14 @@ switch (correct_step)
 			 Vx=0;//水平不动
 			 Vy=-5;//向后移动
 		 }
-   }			 
-	  else if(delta_y<=21 && delta_y>=18)//已调整完毕 
+     else if(delta_y<=23 && delta_y>=18)//已调整完毕 
    {
      Vx=0;
      Vy=0;//速度清零
      correct_y_flag=1;//y方向调整完毕
 		 correct_step=2;//调整步数置2
    }
+   }			 
    break;
 
  case 2: //
@@ -874,15 +908,15 @@ switch (correct_step)
       else if(delta_x<=2 && delta_x>=-2)//已调整完毕
     {
       Vx=0;
-      Vy=0;//速度清零
-      correct_x_flag=1;//y方向调整完毕
+      Vy=0;                             //速度清零
+      correct_x_flag=1;                 //x方向调整完毕
     }
 		  if(correct_y_flag==1 && correct_x_flag==1)
 		{
-			CSI_correct_flag=1;//总钻风调整完毕
+			CSI_correct_flag=1;               //总钻风调整完毕
 			correct_x_flag=0;
-			correct_y_flag=0;//调整标志位清0
-			correct_step=1;//步数回归到第一步
+			correct_y_flag=0;                 //调整标志位清0
+			correct_step=1;                   //步数回归到第一步
 		}
   }
    break;
@@ -1084,14 +1118,7 @@ void car_findcard(int *mode)
 			else
         delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
         //因为车身姿态与采样频率8596的问题，有且只有一个相交点，给出在符合角度的波动区间
-      if(delta_angle-Angle_z<10 && delta_angle-Angle_z>-15 && fabsf(Angle_z)>20.0)//当底盘坐标需要偏角较大的时候,一般在弯道
-      {
-        car_stop();//停车
-				system_delay_ms(1000);
-        find_car_flag = 1;
-        *mode=Car_find_card_y;
-      }
-      else if(delta_angle-Angle_z<3 && delta_angle-Angle_z>-3 && fabsf(Angle_z)<10.0)//当底盘坐标需要偏角较小的时候,一般在直道0
+      if(delta_angle-Angle_z<15 && delta_angle-Angle_z>-15)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
 				system_delay_ms(1000);
@@ -1109,24 +1136,16 @@ void car_findcard(int *mode)
 			*mode = Car_find_card_cor; //模式转变
       only_one=1;
 			car_stop();//清空速度
-			Angle_arrive_card=0;//清零角度
-			correct_x=0;
-			correct_y=0;//清空修正距离
-			// pick_up_mode=1;//防止卡死
+      correct_x=0;
+      correct_y=0;//清零修正的x，y距离
+			delta_x=0;
+			delta_y=0;
+      Angle_arrive_card=0;//清零角度
+			pick_up_mode=OPEN;//防止卡死
 			correct_art2_flag = OPEN;//打开art2识别中断
-      NVIC_SetPriority(LPUART1_IRQn, 2);                             // 降低UART1中断优先级
+      NVIC_SetPriority(LPUART1_IRQn, 2);                                // 降低UART1中断优先级
       arrive_card_flag=OPEN;//打开总钻风微调时的里程计计数
-      // fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化UART数据FIFO
-			// uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
-			// uart_rx_interrupt(UART_1, 0);                                  // 关闭使能UART1接收中断
-      // static uint8 chance=0;
-      
-      // if(chance==0)
-      // {
-      //   uart_write_string(UART_1, uart_1_stop);
-      //   chance++;
-      // }
-      
+      CSI_correct_flag =  NOT_FINISH;//总钻风调整完毕标志清除
       *mode = Car_find_card_cor; //模式转变
       target_type = *mode;
     }
@@ -1142,7 +1161,7 @@ void car_findcard(int *mode)
 //******************************总钻风对正*****************************//
   if (*mode == Car_find_card_cor) // 总钻风微调识别
   {
-    if (CSI_correct_flag == 1) // 总钻风坐标对正
+    if (CSI_correct_flag == FINISH) // 总钻风坐标对正
     {
 
       car_stop();//清空速度
@@ -1154,6 +1173,7 @@ void car_findcard(int *mode)
 			delta_y=0;
       Angle_arrive_card=0;//清零角度
 			only_one=OPEN;//重新打开only_one
+			CSI_correct_flag=NOT_FINISH; //总钻风微调标志清零
 			near_card_x=0;
 			near_card_y=0;
 			card_center_x=0;
@@ -1168,15 +1188,21 @@ void car_findcard(int *mode)
 			   *mode = Car_find_card_cor;
 				if(near_card_x!=0 && near_card_y!=0)
 				{
-					if(only_one)
-				 {
-					card_center_x=near_card_x;
-					card_center_y=near_card_y;
-          card_classify=card_type;
-					correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
-					only_one=0;//只记录一次
-				 }
+//          if(near_card_y>150)//有时候会发错坐标，要设定区间来截取正确的坐标
+//          {
+					  if(only_one)
+				   {
+					  card_center_x=near_card_x;
+					  card_center_y=near_card_y;
+            card_classify=card_type;
+					  correct_art2_flag = CLOSE;//立即关闭art4发数据，防止堵塞数据缓冲区
+					  only_one=0;//只记录一次
+				   }
+//          }
 				}
+          CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
+          Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
+          Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
           if(card_classify==1 || card_classify==2 || card_classify==7 || card_classify==13)//交通工具类
           {
             classify_360(Traffic);
@@ -1192,9 +1218,6 @@ void car_findcard(int *mode)
             classify_360(Supply);
             Supply_count++;
           }
-          CSI_dis_new_correct(card_center_x, card_center_y);//总钻风坐标对正，准备x,y速度
-          Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
-          Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
 		}
 	}
   //******************************卡片拾取*****************************//
@@ -1203,7 +1226,7 @@ void car_findcard(int *mode)
      if(arm_pick_flag==ARM_PICK_DONE)//卡片已被拾取
 	   {
 			 correct_x=0;
-       correct_y=0;//清零修正的x，y距离
+       correct_y=0;//清零修正的x，y距离,为下一步倒车做准备
 			 Angle_arrive_card=0;//清零角度
        arrive_card_flag=OPEN;//开启总钻风微调时的里程计计数
        *mode = Car_turn_again;//模式转变为转向回正
@@ -1232,6 +1255,8 @@ void car_findcard(int *mode)
 			CSI_correct_flag=0; //总钻风微调标志清零
       find_car_flag=0;    //找到卡片标志位清零
       arrive_card_flag=CLOSE;//关闭里程计修正计数
+      arm_pick_flag=ARM_PICK_NOT_DONE;
+			pick_up_mode=CLOSE;
 			ahead_flag=0;
 			/****清空各种坐标和角度****/
 			now_distance_x=0;
@@ -1248,20 +1273,15 @@ void car_findcard(int *mode)
       card_x[0]=0;//卡片坐标清空
       card_y[0]=0;
 			only_one=1;//重新打开only_one
-      // fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64); // 初始化UART数据FIFO
-			// 	uart_init(UART_1, 115200, UART1_TX_B12, UART1_RX_B13);         // 初始化UART1串口
-			// uart_rx_interrupt(UART_1, 1);                                  // 开启使能UART1接收中断
-      // chance=1;
       NVIC_SetPriority(LPUART1_IRQn, 0);//恢复art1的中断优先级
-      uart_write_string(UART_1, uart_1_begin);
-			arm_pick_flag=ARM_PICK_NOT_DONE;
+      // uart_write_string(UART_1, uart_1_begin);
       target_type = *mode;
     }
     else
     {
      Turn_Angle_PD(now_angle);//向原先的角度转向回正
 		 Vx=0;
-		  Vy=Distance_pid(&distance_pid[0], -10, (int)correct_y);//后退
+		  Vy=Distance_pid(&distance_pid[0], -13, (int)correct_y);//后退
 		 Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
      *mode = Car_turn_again;
     }
@@ -1601,20 +1621,68 @@ void card_final_classify(int *classify_step)
 // /**
 // * @brief 左环岛单搬策略
 // * @param Island_step为步数选择
-// * @param
+// * @param 该函数是判断出为左环岛类型时才使用
 // * @return 无
 // */
-//void Left_Island_pick_and_move(*Island_step)
-//{
-//  if(Island_step==Arrive_zeropoint)
-//  {
-//    if()
-//    {
-
-//    }
-//    else
-//    {
-
-//    }
-//  }
-//}
+ int Left_Island_classify_zone_x;
+ int Left_Island_classify_zone_y;
+ int delta_find_Island_zero_x,delta_find_Island_zero_y;
+ int delta_find_Island_zero_angle; 
+ float now_Island_angle;
+ float turn_IsLand_angel;
+ void Left_Island_pick_and_move(int *Island_step)
+ {
+ if(*Island_step==Catch_zeropoint)                //找到环岛区域
+ {
+   if(now_distance_x>500 && now_distance_y>800)   //识别出了在左环岛最右侧的卡片
+   {
+     Left_Island_classify_zone_x = now_distance_x;
+     Left_Island_classify_zone_y = now_distance_y;//记录识别出的环岛外分类区域的卡片坐标
+     Angle_Island = 0;                            //第一次用来对停车的位置做一个初步定位
+     Island_classify_flag=OPEN;                   //打开环岛里程计模式
+     Island_x=0;
+     Island_y=0;                                  //环岛里程计清零
+     *Island_step=Arrive_zeropoint;               //切换模式
+   }
+   else
+   {
+     car_run();
+     *Island_step=Catch_zeropoint;
+   }
+ }
+  if(*Island_step==Arrive_zeropoint)              //去环岛的原点处
+ {
+   if(abs(delta_find_Island_zero_angle)<5)        //到达与最右侧的区域的环岛区域
+   {
+     car_stop();
+     system_delay_ms(500);
+     now_Island_angle = Angle_Z;      //记录下环岛转向前的角度
+     turn_IsLand_angel = Angle_Z- 90; //向右转向90度
+     *Island_step=Car_Island_turn;    //向圆环外部区域转向
+   }
+   else
+   {
+     car_run();
+     delta_find_Island_zero_x = Left_Island_classify_zone_x - Island_x;
+     delta_find_Island_zero_y = Left_Island_classify_zone_y - Island_y;
+     delta_find_Island_zero_angle = atan2(delta_find_Island_zero_y, delta_find_Island_zero_x);
+     *Island_step=Arrive_zeropoint;
+   }
+ }
+   if(*Island_step==Car_Island_turn)           //车头转向环岛外侧
+ {
+   if(abs(turn_IsLand_angel-Angle_Z)<3)        //摄像头朝向环岛的外侧
+   {
+     car_stop();
+     system_delay_ms(500);
+     *Island_step=Car_Island_Find_Upline;     //用上边线寻迹进入圆环
+   }
+   else
+   {
+     Turn_Angle_PD(turn_IsLand_angel);
+     Vx=0;
+     Vy=0;
+     *Island_step=Car_Island_turn;
+   }
+ }
+ }
