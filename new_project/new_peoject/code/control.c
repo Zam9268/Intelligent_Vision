@@ -798,7 +798,7 @@ if (find_ramp == OPEN)             //坡道调整
   ramp_y += Vy_ramp * 0.005;//分解出卡片所需的里程，用于找卡片
 }
 /***************************环岛分类时使用***************************************/
-if (Island_classify_flag == OPEN)             //坡道调整
+if (Island_classify_flag == OPEN)             //环岛调整
 {
     Angle_Island_bias = Angle_Island * PI / 180;
 
@@ -1133,8 +1133,8 @@ void car_findcard(int *mode)
 				delta_angle = 90.0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为90
 			else
         delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
-        //因为车身姿态与采样频率8596的问题，有且只有一个相交点，给出在符合角度的波动区间
-      if(delta_angle-Angle_z<20 && delta_angle-Angle_z>-20)//当底盘坐标需要偏角较大的时候,一般在弯道
+        //因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
+      if(delta_angle-Angle_z<15 && delta_angle-Angle_z>-15)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
 				system_delay_ms(1000);
@@ -1652,14 +1652,26 @@ void card_final_classify(int *classify_step)
 // * @param 该函数是判断出为左环岛类型时才使用
 // * @return 无
 // */
- int Left_Island_classify_zone_x;
- int Left_Island_classify_zone_y;
- int delta_find_Island_zero_x,delta_find_Island_zero_y;
- int delta_find_Island_zero_angle; 
- float now_Island_angle;
- float turn_IsLand_angel;
+uint8 allow_flag=OPEN;
+int Left_Island_classify_zone_x;
+int Left_Island_classify_zone_y;
+int delta_find_Island_zero_x,delta_find_Island_zero_y;
+int delta_find_Island_zero_angle; 
+float now_Island_angle;
+float turn_IsLand_angel;
+/***************记录环岛的区域解算坐标和它的类型**************/
+int center_card_island_distance;// 捕获到卡片时，卡片中心与车的距离
+float Card_island_angle;      //捕获到卡片时的偏转角，转换成角度制
+float delta_card_island_angle;//连线偏角转化成弧度制
+int card_island_x,card_island_y;//解算出的环岛世界坐标
+int zone_count=0;              //记录环岛外部区域的区域数量
+uint8 find_zone_count;        //记录找到的区域数量,用来取出临时变量i
+uint8 island_find_oldcard_flag=NO;//记录找到的卡片是否是旧卡片
+int Island_card_type;
+
  void Left_Island_pick_and_move(int *Island_step)
  {
+  /***************找环岛的目标卡片****************/
  if(*Island_step==Catch_zeropoint)                //找到环岛区域
  {
    if(now_distance_x>500 && now_distance_y>800)   //识别出了在左环岛最右侧的卡片
@@ -1678,6 +1690,7 @@ void card_final_classify(int *classify_step)
      *Island_step=Catch_zeropoint;
    }
  }
+ /*********************去原点处******************/
   if(*Island_step==Arrive_zeropoint)              //去环岛的原点处
  {
    if(abs(delta_find_Island_zero_angle)<5)        //到达与最右侧的区域的环岛区域
@@ -1697,13 +1710,18 @@ void card_final_classify(int *classify_step)
      *Island_step=Arrive_zeropoint;
    }
  }
+ /*********************转向环岛外部区域******************/
    if(*Island_step==Car_Island_turn)           //车头转向环岛外侧
  {
    if(abs(turn_IsLand_angel-Angle_Z)<3)        //摄像头朝向环岛的外侧
    {
      car_stop();
-     system_delay_ms(500);
-     *Island_step=Car_Island_Find_Upline;     //用上边线寻迹进入圆环
+    //  system_delay_ms(500);
+     Angle_Island = 0;                        //第二次用来对整个环岛做一个分类区域的解算
+     Island_classify_flag=OPEN;               //打开环岛里程计模式
+     Island_x=0;
+     Island_y=0;                              //以该点为原点来建立坐标系
+     *Island_step=Car_Island_Watch_Card_ZONE_FIRST; //利用art1解算出该卡片的类型与在环岛的区域坐标，art4用于识别字母
    }
    else
    {
@@ -1711,6 +1729,57 @@ void card_final_classify(int *classify_step)
      Vx=0;
      Vy=0;
      *Island_step=Car_Island_turn;
+   }
+ }
+/*********************对分类卡片的坐标结算与类型记录******************/
+ if(*Island_step==Car_Island_Watch_Card_ZONE_FIRST)  
+ {
+   if(card_island[zone_count].card_position_ready==YES && card_island[zone_count].card_type_ready == YES)//区域的坐标与类型均已记录        
+   {
+     zone_count++;//数量加一，为下一次存卡片做准备
+     *Island_step = Step_Back_To_Island_Center;           //切换至下一个模式，后退至圆环中心
+   }
+   else
+   {
+    car_stop();
+    if(abs(now_distance_x)<200 && now_distance_y <800)        //找到了环岛外部区域的第一个分类区域,区间是为了防止乱看东西
+   {
+     center_card_island_distance = (int)sqrt((now_distance_x / 10) * (now_distance_x / 10) + (now_distance_y / 10) * (now_distance_y / 10)); // 卡片的直线距离
+     Card_island_angle = atan2((now_distance_y / 10), (now_distance_x / 10)) / PI * 180 * 1.0;                                          // 捕获到卡片时的偏转角，转换成角度制
+     delta_card_island_angle = (Card_island_angle - Angle_Island) / 180 * PI;                                                           // 转化成弧度制
+     card_island_x = Island_x + (float)center_card_island_distance * cos(delta_card_island_angle);                                      // 解算出环岛世界x坐标,新卡片只记录一次！！！
+     card_island_y = Island_y + (float)center_card_island_distance * sin(delta_card_island_angle);                                      // 解算出环岛世界y坐标
+     for (uint8 i = 0; i < zone_count + 1; i++) // 遍历记录但未被拾取的卡片坐标
+    {
+      find_zone_count = i;                           // find_count记录变量i
+      if(abs(card_island_x - card_island[i].x_distance) < 10 && abs(card_island_y - card_island[i].y_distance) < 10) // 当发现有卡片坐标与该卡片世界坐标很相近，认为是旧卡片
+      {
+        island_find_oldcard_flag = YES; // 找到了旧卡片
+        break;
+      }
+    }
+    if(island_find_oldcard_flag == NO)//没有找到旧卡片,更新区域坐标和区域类型，并存入结构体数组中
+    {
+      if(allow_flag)
+      {
+        classify_art2_flag = OPEN; //打开art4的中断
+        if(card_abc!=0)            //识别到了卡片类型
+        {
+          card_island[zone_count].zone_type = card_abc; //记录卡片类型
+          card_island[zone_count].card_type_ready = YES;//该卡片类型已存入
+          classify_art2_flag =  CLOSE;                  //关闭art4的中断
+          card_abc = 0;                                 //清零识别到的卡片类型
+          allow_flag = CLOSE;                           //关闭允许识别的标志位
+        } 
+      }
+      card_island[zone_count].x_distance = card_island_x;// 记录新卡片的环岛世界世界坐标
+      card_island[zone_count].y_distance = card_island_y;
+      card_island[zone_count].card_position_ready = YES; // 该卡片坐标已存入
+      find_zone_count = 0;                               // 重置find_zone_count
+      island_find_oldcard_flag = YES;                    // 重置标志位
+    }
+    }
+    *Island_step = Car_Island_Watch_Card_ZONE_FIRST;           //保持该模式
    }
  }
  }

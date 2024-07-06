@@ -59,10 +59,12 @@
 #define Go_back             5//后退至y处原本的位置
 #define Turn_back           6//返回正常寻迹
 
-#define Catch_zeropoint    0//找到原点处的元素标志
-#define Arrive_zeropoint   1//到达原点处
-#define Car_Island_turn    2//向卡片放置区域转向
-#define Car_Island_Find_Upline  3//上边线寻迹
+#define Catch_zeropoint    					0//找到原点处的元素标志
+#define Arrive_zeropoint   					1//到达原点处
+#define Car_Island_turn    					2//向卡片放置区域转向
+#define Car_Island_Watch_Card_ZONE_FIRST   	3//解算第一个分类区域的环岛坐标
+#define Step_Back_To_Island_Center  		4//后退至中心
+#define Car_Island_Find_Upline 				5//上边线寻迹
 
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志

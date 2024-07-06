@@ -73,6 +73,8 @@ int island_state3_real_y = 0; // 环岛状态3的固定点坐标
 int camera_island_state3_x = 0;
 int camera_island_state3_y = 0; // 环岛状态3的固定点相机坐标
 int real_x, real_y;
+int number_card_real_x;
+int number_card_real_y;
 float Left_derivative[IMAGE_HEIGHT] = {0.0};
 float Right_derivative[IMAGE_HEIGHT] = {0.0};
 int center[IMAGE_HEIGHT]; // record the center line's column
@@ -583,6 +585,7 @@ void Pespective_point_b(int real_x, int real_y, int *camera_x, int *camera_y)
  */
 void Border_Card_Detect(void)
 {
+    
 }
 
 int deviation[8][2] = {{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}};        //??????x??????????y????
@@ -2879,27 +2882,79 @@ void Straight_Card_Find(void)
 */
 void Finnal_Zebra_Number_Find(void)
 {
-    /*一：从上往下开始扫线*/
+    /*一：分别从左边和右边向中间开始扫线*/
     int f_card_left_up_point[2] = {0};
-    int f_card_right_up_point[2] = {0};
+    int f_card_left_down_point[2] = {0};
     uint8 Island_surround_up[IMAGE_WIDTH] = {0}; // 从上往下数的边线
-    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++) // 从上20行往下数
+    uint8 Left_to_right[IMAGE_HEIGHT]={0};
+    uint8 Right_to_left[IMAGE_HEIGHT]={0};//从左到右扫的线
+    for(uint8 i=0;i<IMAGE_HEIGHT;i++)
     {
-        for (uint8 j = 20; j < IMAGE_HEIGHT - 21; j++)
+        for(uint8 j=2;j<IMAGE_WIDTH-3;j++)//最靠左和最靠右的两行识别为黑色
         {
-            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT && Image_Use[j - 1][i] == BLACK_POINT)
+            if(Image_Use[i][j-1]==BLACK_POINT&&Image_Use[i][j-2]==BLACK_POINT &&Image_Use[i][j]==WHITE_POINT
+            &&Image_Use[i][j+1]==WHITE_POINT)
             {
-                Island_surround_up[i] = j + 1;
+                Left_to_right[i]=j;
                 break;
+            }
+            else if(j==IMAGE_WIDTH-4)
+            {
+                Left_to_right[i]=0;
+            }
+        }
+        for(uint8 j=IMAGE_WIDTH-3;j>=2;j--)
+        {
+            if(Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT &&Image_Use[i][j]==WHITE_POINT
+            &&Image_Use[i][j-1]==WHITE_POINT)
+            {
+                Right_to_left[i]=j;
+                break;
+            }
+            else if(j==2)
+            {
+                Right_to_left[i]=0;
             }
         }
     }
     /*二：对线进行连续性判断*/
     // uint8 continus_left[2] = {0};
-    // for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
-    // {
-    //     if (abs(Island_surround_up[i] - Island_surround_up[i - 1]) >=)
-    // }
+    for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
+    {
+        if (Left_to_right[i] != 0)
+        {
+            if (abs(Left_to_right[i] - Left_to_right[i - 1]) >= 15 && abs(Left_to_right[i-1]-Left_to_right[i-2])<=5)
+            {
+                f_card_left_up_point[1] = Left_to_right[i];
+                f_card_left_up_point[0] = i;
+                break;
+            }
+        }
+    }
+
+    for(uint8 i=IMAGE_HEIGHT-4;i>=3;i--)
+    {
+        if(Left_to_right[i]!=0)
+        {
+            if(abs(Left_to_right[i]-Left_to_right[i-1])<=5&&abs(Left_to_right[i]-Left_to_right[i+1])>=15)
+            {
+                f_card_left_down_point[1]=Left_to_right[i];
+                f_card_left_down_point[0]=i;
+                break;
+            }
+        }
+    }
+
+    /*三：计算出中心坐标*/
+    if(f_card_left_down_point[0]==0||f_card_left_up_point[0]==0 || f_card_left_down_point[1]==0 || f_card_left_up_point[1]==0)
+    {
+        return;
+    }
+    number_card_real_x=0.00;
+    number_card_real_y=0.00;
+    int center_x=f_card_left_down_point[1]+f_card_left_up_point[1]-180;
+    int center_y=240-(f_card_left_down_point[0]+f_card_left_up_point[0]);
+    Pespective_point(center_x,center_y,&number_card_real_x,&number_card_real_y);
 }
 /**
  * @brief Island detection function
