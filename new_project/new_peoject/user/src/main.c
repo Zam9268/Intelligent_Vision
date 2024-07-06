@@ -140,6 +140,7 @@ int main(void)
         
         My_Communication_Init(); // 通信初始化
         PidInit();               // 增量式pid初始化
+        card_island_init();      // 卡片岛初始化
         //   Pos_PidInit();//位置式pid初始化，现已弃用
         Distance_PidInit(); // 距离环初始化
 

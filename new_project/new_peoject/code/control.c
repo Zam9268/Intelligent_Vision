@@ -795,7 +795,7 @@ if (find_ramp == OPEN)             //坡道调整
   ramp_y += Vy_ramp * 0.005;//分解出卡片所需的里程，用于找卡片
 }
 /***************************环岛分类时使用***************************************/
-if (Island_classify_flag == OPEN)             //坡道调整
+if (Island_classify_flag == OPEN)             //环岛调整
 {
     Angle_Island_bias = Angle_Island * PI / 180;
 
@@ -1117,7 +1117,7 @@ void car_findcard(int *mode)
 				delta_angle = 90.0;//当delta_x刚好为0值时(此时tan值无意义)，把这时的角度就认为为90
 			else
         delta_angle = atan((double)(delta_card_y/delta_card_x))/PI*180*1.0;//算出即时偏移角
-        //因为车身姿态与采样频率8596的问题，有且只有一个相交点，给出在符合角度的波动区间
+        //因为车身姿态与采样频率的问题，有且只有一个相交点，给出在符合角度的波动区间
       if(delta_angle-Angle_z<15 && delta_angle-Angle_z>-15)//当底盘坐标需要偏角较大的时候,一般在弯道
       {
         car_stop();//停车
@@ -1293,132 +1293,132 @@ void car_findcard(int *mode)
 // * @param
 // * @return 无
 // */
-void car_new_findcard(int *mode)
-{
-  //******************************正常循迹*****************************//
-  if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
-  {
-    if (card_position[now_card].card_word_ready==YES) //当卡片数组更新，当前卡片坐标已存入后,可以进入距离判断，避免从原点就开始发癫
-    {
-        *mode = Car_find_card_y;//转变小车运动模式
-				target_type = *mode;//测试变量使用
-    }			
-     }
-		else
-		{
-      car_run();//正常巡线模式
-			*mode=Car_go;
-		}
-  //******************************找卡片*****************************//
-  if (*mode == Car_find_card_y) 
-  {
-    if(car_card_diatance<35 && car_card_diatance>25) // 到达卡片附近
-    {
-      car_stop();//清空速度
-			system_delay_ms(1000);
-      now_angle = Angle_Z;//记录下此时角度
-      card_car_x = card_position[now_card].x_distance - (int)Car_dis_x;//世界坐标上卡片与车辆的x距离
-      card_car_y = card_position[now_card].y_distance - (int)Car_dis_y;//世界坐标上卡片与车辆的y距离
-      card_car_other_angle =atan2( card_car_y, card_car_x)/PI*180;//转换成角度制
-      if(abs(card_car_other_angle-(int)Angle_Z) < 4)//当解算出的角度与旋转角Angle_Z相差不大时
-      {
-        turn_angle=-90+now_angle;//向右转90度 
-      }
-      if(abs(card_car_other_angle-(int)Angle_Z-180) < 4)//当解算出的角度与旋转角Angle_Z翻转180度后的角度相差不大时,向左转
-      {
-        turn_angle=90+now_angle;//向左转90度
-      }
-      *mode = Car_turn; //模式转变
-    }
-		else
-		{
-			car_run();//正常寻迹跑
-      //实时计算
-      car_card_angle = card_world_angle - car_world_angle;//角度制
-      car_card_diatance = (int)sqrt((card_position[now_card].world_distance * card_position[now_card].world_distance)					 //卡片与原点距离的平方
-                                 +(car_world_distance * car_world_distance)                                                    //车辆与原点距离的平方
-                                 -2*card_position[now_card].world_distance*car_world_distance*cos(car_card_angle/180*PI));     //计算这时第now_card张卡片的角度
-      *mode = Car_find_card_y;//保持该模式
-		}
-  }
-//******************************向卡片方向转向*****************************//
-  if (*mode == Car_turn) 
-  {
-    if (fabsf(Angle_Z - turn_angle) < 1) // 陀螺仪转向识别
-    {
-      // Vz = 0;//清0Vz
-			car_stop();//清空速度
-			system_delay_ms(1000);
-      *mode = Car_find_card_cor; // 模式转变
-      target_type = *mode;
-			pick_up_mode = 1; //打开总钻风识别
-    }
-    else
-    {
-      Turn_Angle_PD(turn_angle);//准备Vz转速
-      Vx=0;
-      Vy=0;//x,y静止
-      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-      *mode = Car_turn;
-    }
-  }
-//******************************总钻风对正*****************************//
-  if (*mode == Car_find_card_cor) // 总钻风微调识别
-  {
-    if (CSI_correct_flag == 1) // 总钻风坐标对正
-    {
-      car_stop();//清空速度
-			system_delay_ms(500);
-      *mode = Pick_up_card;//模式转变
-			target_type = *mode;
-    }
-		else
-		{
-			*mode = Car_find_card_cor;
-      CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正，准备x,y速度
-      Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
-      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-//			system_delay_ms(200);
-		}
-	}
-  //******************************卡片拾取*****************************//
-    if (*mode == Pick_up_card) // 捡卡片
-    {
-     if(arm_pick_flag==ARM_PICK_DONE)//卡片已被拾取
-	   {
-       catch_card_flag=0;//退出里程计第二种模式
-       *mode = Car_turn_again;//模式转变为转向回正
-	   }
-      else//卡片未被拾取
-	   {
-		  arm_control(2);//捡卡片
-	    arm_control(4);//默认模式
-      card_position[now_card].pick_doen_flag=YES;//标记该张卡片已经被拾取完毕
-		  arm_pick_flag=ARM_PICK_DONE;
-      *mode = Pick_up_card;
-	   }
-    }
-  //******************************车头回正*****************************//
-    if (*mode == Car_turn_again) 
-    {
-    if (fabsf(Angle_Z - now_angle) <= 2) // 陀螺仪转向识别
-    {
-			*mode = Car_go; //重新变为寻迹
-			car_stop();//清空速度
-			system_delay_ms(500);//停车0.5s
-      now_card++;//开始对比下一张卡片坐标
-      target_type = *mode;
-    }
-    else
-    {
-     Turn_Angle_PD(now_angle);//向原先的角度转向回正
-		 Vy=Distance_pid(&distance_pid[0], -10, (int)correct_y);
-		 Vx=0;
-		 Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-     *mode = Car_turn_again;
-    }
-   }
-}
+//void car_new_findcard(int *mode)
+//{
+//  //******************************正常循迹*****************************//
+//  if (*mode == Car_go) // 寻迹模式，对赛道进行处理,默认设置
+//  {
+//    if (card_position[now_card].card_poaition_ready==YES) //当卡片数组更新，当前卡片坐标已存入后,可以进入距离判断，避免从原点就开始发癫
+//    {
+//        *mode = Car_find_card_y;//转变小车运动模式
+//				target_type = *mode;//测试变量使用
+//    }			
+//     }
+//		else
+//		{
+//      car_run();//正常巡线模式
+//			*mode=Car_go;
+//		}
+//  //******************************找卡片*****************************//
+//  if (*mode == Car_find_card_y) 
+//  {
+//    if(car_card_diatance<35 && car_card_diatance>25) // 到达卡片附近
+//    {
+//      car_stop();//清空速度
+//			system_delay_ms(1000);
+//      now_angle = Angle_Z;//记录下此时角度
+//      card_car_x = card_position[now_card].x_distance - (int)Car_dis_x;//世界坐标上卡片与车辆的x距离
+//      card_car_y = card_position[now_card].y_distance - (int)Car_dis_y;//世界坐标上卡片与车辆的y距离
+//      card_car_other_angle =atan2( card_car_y, card_car_x)/PI*180;//转换成角度制
+//      if(abs(card_car_other_angle-(int)Angle_Z) < 4)//当解算出的角度与旋转角Angle_Z相差不大时
+//      {
+//        turn_angle=-90+now_angle;//向右转90度 
+//      }
+//      if(abs(card_car_other_angle-(int)Angle_Z-180) < 4)//当解算出的角度与旋转角Angle_Z翻转180度后的角度相差不大时,向左转
+//      {
+//        turn_angle=90+now_angle;//向左转90度
+//      }
+//      *mode = Car_turn; //模式转变
+//    }
+//		else
+//		{
+//			car_run();//正常寻迹跑
+//      //实时计算
+//      car_card_angle = card_world_angle - car_world_angle;//角度制
+//      car_card_diatance = (int)sqrt((card_position[now_card].world_distance * card_position[now_card].world_distance)					 //卡片与原点距离的平方
+//                                 +(car_world_distance * car_world_distance)                                                    //车辆与原点距离的平方
+//                                 -2*card_position[now_card].world_distance*car_world_distance*cos(car_card_angle/180*PI));     //计算这时第now_card张卡片的角度
+//      *mode = Car_find_card_y;//保持该模式
+//		}
+//  }
+////******************************向卡片方向转向*****************************//
+//  if (*mode == Car_turn) 
+//  {
+//    if (fabsf(Angle_Z - turn_angle) < 1) // 陀螺仪转向识别
+//    {
+//      // Vz = 0;//清0Vz
+//			car_stop();//清空速度
+//			system_delay_ms(1000);
+//      *mode = Car_find_card_cor; // 模式转变
+//      target_type = *mode;
+//			pick_up_mode = 1; //打开总钻风识别
+//    }
+//    else
+//    {
+//      Turn_Angle_PD(turn_angle);//准备Vz转速
+//      Vx=0;
+//      Vy=0;//x,y静止
+//      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//      *mode = Car_turn;
+//    }
+//  }
+////******************************总钻风对正*****************************//
+//  if (*mode == Car_find_card_cor) // 总钻风微调识别
+//  {
+//    if (CSI_correct_flag == 1) // 总钻风坐标对正
+//    {
+//      car_stop();//清空速度
+//			system_delay_ms(500);
+//      *mode = Pick_up_card;//模式转变
+//			target_type = *mode;
+//    }
+//		else
+//		{
+//			*mode = Car_find_card_cor;
+//      CSI_dis_new_correct(center_x, center_y);//总钻风坐标对正，准备x,y速度
+//      Turn_Angle_PD(turn_angle);//准备Vz转速，作用是锁住车头方向
+//      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+////			system_delay_ms(200);
+//		}
+//	}
+//  //******************************卡片拾取*****************************//
+//    if (*mode == Pick_up_card) // 捡卡片
+//    {
+//     if(arm_pick_flag==ARM_PICK_DONE)//卡片已被拾取
+//	   {
+//       catch_card_flag=0;//退出里程计第二种模式
+//       *mode = Car_turn_again;//模式转变为转向回正
+//	   }
+//      else//卡片未被拾取
+//	   {
+//		  arm_control(2);//捡卡片
+//	    arm_control(4);//默认模式
+//      card_position[now_card].pick_doen_flag=YES;//标记该张卡片已经被拾取完毕
+//		  arm_pick_flag=ARM_PICK_DONE;
+//      *mode = Pick_up_card;
+//	   }
+//    }
+//  //******************************车头回正*****************************//
+//    if (*mode == Car_turn_again) 
+//    {
+//    if (fabsf(Angle_Z - now_angle) <= 2) // 陀螺仪转向识别
+//    {
+//			*mode = Car_go; //重新变为寻迹
+//			car_stop();//清空速度
+//			system_delay_ms(500);//停车0.5s
+//      now_card++;//开始对比下一张卡片坐标
+//      target_type = *mode;
+//    }
+//    else
+//    {
+//     Turn_Angle_PD(now_angle);//向原先的角度转向回正
+//		 Vy=Distance_pid(&distance_pid[0], -10, (int)correct_y);
+//		 Vx=0;
+//		 Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//     *mode = Car_turn_again;
+//    }
+//   }
+//}
 // /**
 // * @brief 斑马线分类，打包函数
 // * @param mode为模式选择
@@ -1624,14 +1624,26 @@ void card_final_classify(int *classify_step)
 // * @param 该函数是判断出为左环岛类型时才使用
 // * @return 无
 // */
- int Left_Island_classify_zone_x;
- int Left_Island_classify_zone_y;
- int delta_find_Island_zero_x,delta_find_Island_zero_y;
- int delta_find_Island_zero_angle; 
- float now_Island_angle;
- float turn_IsLand_angel;
+uint8 allow_flag=OPEN;
+int Left_Island_classify_zone_x;
+int Left_Island_classify_zone_y;
+int delta_find_Island_zero_x,delta_find_Island_zero_y;
+int delta_find_Island_zero_angle; 
+float now_Island_angle;
+float turn_IsLand_angel;
+/***************记录环岛的区域解算坐标和它的类型**************/
+int center_card_island_distance;// 捕获到卡片时，卡片中心与车的距离
+float Card_island_angle;      //捕获到卡片时的偏转角，转换成角度制
+float delta_card_island_angle;//连线偏角转化成弧度制
+int card_island_x,card_island_y;//解算出的环岛世界坐标
+int zone_count=0;              //记录环岛外部区域的区域数量
+uint8 find_zone_count;        //记录找到的区域数量,用来取出临时变量i
+uint8 island_find_oldcard_flag=NO;//记录找到的卡片是否是旧卡片
+int Island_card_type;
+
  void Left_Island_pick_and_move(int *Island_step)
  {
+  /***************找环岛的目标卡片****************/
  if(*Island_step==Catch_zeropoint)                //找到环岛区域
  {
    if(now_distance_x>500 && now_distance_y>800)   //识别出了在左环岛最右侧的卡片
@@ -1650,6 +1662,7 @@ void card_final_classify(int *classify_step)
      *Island_step=Catch_zeropoint;
    }
  }
+ /*********************去原点处******************/
   if(*Island_step==Arrive_zeropoint)              //去环岛的原点处
  {
    if(abs(delta_find_Island_zero_angle)<5)        //到达与最右侧的区域的环岛区域
@@ -1669,13 +1682,18 @@ void card_final_classify(int *classify_step)
      *Island_step=Arrive_zeropoint;
    }
  }
+ /*********************转向环岛外部区域******************/
    if(*Island_step==Car_Island_turn)           //车头转向环岛外侧
  {
    if(abs(turn_IsLand_angel-Angle_Z)<3)        //摄像头朝向环岛的外侧
    {
      car_stop();
-     system_delay_ms(500);
-     *Island_step=Car_Island_Find_Upline;     //用上边线寻迹进入圆环
+    //  system_delay_ms(500);
+     Angle_Island = 0;                        //第二次用来对整个环岛做一个分类区域的解算
+     Island_classify_flag=OPEN;               //打开环岛里程计模式
+     Island_x=0;
+     Island_y=0;                              //以该点为原点来建立坐标系
+     *Island_step=Car_Island_Watch_Card_ZONE_FIRST; //利用art1解算出该卡片的类型与在环岛的区域坐标，art4用于识别字母
    }
    else
    {
@@ -1683,6 +1701,57 @@ void card_final_classify(int *classify_step)
      Vx=0;
      Vy=0;
      *Island_step=Car_Island_turn;
+   }
+ }
+/*********************对分类卡片的坐标结算与类型记录******************/
+ if(*Island_step==Car_Island_Watch_Card_ZONE_FIRST)  
+ {
+   if(card_island[zone_count].card_position_ready==YES && card_island[zone_count].card_type_ready == YES)//区域的坐标与类型均已记录        
+   {
+     zone_count++;//数量加一，为下一次存卡片做准备
+     *Island_step = Step_Back_To_Island_Center;           //切换至下一个模式，后退至圆环中心
+   }
+   else
+   {
+    car_stop();
+    if(abs(now_distance_x)<200 && now_distance_y <800)        //找到了环岛外部区域的第一个分类区域,区间是为了防止乱看东西
+   {
+     center_card_island_distance = (int)sqrt((now_distance_x / 10) * (now_distance_x / 10) + (now_distance_y / 10) * (now_distance_y / 10)); // 卡片的直线距离
+     Card_island_angle = atan2((now_distance_y / 10), (now_distance_x / 10)) / PI * 180 * 1.0;                                          // 捕获到卡片时的偏转角，转换成角度制
+     delta_card_island_angle = (Card_island_angle - Angle_Island) / 180 * PI;                                                           // 转化成弧度制
+     card_island_x = Island_x + (float)center_card_island_distance * cos(delta_card_island_angle);                                      // 解算出环岛世界x坐标,新卡片只记录一次！！！
+     card_island_y = Island_y + (float)center_card_island_distance * sin(delta_card_island_angle);                                      // 解算出环岛世界y坐标
+     for (uint8 i = 0; i < zone_count + 1; i++) // 遍历记录但未被拾取的卡片坐标
+    {
+      find_zone_count = i;                           // find_count记录变量i
+      if(abs(card_island_x - card_island[i].x_distance) < 10 && abs(card_island_y - card_island[i].y_distance) < 10) // 当发现有卡片坐标与该卡片世界坐标很相近，认为是旧卡片
+      {
+        island_find_oldcard_flag = YES; // 找到了旧卡片
+        break;
+      }
+    }
+    if(island_find_oldcard_flag == NO)//没有找到旧卡片,更新区域坐标和区域类型，并存入结构体数组中
+    {
+      if(allow_flag)
+      {
+        classify_art2_flag = OPEN; //打开art4的中断
+        if(card_abc!=0)            //识别到了卡片类型
+        {
+          card_island[zone_count].zone_type = card_abc; //记录卡片类型
+          card_island[zone_count].card_type_ready = YES;//该卡片类型已存入
+          classify_art2_flag =  CLOSE;                  //关闭art4的中断
+          card_abc = 0;                                 //清零识别到的卡片类型
+          allow_flag = CLOSE;                           //关闭允许识别的标志位
+        } 
+      }
+      card_island[zone_count].x_distance = card_island_x;// 记录新卡片的环岛世界世界坐标
+      card_island[zone_count].y_distance = card_island_y;
+      card_island[zone_count].card_position_ready = YES; // 该卡片坐标已存入
+      find_zone_count = 0;                               // 重置find_zone_count
+      island_find_oldcard_flag = YES;                    // 重置标志位
+    }
+    }
+    *Island_step = Car_Island_Watch_Card_ZONE_FIRST;           //保持该模式
    }
  }
  }

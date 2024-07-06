@@ -96,7 +96,7 @@ void Get_angle()
 	 Angle_world=-Angle_Z;//顺时针角度为正
 	 Angle_arrive_card+=fil_Gyro_z*dt;//用于总钻风调整
 	 Angle_ramp+=fil_Gyro_z*dt;//用于坡道绕行
-	 Angle_Island-=fil_Gyro_z*dt;//用于环岛分类
+	 Angle_Island+=fil_Gyro_z*dt;//用于环岛分类
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
 }

@@ -41,9 +41,11 @@
 typedef struct{
 	int x_distance;	        //卡片x坐标
 	int y_distance;	        //卡片y坐标
+	int zone_type;	        //卡片区域类型
 	int world_distance;	    //卡片与原点的距离
 	float world_angle;      //卡片在全局坐标的方位角
-	int card_word_ready;    //该卡片数组是否已经赋值
+	int card_type_ready;    //卡片类型是否已经赋值
+	int card_position_ready;    //该卡片数组坐标是否已经赋值
   int pick_doen_flag;       //卡片拾取完成标志位
 }Card;
 
@@ -55,6 +57,7 @@ extern unsigned int now_distance_y;
 extern int record_now_distance_x;
 extern unsigned int record_now_distance_y;
 extern Card card_position[100];
+extern Card card_island[5];      //环岛卡片区域
 extern float Card_angle;//捕获到卡片时的角度
 extern float delta_card_angle;
 extern float center_distance;//卡片的直线距离  
@@ -79,5 +82,6 @@ void uart4_rx_interrupt_handler(void);
 void card_position_init(void);
 void get_uartdata(void);
 void uart_data_handle(void);
+void card_island_init(void);
 
 #endif

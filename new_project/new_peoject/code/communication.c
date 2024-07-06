@@ -187,6 +187,7 @@ int near_card_y;
 uint8 find_card_flag = 0; // 是否找到卡片的标志
 int card_type = 0;        // 卡片类型，取值范围为1~15
 Card card_position[100];
+Card card_island[5];      //环岛卡片区域
 int one_time = 1;
 int card_word_ready;                        // 卡片世界坐标解算完成的标志位
 float Card_angle = 0;                       // 卡片方位角
@@ -215,8 +216,28 @@ void card_position_init(void)
         card_position[i].x_distance = 0;     // 卡片x坐标
         card_position[i].y_distance = 0;     // 卡片y坐标
         card_position[i].world_distance = 0; // 卡片与原点的距离
+        card_island[i].card_type_ready=0;        //卡片类型是否已经赋值
+	    card_island[i].card_position_ready=0;    //该卡片数组坐标是否已经赋值
         card_position[i].world_angle = 0.0;  // 卡片在全局坐标的方位角
         card_position[i].pick_doen_flag = 0; // 卡片拾取完成标志位 = 0.00;
+    }
+}
+/**
+ * @brief 环岛区域的卡片类型数组初始化
+ * @param 对卡片结构体数组赋初值
+ * @return 无
+ */
+void card_island_init(void)
+{
+    for (uint8 i = 0; i < 5; i++)
+    {
+        card_island[i].x_distance = 0;     // 卡片x坐标
+        card_island[i].y_distance = 0;     // 卡片y坐标
+        card_island[i].world_distance = 0; // 卡片与原点的距离
+        card_island[i].world_angle = 0.0;  // 卡片在环岛坐标的方位角
+        card_island[i].card_type_ready=0;        //卡片类型是否已经赋值
+	    card_island[i].card_position_ready=0;    //该卡片数组坐标是否已经赋值
+        card_island[i].pick_doen_flag = 0; // 不使用
     }
 }
 /**
@@ -276,7 +297,7 @@ void uart_data_handle(void)
             card_position[card_count].y_distance = card_world_y;            // 更新世界坐标y
             card_position[card_count].world_distance = card_world_distance; // 更新世界坐标y
             card_position[card_count].world_angle = card_world_angle;       // 更新卡片方位角
-            card_position[card_count].card_word_ready = YES;                // 卡片坐标已准备完毕
+            card_position[card_count].card_position_ready = YES;                // 卡片坐标已准备完毕
             card_count++;                                                   // 该张卡片已存入，卡片数量++，扩展数组的下一位
             find_count = 0;                                                 // 清空find_count
         }
