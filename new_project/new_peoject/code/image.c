@@ -26,6 +26,7 @@ uint8 Search_Stop_Line;                        // Stop line for searching
 uint8 Boundry_Start_Left, Boundry_Start_Right; // Starting points of the left and right boundaries
 uint8 Road_Wide[IMAGE_HEIGHT];                 // Road width
 RoadType Road_Type;                            // Type of road element
+Card_Corner_Type Card_Corner;                  // Type of card corner
 uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0;   // Finding the left top turning point
@@ -59,6 +60,8 @@ uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
 uint8 lower_row_center_threshold = 0;
 uint8 Top_Line_Continues_flag = 0; // 自下而上扫线的连续性标志位
+uint8 card_corner_up = 0;          // 找到的卡片的角点坐标的类型
+uint8 card_corner_down = 0;        // 找到的卡片的角点坐标的类型
 int Edge_threshold = 1700;         // 边缘检测的阈值，通过按键进行调节，初始值为1700
 int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
 int center_straight_left_card_x = 0;
@@ -74,7 +77,9 @@ int camera_island_state3_x = 0;
 int camera_island_state3_y = 0; // 环岛状态3的固定点相机坐标
 int real_x, real_y;
 int number_card_real_x;
-int number_card_real_y;
+int number_card_real_y; // 终点数字的坐标
+int wind_card_real_x;
+int wind_card_real_y; // 风的坐标
 float Left_derivative[IMAGE_HEIGHT] = {0.0};
 float Right_derivative[IMAGE_HEIGHT] = {0.0};
 int center[IMAGE_HEIGHT]; // record the center line's column
@@ -583,9 +588,308 @@ void Pespective_point_b(int real_x, int real_y, int *camera_x, int *camera_y)
  * @return no
  * @attention no
  */
-void Border_Card_Detect(void)
+void Border_Card_Detect_Left(void)
 {
-    
+    /*具体判断思路：和直道上的判断一样，先在赛道的左右边界往中间扫，接触到白点的时候才会停止扫描
+    如何判定是否存在卡片？——在原来的边界上，往左扫线，一般情况下是白--黑，但是如果遇到卡片，肯定会出现白--黑--白等复杂情况，此时该行为特殊行
+    */
+    uint8 down_to_up_point[2] = {0};
+    uint8 up_to_down_point[2] = {0};
+    uint8 Find_Card_Flag = 0; // 是否寻找卡片的标志位，如果找到卡片，就置1
+    uint8 white_to_black_count = 0;
+    uint8 black_to_white_count = 0;
+    uint8 Card_Find[IMAGE_HEIGHT] = {0};
+    for (uint8 i = IMAGE_HEIGHT - 1; i >= 0; i--)
+    {
+        if (Left_Lost_Flag[i] != 1) // 如果不处于丢线状态，一般处于丢线状态的话就不必理会了
+        {
+            for (uint8 j = left_line[i]; j >= 2; j--)
+            {
+                if (Image_Use[i][j] == WHITE_POINT && Image_Use[i][j - 1] == BLACK_POINT)
+                {
+                    white_to_black_count++;
+                }
+                if (white_to_black_count >= 2)
+                {
+                    Card_Find[i] = 1; // 该行为特殊行
+                    break;
+                }
+            }
+            /*如果遍历所有的列都只有一次的跳变，就说明不是特殊行*/
+            if (white_to_black_count == 1)
+            {
+                Card_Find[i] = 0;
+            }
+            /*一般情况下的white_to_black_count是为1的，如果white_to_black_count大于等于2则说明为特殊行*/
+        }
+        else if (Left_Lost_Flag[i] == 1)
+        {
+            Card_Find[i] == 0; // 如果丢线的话，就不必理会了
+        }
+    }
+
+    /*接下来就是对特殊行的处理：找出最高特殊行和最低特殊行*/
+    uint8 max_highest_row = 0;
+    uint8 min_lowest_row = 120;
+    for (uint8 i = 0; i <= IMAGE_HEIGHT - 1; i++)
+    {
+        if (Card_Find[i] == 1)
+        {
+            if (i > max_highest_row)
+            {
+                max_highest_row = i;
+            }
+            if (i < min_lowest_row)
+            {
+                min_lowest_row = i;
+            }
+        }
+    }
+
+    /*如果最高行和最低行均存在，说明会存在一个卡片，这个时候就从左往右扫，只要扫到第一个白点
+    如果一：白点不靠近原本赛道边缘的坐标----那么该顶点就在外侧
+    二：卡片靠近扫到边缘的坐标----那么该顶点就在内侧
+    反正无论怎么扫，都会出现两个顶点，这两个顶点的相对于卡片中心的位置是不确定的
+    */
+    if (max_highest_row != 0 && min_lowest_row != 120)
+    {
+        for (uint8 i = max_highest_row; i >= min_lowest_row; i--)
+        {
+            if (Left_Lost_Flag[i] != 1)
+            {
+                for (uint8 j = 2; j <= left_line[i]; j++)
+                {
+                    if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j + 1] == WHITE_POINT)
+                    {
+                        up_to_down_point[0] = i;
+                        up_to_down_point[1] = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (uint8 i = min_lowest_row; i <= max_highest_row; i++)
+        {
+            if (Left_Lost_Flag[i] != 1)
+            {
+                for (uint8 j = 2; j <= left_line[i]; j++)
+                {
+                    if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j + 1] == WHITE_POINT)
+                    {
+                        down_to_up_point[0] = i; // 0是行，1是列
+                        down_to_up_point[1] = j;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else
+        return;
+    card_corner_down = 0;
+    card_corner_up = 0;
+    /*判断找到的角点是什么类型的，具体方法就是看该行和边界中间有没有黑色像素点，如果有很多黑色像素点，那么就为远点*/
+    if (up_to_down_point[1] != 0 && down_to_up_point[1] != 0 && up_to_down_point[0] != 0 && down_to_up_point[0] != 0)
+    {
+        uint8 black_count = 0; // 计算中间黑色像素点的个数
+        for (uint8 j = up_to_down_point[1]; j <= left_line[up_to_down_point[0]]; j++)
+        {
+            if (Image_Use[up_to_down_point[0]][j] == BLACK_POINT)
+            {
+                black_count++;
+            }
+        }
+        if (black_count >= 5)
+        {
+            card_corner_down = 1; // 远点
+        }
+        else
+        {
+            card_corner_down = 2; // 近点
+        }
+
+        black_count = 0; // 清零，省点内存
+        for (uint8 j = down_to_up_point[1]; j <= left_line[down_to_up_point[0]]; j++)
+        {
+            if (Image_Use[down_to_up_point[0]][j] == BLACK_POINT)
+            {
+                black_count++;
+            }
+        }
+        if (black_count >= 5)
+        {
+            card_corner_up = 1; // 远点
+        }
+        else
+        {
+            card_corner_up = 2; // 近点
+        }
+    }
+    else
+        return;
+
+    /*找到通过逆透视找到对应的卡片的坐标*/
+    int real_up_x, real_up_y, real_down_x, real_down_y;
+    Pespective_point(up_to_down_point[1], up_to_down_point[0], &real_up_x, &real_up_y);
+    Pespective_point(down_to_up_point[1], down_to_up_point[0], &real_down_x, &real_down_y);
+    /*通过卡片的远点和近点类型来判断中心坐标*/
+    if (card_corner_up == 1 && card_corner_down == 1) // 都是远点，此时应该为直道
+    {
+        card_center_x = (real_up_x + real_down_x) / 2 + 60; // 单位为mm
+        card_center_y = (real_up_y + real_down_y) / 2;
+    }
+    else if (card_corner_up == 1 && card_corner_down == 2) // 上远下近，此时为对角线
+    {
+        card_center_x = (real_up_x + real_down_x) / 2;
+        card_center_y = (real_up_y + real_down_y) / 2;
+    }
+}
+
+/*在右边界找卡片的函数，和左边界找卡片对称相反*/
+void Border_Card_Detect_Right(void)
+{
+    uint8 down_to_up_point[2] = {0};
+    uint8 up_to_down_point[2] = {0};
+    uint8 Find_Card_Flag = 0; // 是否寻找卡片的标志位，如果找到卡片，就置1
+    uint8 white_to_black_count = 0;
+    uint8 black_to_white_count = 0;
+    uint8 Card_Find[IMAGE_HEIGHT] = {0};
+    for (uint8 i = IMAGE_HEIGHT - 1; i >= 0; i--)
+    {
+        if (Right_Lost_Flag[i] != 1)
+        {
+            for (uint8 j = right_line[i]; j <= IMAGE_WIDTH - 3; j++)
+            {
+                if (Image_Use[i][j] == WHITE_POINT && Image_Use[i][j + 1] == BLACK_POINT)
+                {
+                    white_to_black_count++;
+                }
+                if (white_to_black_count >= 2)
+                {
+                    Card_Find[i] = 1;
+                    break;
+                }
+            }
+            if (white_to_black_count == 1)
+            {
+                Card_Find[i] = 0;
+            }
+        }
+        else if (Right_Lost_Flag[i] == 1)
+        {
+            Card_Find[i] = 0;
+        }
+    }
+
+    uint8 max_highest_row = 0;
+    uint8 min_lowest_row = 120;
+    for (uint8 i = 0; i <= IMAGE_HEIGHT - 1; i++)
+    {
+        if (Card_Find[i] == 1)
+        {
+            if (i > max_highest_row)
+            {
+                max_highest_row = i;
+            }
+            if (i < min_lowest_row)
+            {
+                min_lowest_row = i;
+            }
+        }
+    }
+
+    if (max_highest_row != 0 && min_lowest_row != 120)
+    {
+        for (uint8 i = max_highest_row; i >= min_lowest_row; i--)
+        {
+            if (Right_Lost_Flag[i] != 1)
+            {
+                for (uint8 j = IMAGE_WIDTH - 3; j >= right_line[i]; j--)
+                {
+                    if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j - 1] == WHITE_POINT)
+                    {
+                        up_to_down_point[0] = i;
+                        up_to_down_point[1] = j;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (uint8 i = min_lowest_row; i <= max_highest_row; i++)
+        {
+            if (Right_Lost_Flag[i] != 1)
+            {
+                for (uint8 j = IMAGE_WIDTH - 3; j >= right_line[i]; j--)
+                {
+                    if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j - 1] == WHITE_POINT)
+                    {
+                        down_to_up_point[0] = i;
+                        down_to_up_point[1] = j;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    else
+        return;
+
+    card_corner_down = 0;
+    card_corner_up = 0;
+    if (up_to_down_point[1] != 0 && down_to_up_point[1] != 0 && up_to_down_point[0] != 0 && down_to_up_point[0] != 0)
+    {
+        uint8 black_count = 0;
+        for (uint8 j = up_to_down_point[1]; j >= right_line[up_to_down_point[0]]; j--)
+        {
+            if (Image_Use[up_to_down_point[0]][j] == BLACK_POINT)
+            {
+                black_count++;
+            }
+        }
+        if (black_count >= 5)
+        {
+            card_corner_down = 1;
+        }
+        else
+        {
+            card_corner_down = 2;
+        }
+
+        black_count = 0;
+        for (uint8 j = down_to_up_point[1]; j >= right_line[down_to_up_point[0]]; j--)
+        {
+            if (Image_Use[down_to_up_point[0]][j] == BLACK_POINT)
+            {
+                black_count++;
+            }
+        }
+        if (black_count >= 5)
+        {
+            card_corner_up = 1;
+        }
+        else
+        {
+            card_corner_up = 2;
+        }
+    }
+    else
+        return;
+
+    int real_up_x, real_up_y, real_down_x, real_down_y;
+    Pespective_point(up_to_down_point[1], up_to_down_point[0], &real_up_x, &real_up_y);
+    Pespective_point(down_to_up_point[1], down_to_up_point[0], &real_down_x, &real_down_y);
+    if (card_corner_up == 1 && card_corner_down == 1)
+    {
+        card_center_x = (real_up_x + real_down_x) / 2 - 60;
+        card_center_y = (real_up_y + real_down_y) / 2;
+    }
+    else if (card_corner_up == 1 && card_corner_down == 2)
+    {
+        card_center_x = (real_up_x + real_down_x) / 2;
+        card_center_y = (real_up_y + real_down_y) / 2;
+    }
 }
 
 int deviation[8][2] = {{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}};        //??????x??????????y????
@@ -1010,28 +1314,34 @@ void Outer_Analyse(void)
     */
     uint8 left_c = Continuity_Change_Left_Island(IMAGE_HEIGHT - 10, 10);
     uint8 right_c = Continuity_Change_Right_Island(IMAGE_HEIGHT - 10, 10);
-    uint8 left_up_c=Continuity_Change_Left_Island_Up(IMAGE_HEIGHT-10,10);
-    uint8 right_up_c=Continuity_Change_Right_Island_Up(IMAGE_HEIGHT-10,10);
+    uint8 left_up_c = Continuity_Change_Left_Island_Up(IMAGE_HEIGHT - 10, 10);
+    uint8 right_up_c = Continuity_Change_Right_Island_Up(IMAGE_HEIGHT - 10, 10);
     // ips114_draw_line(188,0,left_line[left_c],left_c,RGB565_RED);
     // ips114_draw_line(188,0,left_line[left_up_c],right_c,RGB565_RED);
     /*如果左右边线有连续的话，就求其斜率*/
 
-    left_k=0.00;right_k=0.00;
-    uint8 temp;//中间变量
-    if(left_c==0)//如果是连续的话
+    left_k = 0.00;
+    right_k = 0.00;
+    uint8 temp;      // 中间变量
+    if (left_c == 0) // 如果是连续的话
     {
-        int deta_c_x=abs(Search_Stop_Line-Boundry_Start_Left);
-        int deta_c_y=(left_line[Search_Stop_Line]-left_line[Boundry_Start_Left]);
-        left_k=(float)(deta_c_x*100/deta_c_y)*0.01;
+        int deta_c_x = abs(Search_Stop_Line - Boundry_Start_Left);
+        int deta_c_y = (left_line[Search_Stop_Line] - left_line[Boundry_Start_Left]);
+        left_k = (float)(deta_c_x * 100 / deta_c_y) * 0.01;
     }
-    if(right_c==0)
+    if (right_c == 0)
     {
-        int detar_x=abs(Search_Stop_Line-Boundry_Start_Right);
-        int detar_y=(right_line[Search_Stop_Line]-right_line[Boundry_Start_Right]);
-        ips114_show_int(188,60,detar_y,3);
-        right_k=(float)(detar_x*100/detar_y)*0.01;
+        int detar_x = abs(Search_Stop_Line - Boundry_Start_Right);
+        int detar_y = (right_line[Search_Stop_Line] - right_line[Boundry_Start_Right]);
+        ips114_show_int(188, 60, detar_y, 3);
+        right_k = (float)(detar_x * 100 / detar_y) * 0.01;
     }
+
     /*test*/
+
+    ips114_show_uint(188, 40, left_c, 3);
+    ips114_show_uint(188, 50, left_up_c, 3);
+
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (Left_Lost_Flag[i] == 1)
@@ -1046,53 +1356,50 @@ void Outer_Analyse(void)
             Boundry_Start_Right = i;                 // Record the starting point of the right boundary
         Road_Wide[i] = right_line[i] - left_line[i]; // Record the road width
     }
-    uint8 min_road_wide=188;
-    uint8 min_road_wide_index=0;
-    for(uint8 i=IMAGE_HEIGHT-1;i>=IMAGE_HEIGHT-1-Search_Stop_Line;i--)
+    uint8 min_road_wide = 188;
+    uint8 min_road_wide_index = 0;
+    for (uint8 i = IMAGE_HEIGHT - 1; i >= IMAGE_HEIGHT - 1 - Search_Stop_Line; i--)
     {
-        if(Road_Wide[i]<min_road_wide && Road_Wide[i]!=0)
+        if (Road_Wide[i] < min_road_wide && Road_Wide[i] != 0)
         {
-            min_road_wide=Road_Wide[i];
-            min_road_wide_index=i;
+            min_road_wide = Road_Wide[i];
+            min_road_wide_index = i;
         }
     }
-    ips114_show_uint(188,30,Road_Wide[right_c],3);
+    ips114_show_uint(188, 30, Road_Wide[right_c], 3);
     ips114_show_uint(188, 90, Left_Lost_Time, 3);
     ips114_show_uint(188, 100, Right_Lost_Time, 3);
     if (Road_Type != RAMP) // 元素排斥
     {
         if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c == 0 && right_c == 0)
             Road_Type = STRAIGHT_ROAD;
-        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 20 && Both_Lost_Time < 5 && (abs(min_road_wide_index-right_c)>5)||(right_c==0||right_line[right_c]>=170))
-            
+        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 20 && Both_Lost_Time < 5 && (abs(min_road_wide_index - right_c) > 5) || (right_c == 0 || right_line[right_c] >= 170))
+
+        {
+            if (Right_Lost_Time != 1)
             {
-                if(Right_Lost_Time!=1)
-                {
-                    Road_Type = RIGHT_TURN;
-                }
-                
+                Road_Type = RIGHT_TURN;
             }
-        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120
-        && abs(min_road_wide_index-right_c)<=5)
+        }
+        else if (Left_Lost_Time <= 5 && Right_Lost_Time >= 15 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Right_Lost_Time <= 100 && left_line[120 - Search_Stop_Line] <= 120 && abs(min_road_wide_index - right_c) <= 5)
         {
             Road_Type = RIGHT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             right_island_flag = 1;
         }
-        if (Right_Lost_Time <=5 && Left_Lost_Time >= 20 && Both_Lost_Time < 15&& (abs(min_road_wide_index-left_c)>5)||(left_c==0||left_line[left_c]>=170))
-            
+        if (Right_Lost_Time <= 5 && Left_Lost_Time >= 20 && Both_Lost_Time < 15 && (abs(min_road_wide_index - left_c) > 5) || (left_c == 0 || left_line[left_c] >= 170))
+
+        {
+            if (Left_Lost_Time != 1)
             {
-                if(Left_Lost_Time!=1)
-                {
-                    Road_Type = LEFT_TURN;
-                }
+                Road_Type = LEFT_TURN;
             }
-        else if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100
-        && abs(min_road_wide_index-left_c)<=5)
+        }
+        else if (Left_Lost_Time >= 15 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5 && Search_Stop_Line >= 100 && Left_Lost_Time <= 100 && abs(min_road_wide_index - left_c) <= 5)
         {
             Road_Type = LEFT_HUANDAO; // 一旦判断为环岛就不会再进入此状态
             left_island_flag = 1;
         }
-        
+
         if (Right_Lost_Time >= 30 && Left_Lost_Time >= 30 && Both_Lost_Time >= 30)
             Road_Type = CROSSING;
     }
@@ -1106,30 +1413,31 @@ void Outer_Analyse(void)
     //     Ramp_to_Straight_Detect(); //??????
 
     /*避障判断放最后*/
-    uint8 wheter_luzhang=0;
-    if(abs(left_c-left_up_c)>=20)
+    uint8 wheter_luzhang = 0;
+    if (abs(left_c - left_up_c) >= 20)
     {
-        if(Road_Type==STRAIGHT_ROAD && left_c >=2)
+        if (Road_Type == STRAIGHT_ROAD && left_c >= 2)
         {
-            wheter_luzhang=Continuity_Change_Left_Island(left_c-2,left_up_c+2);
-            if(wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD && Road_Wide[(left_c+left_up_c)/2]>=20)
+            wheter_luzhang = Continuity_Change_Left_Island(left_c - 2, left_up_c + 2);
+            if (wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD)
             {
-                Road_Type=LEFT_LUZHANG;
+                Road_Type = LEFT_LUZHANG;
             }
         }
     }
-    uint8 new_wheter_luzhang=0;
-    if(abs(right_c-right_up_c)>=20)
+    uint8 new_wheter_luzhang = 0;
+    if (abs(right_c - right_up_c) >= 20)
     {
-        if(Road_Type==STRAIGHT_ROAD && right_c >=2 && Road_Wide[(right_c+right_up_c)/2]>=20)
+        if (Road_Type == STRAIGHT_ROAD && right_c >= 2)
         {
-            new_wheter_luzhang=Continuity_Change_Right_Island(right_c-2,right_up_c+2);
-            if(new_wheter_luzhang!=0 && Road_Type ==STRAIGHT_ROAD)
+            new_wheter_luzhang = Continuity_Change_Right_Island(right_c - 2, right_up_c + 2);
+            if (new_wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD)
             {
-                Road_Type=RIGHT_LUZHANG;
+                Road_Type = RIGHT_LUZHANG;
             }
         }
     }
+    ips114_show_uint(188, 120, new_wheter_luzhang, 3);
 }
 
 /**
@@ -1247,7 +1555,6 @@ int Continuity_Change_Left_Island(int start, int end) // 连续性阈值设置�
     }
     return continuity_change_flag;
 }
-
 
 int Continuity_Change_Left_Island_Up(int start, int end) // 连续性阈值设置为5
 {
@@ -2877,34 +3184,32 @@ void Finnal_Zebra_Number_Find(void)
     int f_card_left_up_point[2] = {0};
     int f_card_left_down_point[2] = {0};
     uint8 Island_surround_up[IMAGE_WIDTH] = {0}; // 从上往下数的边线
-    uint8 Left_to_right[IMAGE_HEIGHT]={0};
-    uint8 Right_to_left[IMAGE_HEIGHT]={0};//从左到右扫的线
-    for(uint8 i=0;i<IMAGE_HEIGHT;i++)
+    uint8 Left_to_right[IMAGE_HEIGHT] = {0};
+    uint8 Right_to_left[IMAGE_HEIGHT] = {0}; // 从左到右扫的线
+    for (uint8 i = 0; i < IMAGE_HEIGHT; i++)
     {
-        for(uint8 j=2;j<IMAGE_WIDTH-3;j++)//最靠左和最靠右的两行识别为黑色
+        for (uint8 j = 2; j < IMAGE_WIDTH - 3; j++) // 最靠左和最靠右的两行识别为黑色
         {
-            if(Image_Use[i][j-1]==BLACK_POINT&&Image_Use[i][j-2]==BLACK_POINT &&Image_Use[i][j]==WHITE_POINT
-            &&Image_Use[i][j+1]==WHITE_POINT)
+            if (Image_Use[i][j - 1] == BLACK_POINT && Image_Use[i][j - 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j + 1] == WHITE_POINT)
             {
-                Left_to_right[i]=j;
+                Left_to_right[i] = j;
                 break;
             }
-            else if(j==IMAGE_WIDTH-4)
+            else if (j == IMAGE_WIDTH - 4)
             {
-                Left_to_right[i]=0;
+                Left_to_right[i] = 0;
             }
         }
-        for(uint8 j=IMAGE_WIDTH-3;j>=2;j--)
+        for (uint8 j = IMAGE_WIDTH - 3; j >= 2; j--)
         {
-            if(Image_Use[i][j+1]==BLACK_POINT&&Image_Use[i][j+2]==BLACK_POINT &&Image_Use[i][j]==WHITE_POINT
-            &&Image_Use[i][j-1]==WHITE_POINT)
+            if (Image_Use[i][j + 1] == BLACK_POINT && Image_Use[i][j + 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j - 1] == WHITE_POINT)
             {
-                Right_to_left[i]=j;
+                Right_to_left[i] = j;
                 break;
             }
-            else if(j==2)
+            else if (j == 2)
             {
-                Right_to_left[i]=0;
+                Right_to_left[i] = 0;
             }
         }
     }
@@ -2914,7 +3219,7 @@ void Finnal_Zebra_Number_Find(void)
     {
         if (Left_to_right[i] != 0)
         {
-            if (abs(Left_to_right[i] - Left_to_right[i - 1]) >= 15 && abs(Left_to_right[i-1]-Left_to_right[i-2])<=5)
+            if (abs(Left_to_right[i] - Left_to_right[i - 1]) >= 15 && abs(Left_to_right[i - 1] - Left_to_right[i - 2]) <= 5)
             {
                 f_card_left_up_point[1] = Left_to_right[i];
                 f_card_left_up_point[0] = i;
@@ -2923,29 +3228,29 @@ void Finnal_Zebra_Number_Find(void)
         }
     }
 
-    for(uint8 i=IMAGE_HEIGHT-4;i>=3;i--)
+    for (uint8 i = IMAGE_HEIGHT - 4; i >= 3; i--)
     {
-        if(Left_to_right[i]!=0)
+        if (Left_to_right[i] != 0)
         {
-            if(abs(Left_to_right[i]-Left_to_right[i-1])<=5&&abs(Left_to_right[i]-Left_to_right[i+1])>=15)
+            if (abs(Left_to_right[i] - Left_to_right[i - 1]) <= 5 && abs(Left_to_right[i] - Left_to_right[i + 1]) >= 15)
             {
-                f_card_left_down_point[1]=Left_to_right[i];
-                f_card_left_down_point[0]=i;
+                f_card_left_down_point[1] = Left_to_right[i];
+                f_card_left_down_point[0] = i;
                 break;
             }
         }
     }
 
     /*三：计算出中心坐标*/
-    if(f_card_left_down_point[0]==0||f_card_left_up_point[0]==0 || f_card_left_down_point[1]==0 || f_card_left_up_point[1]==0)
+    if (f_card_left_down_point[0] == 0 || f_card_left_up_point[0] == 0 || f_card_left_down_point[1] == 0 || f_card_left_up_point[1] == 0)
     {
         return;
     }
-    number_card_real_x=0.00;
-    number_card_real_y=0.00;
-    int center_x=f_card_left_down_point[1]+f_card_left_up_point[1]-180;
-    int center_y=240-(f_card_left_down_point[0]+f_card_left_up_point[0]);
-    Pespective_point(center_x,center_y,&number_card_real_x,&number_card_real_y);
+    number_card_real_x = 0.00;
+    number_card_real_y = 0.00;
+    int center_x = f_card_left_down_point[1] + f_card_left_up_point[1] - 180;
+    int center_y = 240 - (f_card_left_down_point[0] + f_card_left_up_point[0]);
+    Pespective_point(center_x, center_y, &number_card_real_x, &number_card_real_y);
 }
 /**
  * @brief Island detection function
@@ -3176,7 +3481,7 @@ void Zebra_Stripes_Detect_new(void)
 
     for (uint8 i = 30; i <= IMAGE_HEIGHT - 31; i++)
     {
-        if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])) && abs(left_line[i] - right_line[i])<=20)
+        if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])) && abs(left_line[i] - right_line[i]) <= 20)
         {
             zebra_count++; // 多计算几行特殊行，这样就防止误判
         }
@@ -3212,10 +3517,10 @@ void test2(void)
         type = 7;
     else if (Road_Type == RAMP)
         type = 8;
-    else if(Road_Type==LEFT_LUZHANG)
-        type=9;
-    else if(Road_Type==RIGHT_LUZHANG)
-        type=10;
+    else if (Road_Type == LEFT_LUZHANG)
+        type = 9;
+    else if (Road_Type == RIGHT_LUZHANG)
+        type = 10;
     if (Road_Type == CROSSING)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
