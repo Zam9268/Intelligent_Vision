@@ -1031,15 +1031,7 @@ void Outer_Analyse(void)
         ips114_show_int(188,60,detar_y,3);
         right_k=(float)(detar_x*100/detar_y)*0.01;
     }
-    
-    
-
     /*test*/
-    
-
-    ips114_show_uint(188,40,left_c,3);
-   ips114_show_uint(188,50,left_up_c,3);
-   
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (Left_Lost_Flag[i] == 1)
@@ -1138,7 +1130,6 @@ void Outer_Analyse(void)
             }
         }
     }
-		ips114_show_uint(188,120,new_wheter_luzhang,3);
 }
 
 /**
@@ -3287,9 +3278,9 @@ void test2(void)
     // }
     ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
-
-    // ips114_show_int(188, 30, lowest_row, 3);
-    // ips114_show_uint(188, 40, lowest_column, 3);
+		
+		ips114_show_int(188, 30, number_card_real_x, 3);
+    ips114_show_uint(188, 40, number_card_real_y, 3);
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
 
     // // ips114_show_int(188, 90, Left_Lost_Time, 3);
@@ -3350,6 +3341,7 @@ void test(void)
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             lower_row_center_threshold = Get_DownCenterThreshold();
             Center_line_deal_plus(5, 183); // 不能设置太高或太低的边界，否则会导致错误
+					Finnal_Zebra_Number_Find();
             Outer_Analyse();
             // Top_Line_Search();
             // new_island_err = Top_Line_Err(80);

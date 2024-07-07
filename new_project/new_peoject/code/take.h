@@ -10,10 +10,11 @@
 
 #define SERVO_MOTOR_FREQ                (50)                                       // 舵机频率
 #define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //舵机角度转换成对应的pwm值
+#define SERVO_MOTOR_DUTY_360(x)         ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/180.0))    //舵机角度转换成对应的pwm值
 
-#define class_A_angle            155    //a类对应舵机角度173度
-#define class_B_angle            96    //b类对应舵机角度113度
-#define class_C_angle            35     //c类对应舵机角度53度
+#define class_A_angle            100    //a类对应舵机角度173度
+#define class_B_angle            66    //b类对应舵机角度113度
+#define class_C_angle            30     //c类对应舵机角度53度
 
 
 #define ARM_PICK_NOT_DONE        (0)
