@@ -16,11 +16,11 @@
 #define class_2_angle            66    //b类对应舵机角度113度
 #define class_3_angle            30     //c类对应舵机角度53度
 
-#define class_first_angle            30      //环岛第一张卡片分类区域 173
-#define class_second_angle           66     //环岛第二张卡片区域
-#define class_third_angle            100     //环岛第三张卡片区域
-#define class_fouth_angle            137    //环岛第四张卡片区域
-#define class_fifth_angle            173    //环岛第五张卡片区域
+#define class_first_angle            18      //环岛第一张卡片分类区域 173
+#define class_second_angle           52     //环岛第二张卡片区域
+#define class_third_angle            88     //环岛第三张卡片区域
+#define class_fouth_angle            124    //环岛第四张卡片区域
+#define class_fifth_angle            160    //环岛第五张卡片区域
 
 
 #define ARM_PICK_NOT_DONE        (0)
