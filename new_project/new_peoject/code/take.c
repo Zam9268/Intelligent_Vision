@@ -36,8 +36,9 @@ extern int arm_flag;
 void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
- pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(29)); //150 91 29(正面)
+ pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数 
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(137)); // 2 30 66 100 137
+// pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY_360(145)); //15  87 145(初始化最优角度) 218(初始化最优角度) 290 
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
  gpio_init(C11, GPO, 0, GPO_PUSH_PULL);//正面电磁铁
@@ -60,6 +61,11 @@ void my_pwm_gpio(void)
 入口参数：_servo1_angle,_servo2_angle,_step_count（舵机1目标速度，舵机2目标速度，步数设置）
 返回值：无
 备注：_step_count越小，速度越快（一般这样设置：快速：10；中速：50；慢速：100）
+
+
+
+
+
 调用示例：servo_slow_ctrl(148,110,10);
 **************************************************************************/
 void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_count)
@@ -149,21 +155,23 @@ void arm_control(uint8 mode)
    system_delay_ms(300);
    servo_slow_ctrl(30, 100, 20); //?????
    system_delay_ms(300);
-   servo_slow_ctrl(30, 45, 20); //?????
+   servo_slow_ctrl(30, 50, 20); //?????
    system_delay_ms(300);
    gpio_set_level(C11, 0);
    break;
 
  case 3: //放出卡片
    gpio_set_level(C11, 1);
-   servo_slow_ctrl(15, 70, 20);//收前臂
-   system_delay_ms(500);
-   servo_slow_ctrl(15, 45, 50); //动后臂    15 45
-   system_delay_ms(500);
-   servo_slow_ctrl(170, 80, 100); //取出卡片 25 75
-   system_delay_ms(500);
-   gpio_set_level(C11, 0);
-
+   servo_slow_ctrl(0, 90, 20);//收前臂
+   system_delay_ms(300);
+   servo_slow_ctrl(0, 45, 100); //动后臂    15 45
+   system_delay_ms(300);
+    servo_slow_ctrl(0, 70, 50); //动后臂    15 45
+    system_delay_ms(300);
+   servo_slow_ctrl(170, 70, 100); //取出卡片 25 75
+   system_delay_ms(300);
+   servo_slow_ctrl(170, 150, 100); //取出卡片 25 75
+   system_delay_ms(300);
    break;
 
  case 4: //机械臂默认模式
@@ -212,8 +220,14 @@ void classify_360(uint8 card_classify_type)
 //*******************************舵机测试函数******************************//
 void test_arm(void)
 {
-	if(pick_count<5)
+	if(pick_count<1)
 	{
+//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_A_angle));
+//		system_delay_ms(1000);
+//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_B_angle));
+//		system_delay_ms(1000);
+//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_C_angle));
+//    system_delay_ms(1000);
 		arm_control(2);//放卡片
 	  arm_control(4);//默认模式
 		pick_count++;

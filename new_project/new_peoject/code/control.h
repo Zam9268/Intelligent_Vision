@@ -150,7 +150,16 @@ extern int num_card_x,num_card_y;
 extern uint8 numcard_classify;
 extern int delta_class_x,delta_class_y;
 extern uint8 Find_num;		//识别完毕的标志位
-extern int banmaxian_finish;  
+extern int banmaxian_finish;
+extern uint8 class_step;
+extern int car_run_mode;
+extern uint8 classify_correct_finish;
+extern uint8 banmaxian_allow_flag;
+extern int put_out_count;  //需要放出的卡片数目
+extern uint8 put_out_card_flag;
+extern int Traffic_count;     //拾取的交通工具卡片数
+extern int Weapon_count;      //拾取的武器总卡片数
+extern int Supply_count;      //拾取的物资的总卡片数
 
 extern int pid_motor[4];
 

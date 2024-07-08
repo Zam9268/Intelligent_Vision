@@ -429,22 +429,35 @@ begin:
     /* Find the longest white column */
     Last_Longest_White_Column_Left[0] = Longest_White_Column_Left[0]; // Record the longest white column in the previous iteration
     Last_Longest_White_Column_Left[1] = Longest_White_Column_Left[1]; // record the column number of the longest white column in the previous iteration
-    Longest_White_Column_Left[0] = 0;                                 // Clear the information of the longest white column
-    for (uint8 i = start_column; i <= end_column; i++)
-    {
-        if (White_Column[i] > Longest_White_Column_Left[0]) // Replace the longest white column with the maximum value
-        {
-            Longest_White_Column_Left[0] = White_Column[i]; // Record the length of the corresponding longest white column
-            Longest_White_Column_Left[1] = i;               // Record the column number where the corresponding longest white column is located
-        }
-    }
+    Longest_White_Column_Left[0] = 0;        
+		// Clear the information of the longest white column
+		if(Longest_Column_Fixed==1)
+		{
+			Longest_White_Column_Left[1]=94;
+			Longest_White_Column_Left[0] = 117;
+		}
+    else
+		{
+			for (uint8 i = start_column; i <= end_column; i++)
+			{
+					if (White_Column[i] > Longest_White_Column_Left[0]) // Replace the longest white column with the maximum value
+					{
+							Longest_White_Column_Left[0] = White_Column[i]; // Record the length of the corresponding longest white column
+							Longest_White_Column_Left[1] = i;               // Record the column number where the corresponding longest white column is located
+					}
+			}
+		}
     Search_Stop_Line = Longest_White_Column_Left[0]; // Set the stop line for searching to the length of the longest white column
     /* To prevent significant changes in the position of the longest white column at the turning point, set a verification for the change */
-    if (abs(Longest_White_Column_Left[1] - Last_Longest_White_Column_Left[1]) >= 60) // If the longest white column position changes by more than 60 columns
-    {
-        Longest_White_Column_Left[0] = Last_Longest_White_Column_Left[0]; // Then the longest white column is set to the previous value
-        Longest_White_Column_Left[1] = Last_Longest_White_Column_Left[1];
-    }
+    if(Longest_Column_Fixed!=1)
+		{
+			if (abs(Longest_White_Column_Left[1] - Last_Longest_White_Column_Left[1]) >= 60) // If the longest white column position changes by more than 60 columns
+			{
+					Longest_White_Column_Left[0] = Last_Longest_White_Column_Left[0]; // Then the longest white column is set to the previous value
+					Longest_White_Column_Left[1] = Last_Longest_White_Column_Left[1];
+			}
+		}
+		
 
     /* Start searching for boundaries */
     int right_border, left_border; // Define intermediate variables for boundaries
@@ -3869,9 +3882,9 @@ void test2(void)
     // }
     ips114_show_uint(188, 10, Longest_White_Column_Left[1], 3);
     ips114_show_uint(188, 20, type, 3);
-
-    // ips114_show_int(188, 30, lowest_row, 3);
-    // ips114_show_uint(188, 40, lowest_column, 3);
+		
+		ips114_show_int(188, 30, number_card_real_x, 3);
+    ips114_show_uint(188, 40, number_card_real_y, 3);
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
 
     // // ips114_show_int(188, 90, Left_Lost_Time, 3);
