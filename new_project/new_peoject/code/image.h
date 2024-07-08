@@ -92,5 +92,6 @@ void Top_Line_Center_Get_Center(void);
 void send_deal(void);
 int Continuity_Change_Left_Island_Up(int start, int end); // 连续性阈值设置为5;
 int Continuity_Change_Right_Island_Up(int start, int end);
+uint8 Top_Top_Line_Search_Island(uint8 center_row);
 
 #endif
