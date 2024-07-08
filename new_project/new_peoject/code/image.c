@@ -27,6 +27,7 @@ uint8 Both_Lost_Time = 0;                      // Number of times both lines are
 uint8 Search_Stop_Line;                        // Stop line for searching
 uint8 Boundry_Start_Left, Boundry_Start_Right; // Starting points of the left and right boundaries
 uint8 Road_Wide[IMAGE_HEIGHT];                 // Road width
+uint8 transform_buffer[16]={0,8,5,4,6,9,10,12,12,3,15,11,7,1,2,13}; // The buffer used to store the transformation of the image
 RoadType Road_Type;                            // Type of road element
 Card_Corner_Type Card_Corner;                  // Type of card corner
 uint8 Right_Down_Find = 0;
@@ -3303,7 +3304,10 @@ void Straight_Card_Find(void)
 }
 
 /*
-斑马线
+斑马线寻找函数，用于寻找白色卡片（距离赛道有一定距离）的卡片的中心坐标
+比如用在终点的 1 2 3的卡片上，用于寻找卡片的中心坐标；还有环岛的部分位置，一般用该函数的前提是总钻风图像中只有下面的上边线和一个卡片的边缘
+
+输出结果：number_card_real_x，number_card_real_y，这个坐标可以通过按按键3（左边四个按键的其中一个）来查看
 */
 void Finnal_Zebra_Number_Find(void)
 {
@@ -3488,6 +3492,10 @@ void Finnal_Zebra_Number_Find(void)
     }
 }
 
+/*
+输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
+输出结果：上边线的最低行，取上边线的最靠右的点的行坐标作为返回值
+*/
 uint8 Top_Top_Line_Search_Island(uint8 center_row)
 {
 
