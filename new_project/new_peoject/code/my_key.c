@@ -58,7 +58,7 @@ uint8 third_menu=0;//第三级菜单
 uint8 visual_menu=0;//视觉处理菜单
 uint8 electric_menu=0;//电控处理菜单
 uint8 visual_mode=0;//视觉处理模式，1选择总钻风阈值调节 2选择识别分类art亮度调节    3.选择目标检测art亮度调节
-
+uint8 visual_show2=0;
 typedef enum
 {
     FIRST_MENU,
@@ -104,10 +104,12 @@ void my_key_handle(void)
     }
     else if(keys[2].single_flag==1)
     {
+        visual_show2=1;
         keys[2].single_flag=0;
     }
     else if(keys[3].single_flag==1)
     {
+        visual_show2=0;
         keys[3].single_flag=0;
     }
 }

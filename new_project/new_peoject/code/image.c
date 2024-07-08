@@ -2,6 +2,7 @@
 #include "stdbool.h"
 #include "stdio.h"
 #include "math.h"
+#include "my_key.h"
 
 uint8 Image_Use[IMAGE_HEIGHT][IMAGE_WIDTH];
 uint8 type = 0;
@@ -44,9 +45,12 @@ uint8 Cross_State = 0;                     // record the state of the cross road
 uint8 Cross_Handle_Flag = 1;               // record the flag of the cross road
 uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
+uint8 max_right_line = 0;                  // record the max right line
+uint8 last_max_right_line = 0;             // record the last max right line
 uint8 start_row = 0;                       // record the start row
 uint8 my_threshold = 0;
 uint8 lowest_column = 0;
+uint8 trap_column = 0;
 uint8 lowest_row = 0;
 uint8 Top_line_lost_time = 0; // 顶部线丢线的个数
 uint8 ramp_change_flagh = 0;
@@ -59,11 +63,12 @@ uint8 straight_card_right_down_point[2] = {0};
 uint8 staraight_left_find_flag = 0;
 uint8 staraight_right_find_flag = 0;
 uint8 lower_row_center_threshold = 0;
-uint8 Top_Line_Continues_flag = 0; // 自下而上扫线的连续性标志位
-uint8 card_corner_up = 0;          // 找到的卡片的角点坐标的类型
-uint8 card_corner_down = 0;        // 找到的卡片的角点坐标的类型
-int Edge_threshold = 1700;         // 边缘检测的阈值，通过按键进行调节，初始值为1700
-int left_up_state3_point[2] = {0}; // 左上角顶点的坐标
+uint8 Top_Line_Continues_flag = 0;  // 自下而上扫线的连续性标志位
+uint8 card_corner_up = 0;           // 找到的卡片的角点坐标的类型
+uint8 card_corner_down = 0;         // 找到的卡片的角点坐标的类型
+int Edge_threshold = 1700;          // 边缘检测的阈值，通过按键进行调节，初始值为1700
+int left_up_state3_point[2] = {0};  // 左上角顶点的坐标
+int right_up_state3_point[2] = {0}; // 右上角顶点的坐标
 int center_straight_left_card_x = 0;
 int center_straight_left_card_y = 0;
 int center_straight_right_card_x = 0;
@@ -100,7 +105,8 @@ extern unsigned int now_distance_y; // the distance made by the target detection
 extern uint8 init_flag;             // the flag of the initialization
 extern uint8 seconds;
 extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始就误判坡道标志位
-extern uint8 Longest_Column_Fixed;
+extern uint8 visual_show2;           // 按键处理显示模式
+
 extern char uart_4_begina[]; // UART4开始字符串310
 extern char uart_4_beginb[]; // UART4开始字符串300
 extern char uart_4_beginc[]; // UART4开始字符串290
@@ -890,6 +896,12 @@ void Border_Card_Detect_Right(void)
         card_center_x = (real_up_x + real_down_x) / 2;
         card_center_y = (real_up_y + real_down_y) / 2;
     }
+
+    if (visual_show2 == 1)
+    {
+        ips114_draw_line(0, 0, up_to_down_point[1], up_to_down_point[0], RGB565_RED);
+        ips114_draw_line(0, 0, down_to_up_point[1], down_to_up_point[0], RGB565_GREEN);
+    }
 }
 
 int deviation[8][2] = {{0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}};        //??????x??????????y????
@@ -1339,8 +1351,8 @@ void Outer_Analyse(void)
 
     /*test*/
 
-    ips114_show_uint(188, 40, left_c, 3);
-    ips114_show_uint(188, 50, left_up_c, 3);
+    //    ips114_show_uint(188, 40, left_c, 3);
+    //    ips114_show_uint(188, 50, left_up_c, 3);
 
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
@@ -1366,9 +1378,9 @@ void Outer_Analyse(void)
             min_road_wide_index = i;
         }
     }
-    ips114_show_uint(188, 30, Road_Wide[right_c], 3);
-    ips114_show_uint(188, 90, Left_Lost_Time, 3);
-    ips114_show_uint(188, 100, Right_Lost_Time, 3);
+    //    ips114_show_uint(188, 30, Road_Wide[right_c], 3);
+    //    ips114_show_uint(188, 90, Left_Lost_Time, 3);
+    //    ips114_show_uint(188, 100, Right_Lost_Time, 3);
     if (Road_Type != RAMP) // 元素排斥
     {
         if (Left_Lost_Time <= 15 && Right_Lost_Time <= 15 && Both_Lost_Time <= 15 && left_c == 0 && right_c == 0)
@@ -1419,9 +1431,10 @@ void Outer_Analyse(void)
         if (Road_Type == STRAIGHT_ROAD && left_c >= 2)
         {
             wheter_luzhang = Continuity_Change_Left_Island(left_c - 2, left_up_c + 2);
-            if (wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD)
+            if (wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD && abs(left_line[left_c] - left_line[left_up_c]) <= 20)
             {
-                Road_Type = LEFT_LUZHANG;
+                if (left_island_flag != 1 && right_island_flag != 1)
+                    Road_Type = LEFT_LUZHANG;
             }
         }
     }
@@ -1431,13 +1444,14 @@ void Outer_Analyse(void)
         if (Road_Type == STRAIGHT_ROAD && right_c >= 2)
         {
             new_wheter_luzhang = Continuity_Change_Right_Island(right_c - 2, right_up_c + 2);
-            if (new_wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD)
+            if (new_wheter_luzhang != 0 && Road_Type == STRAIGHT_ROAD && abs(right_line[right_c] - right_line[right_up_c]) <= 20)
             {
-                Road_Type = RIGHT_LUZHANG;
+                if (left_island_flag != 1 && right_island_flag != 1)
+                    Road_Type = RIGHT_LUZHANG;
             }
         }
     }
-    ips114_show_uint(188, 120, new_wheter_luzhang, 3);
+    //    ips114_show_uint(188, 120, new_wheter_luzhang, 3);
 }
 
 /**
@@ -1510,6 +1524,37 @@ int Continuity_Change_Left_Island_State3(int start, int end) // 连续性阈值�
     for (i = start; i <= end; i++)
     {
         if (abs(left_line[i] - left_line[i + 1]) >= 5) // 连续判断阈值是5,可更改
+        {
+            continuity_change_flag = i;
+            break;
+        }
+    }
+    return continuity_change_flag;
+}
+
+int Continuity_Change_Right_Island_State3(int start, int end) // 连续性阈值设置为5
+{
+    int i;
+    int t;
+    int continuity_change_flag = 0;
+    if (Right_Lost_Time >= 0.9 * MT9V03X_H) // 大部分都丢线，没必要判断了
+        return 1;
+    if (Search_Stop_Line <= 5) // 搜所截止行很矮
+        return 1;
+    if (start >= MT9V03X_H - 1 - 5) // 数组越界保护
+        start = MT9V03X_H - 1 - 5;
+    if (end <= 5)
+        end = 5;
+    if (start > end) // 都是从下往上计算的，反了就互换一下
+    {
+        t = start;
+        start = end;
+        end = t;
+    }
+
+    for (i = start; i <= end; i++)
+    {
+        if (abs(right_line[i] - right_line[i + 1]) >= 5) // 连续判断阈值是5,可更改
         {
             continuity_change_flag = i;
             break;
@@ -2416,6 +2461,21 @@ uint8 Find_Max_left_line(void)
     }
     return max[1];
 }
+
+uint8 Find_Max_right_line(void)
+{
+    uint8 max[2] = {0};
+    max[0] = 188;
+    for (uint8 i = Boundry_Start_Right; i >= 10; i--)
+    {
+        if (right_line[i] < max[0])
+        {
+            max[0] = right_line[i];
+            max[1] = i;
+        }
+    }
+    return max[1];
+}
 /**
  * @brief the function to detect the crossing
  * @param null
@@ -2685,7 +2745,7 @@ uint8 Surround_Continus_detect(uint8 start_column, uint8 end_column)
     }
     for (uint8 i = start_column; i < end_column; i++)
     {
-        if ((abs(Island_surrond[i] - Island_surrond[i - 1]) < 5) && (abs(Island_surrond[i - 1] - Island_surrond[i - 2]) < 5) && (abs(Island_surrond[i] - Island_surrond[i + 1]) >= 10) && (abs(Island_surrond[i] - Island_surrond[i + 2]) >= 10))
+        if (abs(Island_surrond[i] - Island_surrond[i + 1]) >= 5)
         {
             rrtern = i;
             break;
@@ -2828,6 +2888,60 @@ void Top_Line_Search_Island(void)
             }
         }
     }
+
+    for (uint8 i = 5; i <= IMAGE_WIDTH - 5; i++)
+    {
+        if (Island_surrond[i] == 117 && abs(Island_surrond[i] - Island_surrond[i + 1] >= 5))
+        {
+            trap_column = i;
+            break;
+        }
+    }
+}
+
+/*基于环岛顺时针的巡线*/
+void Top_Line_Search_Island_clockwise(void)
+{
+    /*使用前要先将坐标全部清零*/
+    lowest_row = 0;
+    Top_line_lost_time = 0;
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        Island_surrond[i] = 0;
+    }
+
+    uint8 right_max_point = 0;
+    /*第一部分：扫线*/
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        for (uint8 j = IMAGE_HEIGHT - 4; j >= 70; j--)
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
+            {
+                Island_surrond[i] = j + 1;
+                if (j + 1 > lowest_row && i >= 5 && abs(j + 1 - Island_surrond[i - 1]) <= 5 && abs(j + 1 - Island_surrond[i - 2]) <= 5)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
+                break;
+            }
+            else if (j <= 2)
+            {
+                Island_surrond[i] = 2; // 此时丢线,默认为最低那一行
+                Top_line_lost_time++;  // 丢线计数加1
+            }
+        }
+    }
+
+    for (uint8 i = 5; i <= IMAGE_WIDTH - 5; i++)
+    {
+        if (Island_surrond[i] == 117 && abs(Island_surrond[i] - Island_surrond[i + 1] >= 5))
+        {
+            trap_column = i;
+            break;
+        }
+    }
 }
 
 void Top_Line_Center_Get_Center(void)
@@ -2905,31 +3019,34 @@ float Island_Surround(uint8 target_row)
 {
     uint8 continuious_flag = 0;
     static uint8 last_continuious_flag = 0;
-    Top_Line_Search_Island(); // 扫线
-    /*第二部分：状态机执行*/
-    // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
-    uint8 new_con = Surround_Continus_detect(5, lowest_column - 10); // 不能将丢线部分也纳入
+    Top_Line_Search_Island();                                         // 扫线
+                                                                      /*第二部分：状态机执行*/
+                                                                      // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
+    continuious_flag = Surround_Continus_detect(5, trap_column - 10); // 不能将丢线部分也纳入
+    // uint8 new_ccon = Surround_guai_dian_detect(5, lowest_column - 10);
     if (Island_State == 0)
     {
         /*找拐点*/
-        continuious_flag = new_con;
-        if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
-        {
-            if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
-            {
-                Center_line_deal_plus(40, 180);
-            }
-            if (1)
-            {
-                continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 这里可以检测左边的最大值
-            }
-            else
-            {
-                continuious_flag = Monotonicity_Change_Left(IMAGE_HEIGHT - 5, 10); // 这个检测的方法比前面的应该会更好
-            }
-        }
+        // if (continuious_flag == 0)
+        // {
+        //     if (continuious_flag >= 110 || Island_surrond[continuious_flag] <= 20) // 此时找到的点是不正常的，开始检测，重新扫描
+        //     {
+        //         if (Longest_White_Column_Left[1] == 0) // 此时巡线不正常
+        //         {
+        //             Center_line_deal_plus(40, 180);
+        //         }
+        //         if (0)
+        //         {
+        //             continuious_flag = Continuity_Change_Left_Island(IMAGE_HEIGHT - 1, 10); // 这里可以检测左边的最大值
+        //         }
+        //         else
+        //         {
+        //             continuious_flag = Monotonicity_Change_Left(IMAGE_HEIGHT - 5, 10); // 这个检测的方法比前面的应该会更好
+        //         }
+        //     }
+        // }
         /*开始状态1的补线*/
-        if (continuious_flag != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
+        if (continuious_flag != 0 && Island_surrond[continuious_flag] != 0) // 这里要加上一个环岛状态位，（应该是第4个？）
         {
             ips114_draw_line(94, 60, continuious_flag, Island_surrond[continuious_flag], RGB565_GREEN);
             uint8 temp = (Island_surrond[IMAGE_WIDTH - 2] + 0.5 * (IMAGE_HEIGHT - Island_surrond[IMAGE_WIDTH - 2]));
@@ -2953,7 +3070,7 @@ float Island_Surround(uint8 target_row)
     else if (Island_State == 6) /*此时为进入环岛的圆弧，没有出圆弧的状态*/
     {
         uint8 flag = 0;
-        for (uint8 i = 5; i <= lowest_column - 5; i++) // 如果左边出现了断裂点，那么就直接进入下一个状态（这个方法非常好用，是因为在左环岛向左运动）
+        for (uint8 i = lowest_column; i >= 5; i--) // 如果左边出现了断裂点，那么就直接进入下一个状态（这个方法非常好用，是因为在左环岛向左运动）
         {
             if (abs(Island_surrond[i] - Island_surrond[i - 1]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 2]) <= 5 && abs(Island_surrond[i] - Island_surrond[i - 3]) <= 5 && abs(Island_surrond[i] - Island_surrond[i + 1]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 2]) >= 15 && abs(Island_surrond[i] - Island_surrond[i + 3]) >= 15)
             {
@@ -2962,7 +3079,7 @@ float Island_Surround(uint8 target_row)
             }
         }
 
-        if (flag != 0 && flag <= 60 && Top_Line_Continues_flag == 1) // 断裂点在图像的左侧，且上边线的连续性检测通过
+        if (flag != 0 && flag <= 60) // 断裂点在图像的左侧，且上边线的连续性检测通过
             Island_State = 7;
     }
     else if (Island_State == 7) /*此时为出环岛的圆弧，图像左半段出现角点*/
@@ -3022,7 +3139,7 @@ float Island_Surround(uint8 target_row)
     /*第三部分：状态机切换
     有些部分是通过控制部分进行切换的，例如从状态8到9是通过控制切换的
     */
-    if (Island_surrond[IMAGE_WIDTH - 2] <= 30 && Island_State == 0 && continuious_flag != 0 && continuious_flag <= 30) // 利用最后一个点（或者利用最长白列求解）
+    if (Island_State == 0 && continuious_flag != 0 && continuious_flag >= 120 && Island_surrond[continuious_flag] != 0 && Island_surrond[5] >= IMAGE_HEIGHT / 2) // 利用最后一个点（或者利用最长白列求解）
     {
         Island_State = 6; // 进入下一个状态
     }
@@ -3030,10 +3147,9 @@ float Island_Surround(uint8 target_row)
     {
         Island_State = 8;
     }
-
-    //    ips114_show_int(188, 40, right_max_point, 3);
-    //    ips114_show_uint(188, 80, lowest_row, 3);
-    //    ips114_show_uint(188, 90, lowest_column, 3);
+    ips114_show_uint(188, 50, continuious_flag, 3);
+    ips114_show_uint(188, 70, lowest_row, 3);
+    ips114_show_uint(188, 60, lowest_column, 3);
     //    ips114_show_uint(188, 100, Island_State, 3);
     last_continuious_flag = continuious_flag;
     // if(Island_surrond[continuious_flag]<=20)
@@ -3061,10 +3177,10 @@ float Island_Surround(uint8 target_row)
 
     /*显示变量部分*/
     ips114_show_uint(188, 100, continuious_flag, 3);
-    ips114_show_uint(188, 40, new_con, 3);
     return island_err;
 }
 
+/*用于直道的卡片寻找*/
 void Straight_Card_Find(void)
 {
     if (Road_Type != STRAIGHT_ROAD)
@@ -3181,76 +3297,184 @@ void Straight_Card_Find(void)
 void Finnal_Zebra_Number_Find(void)
 {
     /*一：分别从左边和右边向中间开始扫线*/
-    int f_card_left_up_point[2] = {0};
-    int f_card_left_down_point[2] = {0};
-    uint8 Island_surround_up[IMAGE_WIDTH] = {0}; // 从上往下数的边线
-    uint8 Left_to_right[IMAGE_HEIGHT] = {0};
-    uint8 Right_to_left[IMAGE_HEIGHT] = {0}; // 从左到右扫的线
-    for (uint8 i = 0; i < IMAGE_HEIGHT; i++)
+    uint8 find_mode = 1;
+    if (find_mode == 0)
     {
-        for (uint8 j = 2; j < IMAGE_WIDTH - 3; j++) // 最靠左和最靠右的两行识别为黑色
+        uint8 f_card_left_up_point[2] = {0};
+        uint8 f_card_left_down_point[2] = {0};
+        uint8 Island_surround_up[IMAGE_WIDTH] = {0}; // 从上往下数的边线
+        uint8 Left_to_right[IMAGE_HEIGHT] = {0};
+        uint8 Right_to_left[IMAGE_HEIGHT] = {0}; // 从左到右扫的线
+        for (uint8 i = 0; i < IMAGE_HEIGHT; i++)
         {
-            if (Image_Use[i][j - 1] == BLACK_POINT && Image_Use[i][j - 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j + 1] == WHITE_POINT)
+            for (uint8 j = 2; j < IMAGE_WIDTH - 3; j++) // 最靠左和最靠右的两行识别为黑色
             {
-                Left_to_right[i] = j;
-                break;
+                if (Image_Use[i][j - 1] == BLACK_POINT && Image_Use[i][j - 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j + 1] == WHITE_POINT)
+                {
+                    Left_to_right[i] = j;
+                    break;
+                }
+                else if (j == IMAGE_WIDTH - 4)
+                {
+                    Left_to_right[i] = 0;
+                }
             }
-            else if (j == IMAGE_WIDTH - 4)
+            for (uint8 j = IMAGE_WIDTH - 3; j >= 2; j--)
             {
-                Left_to_right[i] = 0;
+                if (Image_Use[i][j + 1] == BLACK_POINT && Image_Use[i][j + 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j - 1] == WHITE_POINT)
+                {
+                    Right_to_left[i] = j;
+                    break;
+                }
+                else if (j == 2)
+                {
+                    Right_to_left[i] = 0;
+                }
             }
         }
-        for (uint8 j = IMAGE_WIDTH - 3; j >= 2; j--)
+        /*二：对线进行连续性判断*/
+        // uint8 continus_left[2] = {0};
+        for (uint8 i = 3; i <= IMAGE_HEIGHT - 4; i++)
         {
-            if (Image_Use[i][j + 1] == BLACK_POINT && Image_Use[i][j + 2] == BLACK_POINT && Image_Use[i][j] == WHITE_POINT && Image_Use[i][j - 1] == WHITE_POINT)
+            if (Left_to_right[i] != 0)
             {
-                Right_to_left[i] = j;
-                break;
-            }
-            else if (j == 2)
-            {
-                Right_to_left[i] = 0;
+                if (abs(Left_to_right[i] - Left_to_right[i - 1]) >= 15 && abs(Left_to_right[i - 1] - Left_to_right[i - 2]) <= 5)
+                {
+                    f_card_left_up_point[1] = Left_to_right[i];
+                    f_card_left_up_point[0] = i;
+                    break;
+                }
             }
         }
-    }
-    /*二：对线进行连续性判断*/
-    // uint8 continus_left[2] = {0};
-    for (uint8 i = 3; i <= IMAGE_WIDTH - 4; i++)
-    {
-        if (Left_to_right[i] != 0)
-        {
-            if (abs(Left_to_right[i] - Left_to_right[i - 1]) >= 15 && abs(Left_to_right[i - 1] - Left_to_right[i - 2]) <= 5)
-            {
-                f_card_left_up_point[1] = Left_to_right[i];
-                f_card_left_up_point[0] = i;
-                break;
-            }
-        }
-    }
 
-    for (uint8 i = IMAGE_HEIGHT - 4; i >= 3; i--)
-    {
-        if (Left_to_right[i] != 0)
+        for (uint8 i = IMAGE_HEIGHT - 4; i >= 3; i--)
         {
-            if (abs(Left_to_right[i] - Left_to_right[i - 1]) <= 5 && abs(Left_to_right[i] - Left_to_right[i + 1]) >= 15)
+            if (Left_to_right[i] != 0)
             {
-                f_card_left_down_point[1] = Left_to_right[i];
-                f_card_left_down_point[0] = i;
-                break;
+                if (abs(Left_to_right[i] - Left_to_right[i - 1]) <= 5 && abs(Left_to_right[i] - Left_to_right[i + 1]) >= 15)
+                {
+                    f_card_left_down_point[1] = Left_to_right[i];
+                    f_card_left_down_point[0] = i;
+                    break;
+                }
             }
         }
-    }
 
-    /*三：计算出中心坐标*/
-    if (f_card_left_down_point[0] == 0 || f_card_left_up_point[0] == 0 || f_card_left_down_point[1] == 0 || f_card_left_up_point[1] == 0)
-    {
-        return;
+        /*三：计算出中心坐标*/
+        if (f_card_left_down_point[0] == 0 || f_card_left_up_point[0] == 0 || f_card_left_down_point[1] == 0 || f_card_left_up_point[1] == 0)
+        {
+            return;
+        }
+        number_card_real_x = 0.00;
+        number_card_real_y = 0.00;
+        int center_x = f_card_left_down_point[1] + f_card_left_up_point[1] - 180;
+        int center_y = 240 - (f_card_left_down_point[0] + f_card_left_up_point[0]);
+        Pespective_point(center_x, center_y, &number_card_real_x, &number_card_real_y);
+
+        if (visual_show2 == 1)
+        {
+            ips114_show_int(0, 60, number_card_real_x, 3);
+            ips114_show_int(0, 70, number_card_real_y, 3);
+            ips114_show_uint(0, 0, f_card_left_down_point[1], 3);
+            ips114_show_uint(0, 10, f_card_left_down_point[0], 3);
+
+            ips114_show_uint(0, 20, f_card_left_up_point[1], 3);
+            ips114_show_uint(0, 30, f_card_left_up_point[0], 3);
+            ips114_draw_line(0, 0, f_card_left_down_point[1], f_card_left_down_point[0], RGB565_RED);
+            ips114_draw_line(0, 0, f_card_left_up_point[1], f_card_left_up_point[0], RGB565_GREEN);
+        }
     }
-    number_card_real_x = 0.00;
-    number_card_real_y = 0.00;
-    int center_x = f_card_left_down_point[1] + f_card_left_up_point[1] - 180;
-    int center_y = 240 - (f_card_left_down_point[0] + f_card_left_up_point[0]);
-    Pespective_point(center_x, center_y, &number_card_real_x, &number_card_real_y);
+    else if (find_mode == 1)
+    {
+        uint8 lowerest_row = 120;
+        uint8 highest_row = 0;
+        uint8 black_count = 0;
+        for (uint8 i = 0; i < IMAGE_HEIGHT; i++)
+        {
+            for (uint8 j = 2; j < IMAGE_WIDTH - 2; j++)
+            {
+                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j + 1] == WHITE_POINT && Image_Use[i][j - 1] == BLACK_POINT)
+                {
+
+                    if (i < lowerest_row)
+                    {
+                        lowerest_row = i;
+                    }
+                    if (i > highest_row)
+                    {
+                        highest_row = i;
+                    }
+                }
+            }
+        }
+
+        /**/
+        if (lowerest_row == 120 || highest_row == 0)
+        {
+            return;
+        }
+
+        uint8 Left_Line[120] = {0};
+        for (uint8 i = lowerest_row; i <= highest_row; i++)
+        {
+            for (uint8 j = 2; j < IMAGE_WIDTH - 2; j++)
+            {
+                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i][j + 1] == WHITE_POINT && Image_Use[i][j - 1] == BLACK_POINT)
+                {
+                    Left_Line[i] = j + 1;
+                    break;
+                }
+                else if (j == IMAGE_HEIGHT - 3)
+                {
+                    Left_Line[i] = 0;
+                }
+            }
+        }
+
+        uint8 left_up_point[2] = {0};
+        uint8 left_down_point[2] = {0};
+
+        for (uint8 i = lowerest_row; i <= highest_row; i++)
+        {
+            if (Left_Line[i] != 0 && lowerest_row >= 10 && highest_row <= 110)
+            {
+                if (abs(Left_Line[i] - Left_Line[i + 1]) <= 5 && abs(Left_Line[i + 1] - Left_Line[i + 2]) <= 5) // 要保证连续
+                {
+                    left_up_point[1] = Left_Line[i];
+                    left_up_point[0] = i;
+                    break;
+                }
+            }
+        }
+        for (uint8 i = highest_row; i >= lowerest_row; i--)
+        {
+            if (Left_Line[i] != 0 && lowerest_row >= 10 && highest_row <= 110)
+            {
+                if (abs(Left_Line[i] - Left_Line[i + 1]) <= 5 && abs(Left_Line[i + 1] - Left_Line[i + 2]) <= 5)
+                {
+                    left_down_point[1] = Left_Line[i];
+                    left_down_point[0] = i;
+                    break;
+                }
+            }
+        }
+
+        int real_left_up_x, real_left_up_y;
+        int real_left_down_x, real_left_down_y;
+
+        Pespective_point(left_up_point[1], left_up_point[0], &real_left_up_x, &real_left_up_y);
+        Pespective_point(left_down_point[1], left_down_point[0], &real_left_down_x, &real_left_down_y);
+
+        number_card_real_x = (real_left_up_x + real_left_down_x) / 2 + 20;
+        number_card_real_y = (real_left_up_y + real_left_down_y) / 2;
+        if (visual_show2 == 1)
+        {
+            ips114_draw_line(0, 0, left_down_point[1], left_down_point[0], RGB565_RED);
+            ips114_draw_line(0, 0, left_up_point[1], left_up_point[0], RGB565_GREEN);
+            ips114_show_int(0, 0, real_left_up_x, 3);
+            ips114_show_int(0, 10, real_left_up_y, 3);
+        }
+    }
 }
 /**
  * @brief Island detection function
@@ -3259,6 +3483,10 @@ void Finnal_Zebra_Number_Find(void)
  */
 void Island_Detect(void)
 {
+    if (left_island_flag == 0 && right_island_flag == 0)
+    {
+        return;
+    }
     static float k = 0;                  // 补线的斜率k
     static int left_down_guai[2] = {0};  // record the position of the the down point of the state1
     static int right_down_guai[2] = {0}; // record the position of the the up point of the state1
@@ -3279,133 +3507,201 @@ void Island_Detect(void)
 
     /*the code of ips*/
     /*test the left island firstly*/
-    switch (Island_State)
+    if (left_island_flag == 1)
     {
-    case 0: // the state of the island is 0:There is no access to the roundabout, only one side of the road is repaired
-    {
-
-        if (monotonicity_change_right_flag == 0 && continuity_change_left_flag != 0 && continuity_change_right_flag == 0 && continuity_change_left_flag >= 40)
+        switch (Island_State)
         {
-            left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
-            left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
-            if (left_down_guai[0] >= 30)
+
+        case 0: // the state of the island is 0:There is no access to the roundabout, only one side of the road is repaired
+        {
+
+            if (monotonicity_change_right_flag == 0 && continuity_change_left_flag != 0 && continuity_change_right_flag == 0 && continuity_change_left_flag >= 40)
             {
-                Island_State = 1; // change the state to 1
+                left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
+                left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
+                if (left_down_guai[0] >= 30)
+                {
+                    Island_State = 1; // change the state to 1
+                }
             }
         }
-    }
-    break;
-    case 1:
-    {
-        /*patching line first*/
-        left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
-        left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
-        // ips114_show_uint(188, 70, left_down_guai[0], 3);
-        // ips114_show_uint(188, 80, left_down_guai[1], 3);
-        Left_Add_Line(Longest_White_Column_Left[1], 3, left_down_guai[1], left_down_guai[0]);
-        if (Boundry_Start_Left < 50) // 当左边线起点小于60时，进入状态2
+        break;
+        case 1:
         {
-            Island_State = 2;
+            /*patching line first*/
+            left_down_guai[1] = left_line[continuity_change_left_flag]; // record the column of the left down point
+            left_down_guai[0] = continuity_change_left_flag;            // record the row of the left down point
+            // ips114_show_uint(188, 70, left_down_guai[0], 3);
+            // ips114_show_uint(188, 80, left_down_guai[1], 3);
+            Left_Add_Line(Longest_White_Column_Left[1], 3, left_down_guai[1], left_down_guai[0]);
+            if (Boundry_Start_Left < 50) // 当左边线起点小于60时，进入状态2
+            {
+                Island_State = 2;
+            }
+        }
+        break;
+
+        case 2: // 左下角丢线，找到左边线的列坐标最大处
+        {
+            last_max_left_line = max_left_line;
+            max_left_line = Find_Max_left_line(); // 寻找单调点
+            // ips114_draw_line(94, 60, left_line[max_left_line], max_left_line, RGB565_RED);
+            // monotonicity_change_line[0] = Monotonicity_Change_Left(70, 10); // 寻找单调性的点
+            // monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
+            if (Boundry_Start_Left <= IMAGE_HEIGHT - 5)
+                Left_Add_Line(left_line[max_left_line], max_left_line, 3, 117);
+            if (Boundry_Start_Left >= IMAGE_HEIGHT - 3 && abs(last_max_left_line - max_left_line) >= 30) // 单调点出现巨大撕裂
+            {
+                Island_State = 3;
+            }
+            // if ((Boundry_Start_Left >= IMAGE_HEIGHT - 5 || monotonicity_change_line[0] > 50))
+            // {
+            //     Island_State = 3; // 当圆弧靠下的时候，就进入状态3
+            // }
+        }
+        break;
+
+        case 3: // 找到左边丢线的起始点，然后开始往上扫点（和最长白列不一样），也可以用最长白列的寻找连续点方法，他那个似乎也好用？
+        {
+
+            left_up_state3_point[0] = Continuity_Change_Left_Island_State3(IMAGE_HEIGHT - 1, 5);
+
+            ips114_draw_line(94, 60, left_line[left_up_state3_point[0]], left_up_state3_point[0], RGB565_BLUE);
+            if (left_up_state3_point[0] != 0 && left_up_state3_point[1] != 0) // 如果找到点的话，直接补线
+            {
+                left_up_state3_point[1] = left_line[left_up_state3_point[0]];
+            }
+            /*这部分是逆透视求出现实坐标*/
+            // Pespective_point(left_line[left_up_state3_point[0]], left_up_state3_point[0], &island_state3_real_x, &island_state3_real_y);
+            // ips114_show_int(188, 70, island_state3_real_x, 3);
+            // ips114_show_int(188, 80, island_state3_real_y, 3);
+            // Pespective_point_b(island_state3_real_x, island_state3_real_y, &camera_island_state3_x, &camera_island_state3_y);
+            // ips114_show_int(188, 90, camera_island_state3_x, 3);
+            // ips114_show_int(188, 100, camera_island_state3_y, 3);
+
+            /*下面这个补线是旧的方案*/
+            // Right_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], right_line[117], 117); // 拉死线
+            /*新的方案：此时补左边线*/
+            Left_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], left_line[117], 117);
+            // else // 找不到的话启动planb，这个拐点一般都是能找到的
+            // {
+            // for (uint8 i = 0; i < 188; i++)
+            // {
+            //     ips114_draw_point(i, Island_surrond[i], RGB565_RED);
+            // }
+            // for (uint8 i = IMAGE_HEIGHT - 5; i >= 5; i--)
+            // {
+            //     if (left_line[i] == 2 && left_line[i + 1] != 2) // 如果出现左边丢线就记录
+            //     {
+            //         start_row = i;
+            //         break;
+            //     }
+            // }
+            // // row如果找不到的话该怎么办？——一般都会找到，不会真找不到吧？
+
+            // if (start_row != 0)
+            // {
+            //     for (uint8 j = 3; j <= Longest_White_Column_Left[1] + 10; j++) // 自左而右扫
+            //     {
+            //         for (uint8 i = start_row; i >= 5; i--)
+            //         {
+            //             if (Image_Use[i][j] == WHITE_POINT && Image_Use[i + 1][j] == BLACK_POINT)
+            //             {
+            //                 if (i >= state3_left_up_guai[0]&&j>=20) // 当行坐标达到最大值时，就取行坐标最大值
+            //                 {
+            //                     state3_left_up_guai[0] = i;
+            //                     state3_left_up_guai[1] = j;
+            //                 }
+            //                 break;
+            //             }
+            //         }
+            //     }
+            // }
+            // ips114_show_uint(188, 90, state3_left_up_guai[0], 3);
+            // ips114_show_uint(188, 100, state3_left_up_guai[0], 3);
+            // ips114_show_uint(188, 110, start_row, 3);
+            // if (state3_left_up_guai[0] >= 0 && state3_left_up_guai[1] >= 0 && state3_left_up_guai[0] <= IMAGE_HEIGHT - 1 && state3_left_up_guai[1] <= IMAGE_WIDTH - 1)
+            //     ips114_draw_line(94, 60, state3_left_up_guai[1], state3_left_up_guai[0], RGB565_BLUE);
+            // if (state3_left_up_guai[0] != 0)
+            // {
+            //     Right_Add_Line(state3_left_up_guai[1], state3_left_up_guai[0], right_line[117], 117);
+            // }
+            // else // 如果还是没找到的话，就拉一条死线
+            // {
+            //     Right_Add_Line(3, 117, right_line[117], 117);
+            // }
+            // }
+        }
+        case 4: // 开始沿环岛跑，换一种求误差方式，当检测到
+        {
+            island_err = Island_Surround(80); // 目标行选择为80
+        }
+        break;
         }
     }
-    break;
-
-    case 2: // 左下角丢线，找到左边线的列坐标最大处
+    else if (right_island_flag == 1) // 右环岛处理函数
     {
-        last_max_left_line = max_left_line;
-        max_left_line = Find_Max_left_line(); // 寻找单调点
-        // ips114_draw_line(94, 60, left_line[max_left_line], max_left_line, RGB565_RED);
-        // monotonicity_change_line[0] = Monotonicity_Change_Left(70, 10); // 寻找单调性的点
-        // monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
-        if (Boundry_Start_Left <= IMAGE_HEIGHT - 5)
-            Left_Add_Line(left_line[max_left_line], max_left_line, 3, 117);
-        if (Boundry_Start_Left >= IMAGE_HEIGHT - 3 && abs(last_max_left_line - max_left_line) >= 30) // 单调点出现巨大撕裂
+        switch (Island_State)
         {
-            Island_State = 3;
-        }
-        // if ((Boundry_Start_Left >= IMAGE_HEIGHT - 5 || monotonicity_change_line[0] > 50))
-        // {
-        //     Island_State = 3; // 当圆弧靠下的时候，就进入状态3
-        // }
-    }
-    break;
-
-    case 3: // 找到左边丢线的起始点，然后开始往上扫点（和最长白列不一样），也可以用最长白列的寻找连续点方法，他那个似乎也好用？
-    {
-
-        left_up_state3_point[0] = Continuity_Change_Left_Island_State3(IMAGE_HEIGHT - 1, 5);
-
-        ips114_draw_line(94, 60, left_line[left_up_state3_point[0]], left_up_state3_point[0], RGB565_BLUE);
-        if (left_up_state3_point[0] != 0 && left_up_state3_point[1] != 0) // 如果找到点的话，直接补线
+        case 0:
         {
-            left_up_state3_point[1] = left_line[left_up_state3_point[0]];
+            if (monotonicity_change_left_flag == 0 && continuity_change_right_flag != 0 && continuity_change_left_flag == 0 && continuity_change_right_flag >= 40)
+            {
+                right_down_guai[1] = right_line[continuity_change_right_flag]; // record the column of the left down point
+                right_down_guai[0] = continuity_change_right_flag;             // record the row of the left down point
+                if (right_down_guai[0] >= 30)
+                {
+                    Island_State = 1; // change the state to 1
+                }
+            }
         }
-        Pespective_point(left_line[left_up_state3_point[0]], left_up_state3_point[0], &island_state3_real_x, &island_state3_real_y);
-        ips114_show_int(188, 70, island_state3_real_x, 3);
-        ips114_show_int(188, 80, island_state3_real_y, 3);
-        Pespective_point_b(island_state3_real_x, island_state3_real_y, &camera_island_state3_x, &camera_island_state3_y);
-        ips114_show_int(188, 90, camera_island_state3_x, 3);
-        ips114_show_int(188, 100, camera_island_state3_y, 3);
+        break;
 
-        /*下面这个补线是旧的方案*/
-        // Right_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], right_line[117], 117); // 拉死线
-        /*新的方案：此时补左边线*/
-        // Left_Add_Line(left_line[left_up_state3_point[0]], left_up_state3_point[0], left_line[117], 117);
-        // else // 找不到的话启动planb，这个拐点一般都是能找到的
-        // {
-        for (uint8 i = 0; i < 188; i++)
+        case 1:
         {
-            ips114_draw_point(i, Island_surrond[i], RGB565_RED);
+            /*patching line first*/
+            right_down_guai[1] = right_line[continuity_change_right_flag]; // record the column of the left down point
+            right_down_guai[0] = continuity_change_right_flag;             // record the row of the left down point
+            // ips114_show_uint(188, 70, left_down_guai[0], 3);
+            // ips114_show_uint(188, 80, left_down_guai[1], 3);
+            Right_Add_Line(188 - Longest_White_Column_Left[1], 3, right_down_guai[1], right_down_guai[0]);
+            if (Boundry_Start_Right < 50) // 当左边线起点小于60时，进入状态2
+            {
+                Island_State = 2;
+            }
         }
-        // for (uint8 i = IMAGE_HEIGHT - 5; i >= 5; i--)
-        // {
-        //     if (left_line[i] == 2 && left_line[i + 1] != 2) // 如果出现左边丢线就记录
-        //     {
-        //         start_row = i;
-        //         break;
-        //     }
-        // }
-        // // row如果找不到的话该怎么办？——一般都会找到，不会真找不到吧？
+        break;
+        case 2:
+        {
+            last_max_right_line = max_right_line;
+            max_right_line = Find_Max_right_line(); // 寻找单调点
+            // ips114_draw_line(94, 60, right_line[max_right_line], max_right_line, RGB565_GREEN);
+            // monotonicity_change_line[0] = Monotonicity_Change_Left(70, 10); // 寻找单调性的点
+            // monotonicity_change_line[1] = left_line[monotonicity_change_line[0]];
+            if (Boundry_Start_Right <= IMAGE_HEIGHT - 5)
+                Right_Add_Line(right_line[max_right_line], max_right_line, 184, 117);
+            if (Boundry_Start_Right >= IMAGE_HEIGHT - 3 && abs(last_max_right_line - max_right_line) >= 30) // 单调点出现巨大撕裂
+            {
+                Island_State = 3;
+            }
+        }
+        break;
 
-        // if (start_row != 0)
-        // {
-        //     for (uint8 j = 3; j <= Longest_White_Column_Left[1] + 10; j++) // 自左而右扫
-        //     {
-        //         for (uint8 i = start_row; i >= 5; i--)
-        //         {
-        //             if (Image_Use[i][j] == WHITE_POINT && Image_Use[i + 1][j] == BLACK_POINT)
-        //             {
-        //                 if (i >= state3_left_up_guai[0]&&j>=20) // 当行坐标达到最大值时，就取行坐标最大值
-        //                 {
-        //                     state3_left_up_guai[0] = i;
-        //                     state3_left_up_guai[1] = j;
-        //                 }
-        //                 break;
-        //             }
-        //         }
-        //     }
-        // }
-        // ips114_show_uint(188, 90, state3_left_up_guai[0], 3);
-        // ips114_show_uint(188, 100, state3_left_up_guai[0], 3);
-        // ips114_show_uint(188, 110, start_row, 3);
-        // if (state3_left_up_guai[0] >= 0 && state3_left_up_guai[1] >= 0 && state3_left_up_guai[0] <= IMAGE_HEIGHT - 1 && state3_left_up_guai[1] <= IMAGE_WIDTH - 1)
-        //     ips114_draw_line(94, 60, state3_left_up_guai[1], state3_left_up_guai[0], RGB565_BLUE);
-        // if (state3_left_up_guai[0] != 0)
-        // {
-        //     Right_Add_Line(state3_left_up_guai[1], state3_left_up_guai[0], right_line[117], 117);
-        // }
-        // else // 如果还是没找到的话，就拉一条死线
-        // {
-        //     Right_Add_Line(3, 117, right_line[117], 117);
-        // }
-        // }
-    }
-    case 4: // 开始沿环岛跑，换一种求误差方式，当检测到
-    {
-        island_err = Island_Surround(80); // 目标行选择为80
-        ips114_show_float(188, 0, island_err, 3, 3);
-    }
-    break;
+        case 3:
+        {
+            right_up_state3_point[0] = Continuity_Change_Right_Island_State3(IMAGE_HEIGHT - 1, 5);
+
+            ips114_draw_line(94, 60, right_line[right_up_state3_point[0]], right_up_state3_point[0], RGB565_BLUE);
+            if (right_up_state3_point[0] != 0 && right_up_state3_point[1] != 0) // 如果找到点的话，直接补线
+            {
+                right_up_state3_point[1] = right_line[right_up_state3_point[0]];
+            }
+            Right_Add_Line(right_line[right_up_state3_point[0]], right_up_state3_point[0], right_line[117], 117);
+        }
+        break;
+        default:
+            break;
+        }
     }
 }
 /**
@@ -3521,10 +3817,11 @@ void test2(void)
         type = 9;
     else if (Road_Type == RIGHT_LUZHANG)
         type = 10;
-    if (Road_Type == CROSSING)
-        Cross_Detect();
-    if (left_island_flag || right_island_flag)
-        Island_Detect();
+    // if (Road_Type == CROSSING)
+    //     Cross_Detect();
+    // if (left_island_flag || right_island_flag)
+    //     Island_Detect();
+
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
@@ -3532,11 +3829,13 @@ void test2(void)
         ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
         // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
     }
+
     ips114_show_uint(188, 80, Island_State, 2);
-    //    for (uint8 i = 0; i < IMAGE_WIDTH - 1; i++)
-    //    {
-    //        ips114_draw_point(i, Island_surrond[i], RGB565_BLUE);
-    //    }
+
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        ips114_draw_point(i, Island_surrond[i], RGB565_RED);
+    }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
@@ -3637,6 +3936,7 @@ void test(void)
         /*注意：如果阈值在*/
         if (pick_up_mode == 0)
         {
+            //            Border_Card_Detect_Left();
             output_address = Scharr_Edge(*mt9v03x_image, Edge_threshold); // 使用扫描边缘的方式获取图像
             my_threshold = Image_Get_Down();
             // ips114_show_uint(188, 120, my_threshold, 4);
@@ -3645,13 +3945,12 @@ void test(void)
             //            Straight_Card_Find();
             // Simple_Binaryzation(*Image_Use, threshold); /*处理一张图片需要近9000us*/
             lower_row_center_threshold = Get_DownCenterThreshold();
-            Center_line_deal_plus(5, 183); // 不能设置太高或太低的边界，否则会导致错误
-					Finnal_Zebra_Number_Find();
+            Center_line_deal_plus(23, 163); // 不能设置太高或太低的边界，否则会导致错误
             Outer_Analyse();
             // Top_Line_Search();
             // new_island_err = Top_Line_Err(80);
-            // island_err = Island_Surround(80); // 目标行选择为80
-            // ips114_show_float(188, 30, island_err, 3, 3);
+            island_err = Island_Surround(80); // 目标行选择为80
+            ips114_show_float(94, 30, island_err, 3, 3);
 
             // Easy_Filtering(110, 20, 30, 170, 5);
         }
