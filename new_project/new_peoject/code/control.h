@@ -62,9 +62,9 @@
 #define Catch_zeropoint    					0//找到原点处的元素标志
 #define Arrive_zeropoint   					1//到达原点处
 #define Car_Island_turn    					2//向卡片放置区域转向
-#define Car_Island_Watch_Card_ZONE_FIRST   	3//解算第一个分类区域的环岛坐标
-#define Step_Back_To_Island_Center  		4//后退至中心
-#define Car_Island_Find_Upline 				5//上边线寻迹
+#define Island_Card_Correct   				3//环岛卡片矫正
+#define Island_Card_Classify_Pick  			4//环岛卡片分类
+#define Car_Island_Turn_Outside				5//向环岛外侧转向
 
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
@@ -86,6 +86,11 @@ typedef struct{
 	float output;         //输出值
 	float output_last;    //上次输出值
 }pid_info;
+/***环岛卡片和十字卡片***/
+typedef struct{
+	int Card_Type;    //卡片对应的类别
+    int Card_PWM_Duty;//卡片对应的角度
+}card;
 extern float top_error;
 extern int card_center_x;
 extern int card_center_y;
@@ -160,6 +165,12 @@ extern uint8 put_out_card_flag;
 extern int Traffic_count;     //拾取的交通工具卡片数
 extern int Weapon_count;      //拾取的武器总卡片数
 extern int Supply_count;      //拾取的物资的总卡片数
+extern int Island_mode;
+extern double Left_Island_classify_zone_x, Left_Island_classify_zone_y;
+extern double delta_find_Island_zero_x,delta_find_Island_zero_y;
+extern double delta_find_Island_zero_angle; 
+extern uint8 arrive_island_center_flag;
+extern int island_card_center_x,island_card_center_y;//art4记录的环岛卡片坐标，矫正使用
 
 extern int pid_motor[4];
 
@@ -198,5 +209,6 @@ void ramp_cross(int Traverse_distance, int Straight_distance);
 void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
+void Left_Island_pick_and_move(int *Island_step);
 void card_final_classify(int *classify_step);
 #endif

@@ -25,6 +25,7 @@ uint8 arm_state_flag = 0;//机械臂开启标志
 uint8 one_pick = 0;
 uint8 arm_put_down = 0;//机械臂放下标志位
 
+int card_classify_count=0;
 
 int finish_count = 0;//中断结束计数位
 int once = 1;
@@ -37,7 +38,7 @@ void my_pwm_gpio(void)
 {
  pwm_init(SERVO_MOTOR_PWM1, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(60));
  pwm_init(SERVO_MOTOR_PWM2, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(70)); //初始化前臂度数 
- pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(137)); // 2 30 66 100 137
+ pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(137)); //  30 66 100 137 175
 // pwm_init(SERVO_MOTOR_PWM3, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY_360(145)); //15  87 145(初始化最优角度) 218(初始化最优角度) 290 
  pwm_init(SERVO_MOTOR_PWM4, SERVO_MOTOR_FREQ, (uint32)SERVO_MOTOR_DUTY(30));
 
@@ -149,7 +150,7 @@ void arm_control(uint8 mode)
    gpio_set_level(C11, 1);
    servo_slow_ctrl(175, 80, 50);
    system_delay_ms(300);
-   servo_slow_ctrl(170, 153, 50);
+   servo_slow_ctrl(170, 151, 50);
    system_delay_ms(300);
    servo_slow_ctrl(165, 100, 50);
    system_delay_ms(300);
@@ -196,7 +197,7 @@ void arm_control(uint8 mode)
  }
 }
 /**************************************************************************
-函数功能：360度舵机分类
+函数功能：360度舵机散落卡片分类
 入口参数：mode
 返回值：无
 备注：1.A类  2.B类  3.C类
@@ -207,14 +208,42 @@ void classify_360(uint8 card_classify_type)
   switch(card_classify_type)
   {
   case 1:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_A_angle));
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_1_angle));
     break;
   case 2:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_B_angle));
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_2_angle));
     break;
   case 3:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_C_angle));
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_3_angle));
     break;  
+  }
+}
+/**************************************************************************
+函数功能：360度舵机环岛/十字分类
+入口参数：mode
+返回值：无
+备注：1.A类  2.B类  3.C类
+调用示例：classify_360(card_type);
+**************************************************************************/
+void classify_little_360(int card_little_classify_type)
+{
+  switch(card_little_classify_type)
+  {
+  case 0:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_first_angle));
+    break;
+  case 1:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_second_angle));
+    break;
+  case 2:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_third_angle));
+    break;
+  case 3:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_fouth_angle));
+    break;
+  case 4:
+    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_fifth_angle));
+    break;
   }
 }
 //*******************************舵机测试函数******************************//

@@ -624,7 +624,7 @@ void Border_Card_Detect_Left(void)
         }
         else if (Left_Lost_Flag[i] == 1)
         {
-            Card_Find[i] == 0; // 如果丢线的话，就不必理会了
+            Card_Find[i] = 0; // 如果丢线的话，就不必理会了
         }
     }
 

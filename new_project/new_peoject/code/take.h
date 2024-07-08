@@ -12,9 +12,15 @@
 #define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //舵机角度转换成对应的pwm值
 #define SERVO_MOTOR_DUTY_360(x)         ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/180.0))    //舵机角度转换成对应的pwm值
 
-#define class_A_angle            100    //a类对应舵机角度173度
-#define class_B_angle            66    //b类对应舵机角度113度
-#define class_C_angle            30     //c类对应舵机角度53度
+#define class_1_angle            100    //a类对应舵机角度173度
+#define class_2_angle            66    //b类对应舵机角度113度
+#define class_3_angle            30     //c类对应舵机角度53度
+
+#define class_first_angle            30      //环岛第一张卡片分类区域 173
+#define class_second_angle           66     //环岛第二张卡片区域
+#define class_third_angle            100     //环岛第三张卡片区域
+#define class_fouth_angle            137    //环岛第四张卡片区域
+#define class_fifth_angle            173    //环岛第五张卡片区域
 
 
 #define ARM_PICK_NOT_DONE        (0)
@@ -32,6 +38,7 @@ extern uint32 servo2_pwm;
 extern uint32 servo3_pwm;//���ռ�ձ�
 //extern uint16 servo3_duty;
 extern uint8 step;
+extern int card_classify_count;
 extern uint8 side_step; 
 extern uint8 arm_pick_flag;
 extern uint8 arm_state_flag;
@@ -46,6 +53,7 @@ void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count);
 void arm_control(uint8 mode);
 void test_arm(void);
 void classify_360(uint8 card_classify_type);
+void classify_little_360(int card_little_classify_type);
 //void classify_pick(uint8 type, uint8 on_off);
 // void classify_pick(uint8 mode);
 // void tri_servo(uint8 tri_mode);
