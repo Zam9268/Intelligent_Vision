@@ -15,21 +15,21 @@ uint8 my_new_lower_black_row = 0; // count the number of black points in a row
 uint8 pick_up_mode_change = 0;
 uint8 num; //
 uint8 max_row = 0;
-uint8 Longest_White_Column_Left[2];            // Record the longest white column in this iteration
-uint8 Last_Longest_White_Column_Left[2];       // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
-uint8 Left_Line_Start, Right_Line_Start;       // Starting point of the left and right lines
-uint8 Longest_White_Column_Right[2];           // The longest white column on the right side, not used
-uint8 Right_Lost_Flag[IMAGE_HEIGHT];           // Lost line flag for the right boundary
-uint8 Left_Lost_Flag[IMAGE_HEIGHT];            // Lost line flag for the left boundary
-uint8 Left_Lost_Time = 0;                      // Number of times the left line is lost
-uint8 Right_Lost_Time = 0;                     // Number of times the right line is lost
-uint8 Both_Lost_Time = 0;                      // Number of times both lines are lost in the same row
-uint8 Search_Stop_Line;                        // Stop line for searching
-uint8 Boundry_Start_Left, Boundry_Start_Right; // Starting points of the left and right boundaries
-uint8 Road_Wide[IMAGE_HEIGHT];                 // Road width
-uint8 transform_buffer[16]={0,8,5,4,6,9,10,12,12,3,15,11,7,1,2,13}; // The buffer used to store the transformation of the image
-RoadType Road_Type;                            // Type of road element
-Card_Corner_Type Card_Corner;                  // Type of card corner
+uint8 Longest_White_Column_Left[2];                                                  // Record the longest white column in this iteration
+uint8 Last_Longest_White_Column_Left[2];                                             // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
+uint8 Left_Line_Start, Right_Line_Start;                                             // Starting point of the left and right lines
+uint8 Longest_White_Column_Right[2];                                                 // The longest white column on the right side, not used
+uint8 Right_Lost_Flag[IMAGE_HEIGHT];                                                 // Lost line flag for the right boundary
+uint8 Left_Lost_Flag[IMAGE_HEIGHT];                                                  // Lost line flag for the left boundary
+uint8 Left_Lost_Time = 0;                                                            // Number of times the left line is lost
+uint8 Right_Lost_Time = 0;                                                           // Number of times the right line is lost
+uint8 Both_Lost_Time = 0;                                                            // Number of times both lines are lost in the same row
+uint8 Search_Stop_Line;                                                              // Stop line for searching
+uint8 Boundry_Start_Left, Boundry_Start_Right;                                       // Starting points of the left and right boundaries
+uint8 Road_Wide[IMAGE_HEIGHT];                                                       // Road width
+uint8 transform_buffer[16] = {0, 8, 5, 4, 6, 9, 10, 12, 12, 3, 15, 11, 7, 1, 2, 13}; // The buffer used to store the transformation of the image
+RoadType Road_Type;                                                                  // Type of road element
+Card_Corner_Type Card_Corner;                                                        // Type of card corner
 uint8 Right_Down_Find = 0;
 uint8 Left_Down_Find = 0; // Finding the left bottom turning point
 uint8 Left_Up_Find = 0;   // Finding the left top turning point
@@ -44,7 +44,8 @@ uint8 left_island_flag, right_island_flag; // the flag of the island on the left
 uint8 ramp_flag = 0;                       // the flag of the ramp
 uint8 Island_State = 0;                    // record the state of the island on the left or right
 uint8 Cross_State = 0;                     // record the state of the cross road
-uint8 Cross_Handle_Flag = 1;               // record the flag of the cross road
+uint8 Cross_Handle_Flag = 0;               // record the flag of the cross road
+uint8 Cross_Way_change = 0;                // 在十字中进行转向捡卡片
 uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
 uint8 max_right_line = 0;                  // record the max right line
@@ -1419,7 +1420,10 @@ void Outer_Analyse(void)
         }
 
         if (Right_Lost_Time >= 30 && Left_Lost_Time >= 30 && Both_Lost_Time >= 30)
+        {
             Road_Type = CROSSING;
+            Cross_Handle_Flag = 1;
+        }
     }
 
     /*校准代码*/
@@ -2489,9 +2493,12 @@ uint8 Find_Max_right_line(void)
  */
 void Cross_Detect(void)
 {
-    int down_search_start = 0; // the down point of finding the crossing
-    if (Road_Type == CROSSING) // start to analyze the crossing if the state is corssing
+
+    int down_search_start = 0;  // the down point of finding the crossing
+    if (Cross_Handle_Flag == 1) // start to analyze the crossing if the state is corssing
     {
+        Last_Left_Up_Find = Left_Up_Find;
+        Last_Right_Up_Find = Right_Up_Find;
         Left_Up_Find = 0;
         Right_Up_Find = 0;
         if (Both_Lost_Time >= 15) // only find the left and the right point if the both lost time is greater than 15
@@ -2535,9 +2542,44 @@ void Cross_Detect(void)
         /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
         if (Cross_State == 0) // 当十字状态置为0的时候
         {
-            Cross_State = 1; // 十字状态置为1
-            Cross_Handle_Flag = 1;
+            Cross_State++; // 十字状态置为1
         }
+        else if (Cross_State == 1)
+        {
+            if (Right_Up_Find >= 60 && Left_Up_Find >= 60)
+            {
+                Cross_State = 2;
+            }
+        }
+        else if (Cross_State == 2)
+        {
+            if ((abs(Last_Left_Up_Find - Left_Up_Find) >= 20 && Left_Up_Find != 0) || abs(Last_Right_Up_Find - Right_Up_Find) >= 20 && Right_Up_Find != 0)
+            {
+                Cross_State = 3;
+            }
+        }
+        else if (Cross_State == 3)
+        {
+            if (Left_Up_Find >= 90 || Right_Up_Find >= 90)
+            {
+                Cross_State = 4;
+            }
+        }
+        else if (Cross_State == 4)
+        {
+            // if (Left_Lost_Time>=10 ||)
+            // {
+            //     Cross_Way_change = 1;
+            //     Cross_State = 0;
+            //     Cross_Handle_Flag = 0;
+            // }
+        }
+
+        /*显示代码*/
+        ips114_draw_line(98, 60, left_line[Left_Up_Find], Left_Up_Find, RGB565_GREEN);
+        ips114_draw_line(98, 60, right_line[Right_Up_Find], Right_Up_Find, RGB565_BLUE);
+        ips114_draw_line(98, 60, left_line[Left_Down_Find], Left_Down_Find, RGB565_RED);
+        ips114_draw_line(98, 60, right_line[Right_Down_Find], Right_Down_Find, RGB565_YELLOW);
     }
 }
 
@@ -3935,7 +3977,7 @@ void test2(void)
         type = 9;
     else if (Road_Type == RIGHT_LUZHANG)
         type = 10;
-    if (Road_Type == CROSSING)
+    if (Cross_Handle_Flag == 1)
         Cross_Detect();
     if (left_island_flag || right_island_flag)
         Island_Detect();
@@ -3947,13 +3989,14 @@ void test2(void)
         ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
         // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
     }
+    ips114_show_uint(188, 10, Cross_Handle_Flag, 2);
 
-    ips114_show_uint(188, 80, Island_State, 2);
-
-    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
-    {
-        ips114_draw_point(i, Island_surrond[i], RGB565_RED);
-    }
+    ips114_show_uint(188, 20, Cross_State, 2);
+    ips114_show_uint(188, 30, Cross_Way_change, 2);
+    // for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    // {
+    //     ips114_draw_point(i, Island_surrond[i], RGB565_RED);
+    // }
     // ips114_draw_point((left_line[i]+right_line[i])/2,i,RGB565_RED);
 
     //     ips114_draw_point(right_line[i],i,RGB565_GREEN);
@@ -3962,10 +4005,10 @@ void test2(void)
 
     if (type == 4)
     {
-        // ips114_draw_line(98,60,left_line[Left_Up_Find],Left_Up_Find,RGB565_GREEN);
-        // ips114_draw_line(98,60,right_line[Right_Up_Find],Right_Up_Find,RGB565_BLUE);
-        // ips114_draw_line(98,60,left_line[Left_Down_Find],Left_Down_Find,RGB565_RED);
-        // ips114_draw_line(98,60,right_line[Right_Down_Find],Right_Down_Find,RGB565_YELLOW);
+        ips114_draw_line(98, 60, left_line[Left_Up_Find], Left_Up_Find, RGB565_GREEN);
+        ips114_draw_line(98, 60, right_line[Right_Up_Find], Right_Up_Find, RGB565_BLUE);
+        ips114_draw_line(98, 60, left_line[Left_Down_Find], Left_Down_Find, RGB565_RED);
+        ips114_draw_line(98, 60, right_line[Right_Down_Find], Right_Down_Find, RGB565_YELLOW);
         // int real_left_down_x,real_left_down_y;
         // Pespective_point(left_line[Left_Down_Find],Left_Down_Find,&real_left_down_x,&real_left_down_y);
         // ips114_show_int(188,0,real_left_down_x,3);
@@ -3974,6 +4017,10 @@ void test2(void)
         // Pespective_point(right_line[Right_Down_Find],Right_Down_Find,&real_right_down_x,&real_right_down_y);
         // ips114_show_int(188,30,real_right_down_x,4);
         // ips114_show_int(188,45,real_right_down_y,4);
+    }
+    if (visual_show2 == 1)
+    {
+        ips114_show_uint(188, 80, Island_State, 2);
     }
 
     //    ips114_show_uint(188,120,threshold,3);
@@ -4006,9 +4053,9 @@ void test2(void)
 
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
 
-    // // ips114_show_int(188, 90, Left_Lost_Time, 3);
-    // // ips114_show_int(188, 100, Right_Lost_Time, 3);
-    // // ips114_show_uint(188, 110, Both_Lost_Time, 3);
+    ips114_show_int(188, 90, Left_Lost_Time, 3);
+    ips114_show_int(188, 100, Right_Lost_Time, 3);
+    ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
     // ips114_show_int(188, 70, lower_row_center_threshold, 3);
     // ips114_show_int(188, 80, center_straight_left_card_y, 3);
@@ -4068,7 +4115,7 @@ void test(void)
             Outer_Analyse();
             // Top_Line_Search();
             // new_island_err = Top_Line_Err(80);
-            uint8 cccon = Top_Top_Line_Search_Island(80); // 目标行选择为80
+            // uint8 cccon = Top_Top_Line_Search_Island(80); // 目标行选择为80
             // ips114_show_uint(94, 30, cccon, 3);
 
             // Easy_Filtering(110, 20, 30, 170, 5);
