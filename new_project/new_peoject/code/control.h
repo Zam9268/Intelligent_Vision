@@ -59,12 +59,14 @@
 #define Go_back             5//后退至y处原本的位置
 #define Turn_back           6//返回正常寻迹
 
-#define Catch_zeropoint    					0//找到原点处的元素标志
-#define Arrive_zeropoint   					1//到达原点处
-#define Car_Island_turn    					2//向卡片放置区域转向
-#define Island_Card_Correct   				3//环岛卡片矫正
+// #define Catch_zeropoint    					0//找到原点处的元素标志
+#define Arrive_zeropoint   					0//到达原点处
+#define Car_Island_turn    					1//向卡片放置区域转向
+#define Island_Card_Correct   				2//环岛卡片矫正
+#define Island_Card_Correct_again			3//art4再校正
 #define Island_Card_Classify_Pick  			4//环岛卡片分类
 #define Car_Island_Turn_Outside				5//向环岛外侧转向
+#define Car_Go_Ahead_Outside				6//向环岛外侧行进
 
 #define Distance_output 10  //速度环输出限幅
 #define CSI_CORRECT_DONE 1  //总钻风完成校正标志
@@ -165,6 +167,11 @@ extern uint8 put_out_card_flag;
 extern int Traffic_count;     //拾取的交通工具卡片数
 extern int Weapon_count;      //拾取的武器总卡片数
 extern int Supply_count;      //拾取的物资的总卡片数
+extern uint8 CSI_island_correct_flag;
+extern float Island_x,Island_y;
+extern int delta_island_x,delta_island_y;
+extern int correct_island_card_step;
+extern int correct_island_x_flag,correct_island_y_flag;
 extern int Island_mode;
 extern double Left_Island_classify_zone_x, Left_Island_classify_zone_y;
 extern double delta_find_Island_zero_x,delta_find_Island_zero_y;
@@ -205,6 +212,7 @@ void Encoder_odometer(void);
 float PIDInfo_Limit(float Value, float MaxValue);
 float Distance_pid(pid_info *pid, int target_diantance, int actual_distance);
 void CSI_dis_new_correct(int cor_x, int cor_y);
+void CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
 void ramp_cross(int Traverse_distance, int Straight_distance);
 void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);

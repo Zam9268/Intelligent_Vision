@@ -74,6 +74,7 @@ uint8 lower_row_center_threshold = 0;
 uint8 Top_Line_Continues_flag = 0;  // 自下而上扫线的连续性标志位
 uint8 card_corner_up = 0;           // 找到的卡片的角点坐标的类型
 uint8 card_corner_down = 0;         // 找到的卡片的角点坐标的类型
+
 int Edge_threshold = 1700;          // 边缘检测的阈值，通过按键进行调节，初始值为1700
 int left_up_state3_point[2] = {0};  // 左上角顶点的坐标
 int right_up_state3_point[2] = {0}; // 右上角顶点的坐标
@@ -3070,8 +3071,8 @@ float Island_Surround(uint8 target_row)
     uint8 continuious_flag = 0;
     static uint8 last_continuious_flag = 0;
     Top_Line_Search_Island();                                         // 扫线
-                                                                      /*第二部分：状态机执行*/
-                                                                      // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
+    /*第二部分：状态机执行*/
+    // right_max_point = Surround_Analyse(); // 找出右边的点这句代码没什么作用
     continuious_flag = Surround_Continus_detect(5, trap_column - 10); // 不能将丢线部分也纳入
     // uint8 new_ccon = Surround_guai_dian_detect(5, lowest_column - 10);
     if (Island_State == 0)
@@ -3430,15 +3431,15 @@ void Finnal_Zebra_Number_Find(void)
 
         if (visual_show2 == 1)
         {
-            ips114_show_int(0, 60, number_card_real_x, 3);
-            ips114_show_int(0, 70, number_card_real_y, 3);
-            ips114_show_uint(0, 0, f_card_left_down_point[1], 3);
-            ips114_show_uint(0, 10, f_card_left_down_point[0], 3);
+            // ips114_show_int(0, 60, number_card_real_x, 3);
+            // ips114_show_int(0, 70, number_card_real_y, 3);
+            // ips114_show_uint(0, 0, f_card_left_down_point[1], 3);
+            // ips114_show_uint(0, 10, f_card_left_down_point[0], 3);
 
-            ips114_show_uint(0, 20, f_card_left_up_point[1], 3);
-            ips114_show_uint(0, 30, f_card_left_up_point[0], 3);
-            ips114_draw_line(0, 0, f_card_left_down_point[1], f_card_left_down_point[0], RGB565_RED);
-            ips114_draw_line(0, 0, f_card_left_up_point[1], f_card_left_up_point[0], RGB565_GREEN);
+            // ips114_show_uint(0, 20, f_card_left_up_point[1], 3);
+            // ips114_show_uint(0, 30, f_card_left_up_point[0], 3);
+            // ips114_draw_line(0, 0, f_card_left_down_point[1], f_card_left_down_point[0], RGB565_RED);
+            // ips114_draw_line(0, 0, f_card_left_up_point[1], f_card_left_up_point[0], RGB565_GREEN);
         }
     }
     else if (find_mode == 1)
