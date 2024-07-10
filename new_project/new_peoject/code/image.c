@@ -4117,9 +4117,9 @@ void test2(void)
         type = 7;
     else if (Road_Type == RAMP)
         type = 8;
-    else if (Road_Type == LEFT_LUZHANG)
+    else if (Road_Type == LEFT_LUZHANG)/*左避障函数，在Outer_Analyse函数进行检测*/
         type = 9;
-    else if (Road_Type == RIGHT_LUZHANG)
+    else if (Road_Type == RIGHT_LUZHANG)//同上
         type = 10;
     if (Cross_Handle_Flag == 1)//如果检测到十字，该标志位就会置为1，那么就会开始运行十字环岛检测函数
         Cross_Detect();
