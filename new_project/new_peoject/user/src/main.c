@@ -91,6 +91,7 @@ extern int correct_art2_flag;
 extern uint8 visual_show2; // 按键处理显示模式
 extern int Island_State;
 extern uint8 left_island_flag;
+extern uint8 test_flag;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -202,58 +203,58 @@ int main(void)
                 // ips114_show_int(0, 20, near_card_y, 3);
                 // ips114_show_uint(0, 40, card_type, 3);
                 // ips114_show_uint(0, 60, card_abc, 3);
-//                ips114_show_uint(0, 80, right_data[0], 3);
-//                ips114_show_uint(0, 100, right_data[1], 3);
-//                ips114_show_uint(0, 120, right_data[2], 3);
-					// Top_Line_Center_Get_Center();
-        test();
-        // CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
-	Left_Island_pick_and_move(&Island_mode);
-//	car_findcard(&car_mode);//模式选择
-//					correct_art2_flag=1;
-		// test_arm();
-//					gpio_set_level(C11, 1);
-//		ips114_show_int(188,60,Edge_threshold,4);
-//        ips114_show_float(0,0,delta_card_x,3,4);//角度
-//        ips114_show_int(0,20,car_run_mode,4);//卡片坐标,即时更新
-//        ips114_show_int(0,40,Traffic_count,3);
-//        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
-//	ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
-//	ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
-//			 
-//	      ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
-//        ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
-//        ips114_show_int(90,40,classify_mode,4);//卡片坐标,即时更新
-//        ips114_show_int(90,60,class_step,4);//卡片坐标,即时更新
-//        ips114_show_int(90,80,classify_correct_finish,4);//卡片坐标,即时更新
+                //                ips114_show_uint(0, 80, right_data[0], 3);
+                //                ips114_show_uint(0, 100, right_data[1], 3);
+                //                ips114_show_uint(0, 120, right_data[2], 3);
+                // Top_Line_Center_Get_Center();
+                test();
+                // CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
+                Left_Island_pick_and_move(&Island_mode);
+                //	car_findcard(&car_mode);//模式选择
+                //					correct_art2_flag=1;
+                // test_arm();
+                //					gpio_set_level(C11, 1);
+                //		ips114_show_int(188,60,Edge_threshold,4);
+                //        ips114_show_float(0,0,delta_card_x,3,4);//角度
+                //        ips114_show_int(0,20,car_run_mode,4);//卡片坐标,即时更新
+                //        ips114_show_int(0,40,Traffic_count,3);
+                //        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
+                //	ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
+                //	ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
+                //
+                //	      ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
+                //        ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
+                //        ips114_show_int(90,40,classify_mode,4);//卡片坐标,即时更新
+                //        ips114_show_int(90,60,class_step,4);//卡片坐标,即时更新
+                //        ips114_show_int(90,80,classify_correct_finish,4);//卡片坐标,即时更新
 
-//         ips114_show_int(120,0,Angle_z,4);//卡片坐标,即时更新
-//         ips114_show_int(120,20,delta_card_x,4);//卡片坐标,即时更新
-//         ips114_show_int(120,40,delta_card_y,4);//数字类型
-//         ips114_show_int(120,60,turn_angle,4);//数字类型
-//        ips114_show_int(120,20,card_center_y,4);//卡片坐标,即时更新
-//        ips114_show_int(120,40,correct_x,4);//卡片坐标,即时更新
-//        ips114_show_int(120,60,correct_y,4);//卡片坐标,即时更新
-//        ips114_show_int(120,80,delta_x,4);//卡片坐标,即时更新
-//        ips114_show_int(120,100,delta_y,4);//卡片坐标,即时更新
-        
-	ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
-        ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
-				ips114_show_int(120,0,Island_x,4);//卡片坐标,即时更新
-        ips114_show_int(120,20,Island_y,4);//卡片坐标,即时更新
-				ips114_show_int(120,40,near_card_x,4);//卡片坐标,即时更新
-        ips114_show_int(120,60,near_card_y,4);//卡片坐标,即时更新
-				ips114_show_int(120,80,delta_x,4);//卡片坐标,即时更新
-        ips114_show_int(120,100,delta_y,4);//卡片坐标,即时更新
-        ips114_show_int(90,40,delta_island_x,4);//卡片坐标,即时更新
-        ips114_show_int(90,60,delta_island_y,4);//卡片坐标,即时更新
-	ips114_show_int(90,80,correct_island_card_step,4);//卡片坐标,即时更新
-        ips114_show_int(0,0,Island_mode,3);//左环岛模式显示
-        ips114_show_int(0,20,Vx,4);//卡片坐标,即时更新
-        ips114_show_int(0,40,Vy,4);//卡片坐标,即时更新
-	ips114_show_int(0,100,card_classify_count,4);//卡片坐标,即时更新
-	ips114_show_int(0,80,left_island_flag,4);//卡片坐标,即时更新
-//        ips114_show_int(90,80,CSI_correct_flag,4);//卡片坐标,即时更新
+                //         ips114_show_int(120,0,Angle_z,4);//卡片坐标,即时更新
+                //         ips114_show_int(120,20,delta_card_x,4);//卡片坐标,即时更新
+                //         ips114_show_int(120,40,delta_card_y,4);//数字类型
+                //         ips114_show_int(120,60,turn_angle,4);//数字类型
+                //        ips114_show_int(120,20,card_center_y,4);//卡片坐标,即时更新
+                //        ips114_show_int(120,40,correct_x,4);//卡片坐标,即时更新
+                //        ips114_show_int(120,60,correct_y,4);//卡片坐标,即时更新
+                //        ips114_show_int(120,80,delta_x,4);//卡片坐标,即时更新
+                //        ips114_show_int(120,100,delta_y,4);//卡片坐标,即时更新
+
+                ips114_show_int(90, 0, now_distance_x, 4);            // 卡片坐标,即时更新
+                ips114_show_int(90, 20, now_distance_y, 4);           // 卡片坐标,即时更新
+                ips114_show_int(120, 0, Island_x, 4);                 // 卡片坐标,即时更新
+                ips114_show_int(120, 20, Island_y, 4);                // 卡片坐标,即时更新
+                ips114_show_int(120, 40, near_card_x, 4);             // 卡片坐标,即时更新
+                ips114_show_int(120, 60, near_card_y, 4);             // 卡片坐标,即时更新
+                ips114_show_int(120, 80, delta_x, 4);                 // 卡片坐标,即时更新
+                ips114_show_int(120, 100, delta_y, 4);                // 卡片坐标,即时更新
+                ips114_show_int(90, 40, delta_island_x, 4);           // 卡片坐标,即时更新
+                ips114_show_int(90, 60, delta_island_y, 4);           // 卡片坐标,即时更新
+                ips114_show_int(90, 80, correct_island_card_step, 4); // 卡片坐标,即时更新
+                ips114_show_int(0, 0, Island_mode, 3);                // 左环岛模式显示
+                ips114_show_int(0, 20, Vx, 4);                        // 卡片坐标,即时更新
+                ips114_show_int(0, 40, Vy, 4);                        // 卡片坐标,即时更新
+                ips114_show_int(0, 100, card_classify_count, 4);      // 卡片坐标,即时更新
+                ips114_show_int(0, 80, left_island_flag, 4);          // 卡片坐标,即时更新
+                //        ips114_show_int(90,80,CSI_correct_flag,4);//卡片坐标,即时更新
 
                 //					/*****************测试上边线巡线(仅直道)成功***********************/
                 //        car_run_upline();

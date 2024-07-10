@@ -69,21 +69,21 @@ def cal_mtx(UV: np.array, XY: np.array) -> np.array:
 
 show =True
 while(True):
-    while(True):
-        img = sensor.snapshot()
-        new_img_coordinate=[]
-        new_img_coordinate.append([71,48])
-        new_img_coordinate.append([-18,44])
-        new_img_coordinate.append([-3,26])
-        new_img_coordinate.append([76,42])
-        new_world_coordinates=[]
-        new_world_coordinates.append([310,200])
-        new_world_coordinates.append([-170,250])
-        new_world_coordinates.append([-140,110])
-        new_world_coordinates.append([310,90])#偏移坐标460
-        H= cal_mtx(new_img_coordinate,new_world_coordinates)
-        pyb.mdelay(1000)
-        print(H)
+#    while(True):
+#        img = sensor.snapshot()
+#        new_img_coordinate=[]
+#        new_img_coordinate.append([71,48])
+#        new_img_coordinate.append([-18,44])
+#        new_img_coordinate.append([-3,26])
+#        new_img_coordinate.append([76,42])
+#        new_world_coordinates=[]
+#        new_world_coordinates.append([310,200])
+#        new_world_coordinates.append([-170,250])
+#        new_world_coordinates.append([-140,110])
+#        new_world_coordinates.append([310,90])#偏移坐标460
+#        H= cal_mtx(new_img_coordinate,new_world_coordinates)
+#        pyb.mdelay(1000)
+#        print(H)
     img = sensor.snapshot()
     for r in img.find_rects(threshold = 20000):#这个矩形包含的像素点至少为20000个，防止矩形误判
         img.draw_rectangle(r.rect(), color = (255, 0, 0))#画出矩形,这个矩形框为红色
@@ -102,10 +102,10 @@ while(True):
         print(abs((dn_cx-up_cx)/(dn_cy-up_cy)))
         print(abs((dn_cx+up_cx)/2))
         #居中判定
-        if abs((dn_cx-up_cx)/(dn_cy-up_cy))<=0.2 and abs((dn_cx+up_cx)/2)<=20:
-            img_coordinate =np.array(img_coordinate)
-            world_coordinates =np.array(world_coordinates)
-            H= cal_mtx(img_coordinate,world_coordinates)
-            pyb.mdelay(1000)
-            print(H)
+#        if abs((dn_cx-up_cx)/(dn_cy-up_cy))<=0.2 and abs((dn_cx+up_cx)/2)<=20:
+        img_coordinate =np.array(img_coordinate)
+        world_coordinates =np.array(world_coordinates)
+        H= cal_mtx(img_coordinate,world_coordinates)
+        pyb.mdelay(1000)
+        print(H)
     img.draw_line(80, 120, 80, 0, color = (255, 0, 0), thickness = 1)
