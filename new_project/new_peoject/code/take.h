@@ -16,11 +16,11 @@
 #define class_2_angle            66    //b类对应舵机角度113度
 #define class_3_angle            30     //c类对应舵机角度53度
 
-#define class_first_angle            18      //环岛第一张卡片分类区域 173
-#define class_second_angle           52     //环岛第二张卡片区域
-#define class_third_angle            88     //环岛第三张卡片区域
-#define class_fouth_angle            124    //环岛第四张卡片区域
-#define class_fifth_angle            160    //环岛第五张卡片区域
+#define class_first_angle            20      //环岛第一张卡片分类区域 173
+#define class_second_angle           56     //环岛第二张卡片区域
+#define class_third_angle            92     //环岛第三张卡片区域
+#define class_fouth_angle            128    //环岛第四张卡片区域
+#define class_fifth_angle            164    //环岛第五张卡片区域
 
 
 #define ARM_PICK_NOT_DONE        (0)
@@ -53,7 +53,7 @@ void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count);
 void arm_control(uint8 mode);
 void test_arm(void);
 void classify_360(uint8 card_classify_type);
-void classify_little_360(int card_little_classify_type);
+void classify_little_360(uint8 card_little_classify_type);
 //void classify_pick(uint8 type, uint8 on_off);
 // void classify_pick(uint8 mode);
 // void tri_servo(uint8 tri_mode);

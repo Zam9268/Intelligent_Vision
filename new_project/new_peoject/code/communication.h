@@ -62,6 +62,9 @@ extern float Card_angle;//捕获到卡片时的角度
 extern float delta_card_angle;
 extern float center_distance;//卡片的直线距离  
 
+extern char uart1_begin[];
+extern char uar1_stop[];
+
 extern int card_word_ready;//卡片世界坐标是否解算完毕
 extern unsigned int card_count;
 extern float last_card_world_x,last_card_world_y;//卡片世界坐标

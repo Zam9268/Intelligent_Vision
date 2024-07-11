@@ -14,7 +14,8 @@ uint8 the_maxlen_position;        // record  the max length of the white column
 uint8 my_new_lower_black_row = 0; // count the number of black points in a row
 uint8 pick_up_mode_change = 0;
 uint8 num; //
-uint8 max_row = 0;
+uint8 up_right_row = 0;
+uint8 down_right_row = 0;
 uint8 Longest_White_Column_Left[2];            // Record the longest white column in this iteration
 uint8 Last_Longest_White_Column_Left[2];       // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
 uint8 Left_Line_Start, Right_Line_Start;       // Starting point of the left and right lines
@@ -60,7 +61,7 @@ uint8 zebra_flag = 0;     // 斑马线判断标志位
 uint8 zebra_flag_new = 0; // 用于第二种斑马线的判断
 uint8 island_cons_flag = 0;
 int center[IMAGE_HEIGHT]; // record the center line's column
-uint8 Island_surrond[IMAGE_WIDTH] = {0};
+int Island_surrond[IMAGE_WIDTH] = {0};
 uint8 top_island_surround[IMAGE_WIDTH] = {0};
 uint8 low_island_surround[IMAGE_WIDTH] = {0};
 uint8 top_island_flag = 0;
@@ -2827,22 +2828,51 @@ uint8 Surround_Analyse(void)
     return last_right_point;
 }
 
-/*从下而上对上边线进行循迹：正常寻迹*/
-void Top_Line_Search(void)
+void Top_Line_Road_Search(void)
 {
     /*使用前要先将坐标全部清零*/
     Top_Line_Continues_flag = 0;
     lowest_row = 0;
-    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)//初始化坐标
     {
         Island_surrond[i] = 0;
     }
 
     uint8 right_max_point = 0;
     /*第一部分：扫线*/
+    for (uint8 i = IMAGE_WIDTH/2-30; i <= IMAGE_WIDTH/2 + 30; i++)
+    {
+        for (uint8 j = IMAGE_HEIGHT - 4; j >60 ; j--)//从下往上扫
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)//有黑白跳变点
+            {
+                Island_surrond[i] = j + 1;//记录目前行
+                if (j + 1 > lowest_row)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
+                break;
+            }
+        }
+    }
+}
+/*从下而上对上边线进行循迹：正常寻迹*/
+void Top_Line_Search(void)
+{
+    /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
+    lowest_row = 0;
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)//初始化坐标
+    {
+        Island_surrond[i] = 119;
+    }
+
+    uint8 right_max_point = 0;
+    /*第一部分：扫线*/
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
-        for (uint8 j = IMAGE_HEIGHT - 4; j >= 70; j--)
+        for (uint8 j = IMAGE_HEIGHT - 1; j >= 1; j--)
         {
             if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
             {
@@ -2852,11 +2882,11 @@ void Top_Line_Search(void)
                     lowest_row = j + 1;
                     lowest_column = i;
                 }
+                if(j<80)//超过80行就认为是丢线
+                {
+                  Island_surrond[i] = 119;
+                }
                 break;
-            }
-            else if (j <= 75)
-            {
-                Island_surrond[i] = 119; // 此时丢线,默认为最低那一行
             }
         }
     }
@@ -3002,21 +3032,21 @@ void send_deal(void)
 float Top_Line_Err(uint8 target_row)
 {
     island_err = 0.0;                             // 使用前先清零
-    for (uint8 i = 10; i < IMAGE_WIDTH - 11; i++) // 记录对应的误差
+    for (uint8 i = IMAGE_WIDTH -55; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
     {
-        island_err += target_row - Island_surrond[i];
+        island_err += target_row-Island_surrond[i];
     }
-    island_err = island_err / (IMAGE_WIDTH - 21); // 取平均值，不加权重了
+    island_err = island_err / 50; // 取平均值，不加权重了
 
     /*在丢线时，要对err进行合理的限幅*/
     /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
-    if (island_err >= 15.0)
+    if (island_err >= 25.0)
     {
-        island_err = 15.0; // island_err的最小值
+        island_err = 25.0; // island_err的最小值
     }
-    else if (island_err <= -15.0)
+    else if (island_err <= -25.0)
     {
-        island_err = -15.0;
+        island_err = -25.0;
     }
     return island_err;
 }
@@ -3495,105 +3525,120 @@ void Finnal_Zebra_Number_Find(void)
 
 /*
 输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
-输出结果：上边线的最低行，取上边线的最靠右的点的行坐标作为返回值
+          上边线和下边线的选择  0:自定义 1:下边线
+输出结果：上边线/下边线的最右列的行坐标，取上边线的最靠右的点的行坐标作为返回值？
+
 */
-uint8 Top_Top_Line_Search_Island(uint8 center_row)
+int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
 {
 
-    uint8 mode = 0;
-    if (mode == 1)
-    {
-        /*第一部分：扫线*/
-        Top_Line_Search_Island();
-        // 然后利用trap_column的标志位进行扫线
+//    uint8 mode = 0;
+//    if (mode == 1)
+//    {
+//        /*第一部分：扫线*/
+//        Top_Line_Search_Island();
+//        // 然后利用trap_column的标志位进行扫线
 
-        /*第二部分：找出最低行*/
-        uint8 min_loweset_row = 120; // 定义最低行（相对于第1行而言）
+//        /*第二部分：找出最低行*/
+//        uint8 min_loweset_row = 120; // 定义最低行（相对于第1行而言）
 
-        if (trap_column >= 3)
-        {
-            for (uint8 i = 0; i <= trap_column - 3; i++)
-            {
-                if (Island_surrond[i] <= min_loweset_row)
-                {
-                    min_loweset_row = Island_surrond[i];
-                }
-            }
-        }
+//        if (trap_column >= 3)
+//        {
+//            for (uint8 i = 0; i <= trap_column - 3; i++)
+//            {
+//                if (Island_surrond[i] <= min_loweset_row)
+//                {
+//                    min_loweset_row = Island_surrond[i];
+//                }
+//            }
+//        }
 
-        /*第三部分：从最低行往上扫*/
-        for (uint8 j = 0; j <= IMAGE_WIDTH - 1; j++)
-        {
-            for (uint8 i = min_loweset_row; i >= 5; i--)
-            {
-                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
-                {
+//        /*第三部分：从最低行往上扫*/
+//        for (uint8 j = 0; j <= IMAGE_WIDTH - 1; j++)
+//        {
+//            for (uint8 i = min_loweset_row; i >= 5; i--)
+//            {
+//                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
+//                {
 
-                    top_island_surround[j] = i - 1;
-                    break;
-                }
-            }
-        }
+//                    top_island_surround[j] = i - 1;
+//                    break;
+//                }
+//            }
+//        }
 
-        if (visual_show2 == 1)
-        {
-            ips114_draw_line(0, min_loweset_row, 188, min_loweset_row, RGB565_RED);
-        }
+//        if (visual_show2 == 1)
+//        {
+//            ips114_draw_line(0, min_loweset_row, 188, min_loweset_row, RGB565_RED);
+//        }
 
-        return top_island_err;
-    }
-    else
-    {
+//        // return top_island_err;
+//    }
+//    else
+//    {
         /*先扫两段线*/
-        for (uint8 j = 0; j <= IMAGE_WIDTH - 1; j++)
+        /*************扫下边线(没用上)************/
+        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)              //从最底下往上扫线，扫到目标行
         {
-            for (uint8 i = IMAGE_HEIGHT - 1; i >= center_row; i--)
+            for (uint8 i = IMAGE_HEIGHT - 2; i >= center_row; i--)
             {
                 if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
                 {
-                    low_island_surround[j] = i - 1;
+                    low_island_surround[j] = i - 1;               //存入行坐标
                     break;
                 }
-                else if (i == center_row)
+                else if (i == center_row)                         //到目标行都没扫到，则认为是丢线
                 {
-                    low_island_surround[j] = 119;
+                    low_island_surround[j] = IMAGE_HEIGHT - 2;
                 }
             }
         }
-
-        for (uint8 j = 0; j <= IMAGE_WIDTH - 1; j++)
+        /*************扫上边线(自定义起始行)************/
+        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)
         {
-            for (uint8 i = center_row; i >= 5; i--)
+            for (uint8 i = center_row; i >= end_row; i--)                //
             {
                 if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
                 {
-                    top_island_surround[j] = i - 1;
+                    top_island_surround[j] = i - 1;                //存入行坐标
                     break;
                 }
-                else if (i == 5)
+                else if (i == end_row)
                 {
-                    top_island_surround[j] = 5;
+                    top_island_surround[j] = end_row;                     //丢线，认为是第5行
                 }
             }
         }
 
         /*逆时针写法*/
         /**/
-        uint8 choose_mode = 0;
+        // uint8 choose_mode = 0;
 
-        if (choose_mode == 0)
+        if (Up_Or_Low == 0)//返回上边线的最右列的值
         {
 
             // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
             // {
             //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
             // }
-            max_row = top_island_surround[185];
+            up_right_row = top_island_surround[185];//上边线最右列的行坐标
+            return up_right_row;                         //提供返回值
             // ips114_show_uint(188, 20, max_row, 3);
             // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
         }
-        return max_row;
-    }
+        else//返回下边线的最右列的值1
+        {
+
+            // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
+            // {
+            //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
+            // }
+            down_right_row = low_island_surround[185];//下边线最右列的行坐标
+            return down_right_row;                         //提供返回值
+            // ips114_show_uint(188, 20, max_row, 3);
+            // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
+        }
+//    }
 }
 /**
  * @brief Island detection function
@@ -4069,7 +4114,7 @@ void test(void)
             Outer_Analyse();
             // Top_Line_Search();
             // new_island_err = Top_Line_Err(80);
-            uint8 cccon = Top_Top_Line_Search_Island(80); // 目标行选择为80
+            uint8 cccon = Top_Top_Line_Search_Island(80,20,0); // 目标行选择为80
             // ips114_show_uint(94, 30, cccon, 3);
 
             // Easy_Filtering(110, 20, 30, 170, 5);

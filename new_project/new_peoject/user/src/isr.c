@@ -65,8 +65,8 @@ uint8 seconds = 0;
 uint8 ramp_begin_detect_flag = 0;
 uint8 change = 0;
 
-char uart_1_begin[] = " start"; // UART4开始字符串
-char uart_1_stop[] = " stop";   // UART4开始字符串abc
+extern char uart_1_begin[]; // UART4开始字符串
+extern char uart_1_stop[];   // UART4开始字符串abc
 
 void CSI_IRQHandler(void)
 {
@@ -119,6 +119,15 @@ void PIT_IRQHandler(void)
         if (init_flag == 0) // 开机后计时1s，用于定时初始化（防止开机就�?坡道�?
         {
             init_count++;
+            // if(init_count>30 && init_count<60)
+            // {
+            //     uart_write_string(UART_1, uart_1_begin);
+            //     init_flag=1;
+            // }
+            // else if(init_count>60 && init_flag==1)
+            // {
+            //     uart_write_string(UART_1, uart_1_stop);
+            // }
             if (init_count == 15)
             {
                 init_flag = 1;
@@ -146,12 +155,11 @@ void PIT_IRQHandler(void)
         {
             // send_deal();
             uart_write_string(UART_4, uart_4_begin);
-            //           correct_art2_flag=0;
         }
 		if(classify_art2_flag == 1)
 		{
 			uart_write_string(UART_4, uart_4_begin_abc);
-    }
+        }
         pit_flag_clear(PIT_CH3);
     }
 

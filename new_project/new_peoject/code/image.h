@@ -66,6 +66,7 @@ typedef enum
 
 float Err_Handle(void);
 float Island_Surround(uint8 target_row);
+void Top_Line_Road_Search(void);
 void Top_Line_Search(void);
 float Top_Line_Err(uint8 target_row);
 void Outer_Analyse(void);
@@ -92,6 +93,6 @@ void Top_Line_Center_Get_Center(void);
 void send_deal(void);
 int Continuity_Change_Left_Island_Up(int start, int end); // 连续性阈值设置为5;
 int Continuity_Change_Right_Island_Up(int start, int end);
-uint8 Top_Top_Line_Search_Island(uint8 center_row);
+int Top_Top_Line_Search_Island(int center_row, int end_row,int Up_Or_Low);
 
 #endif

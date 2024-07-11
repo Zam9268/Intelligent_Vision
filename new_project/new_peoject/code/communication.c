@@ -25,7 +25,7 @@ char uart_4_beginb[] = "fiftb";    // UART4开始字符串300
 char uart_4_beginc[] = "fiftc";    // UART4开始字符串290
 char uart_4_begind[] = "fiftd";    // UART4开始字符串280
 char uart_4_begine[] = "fifte";    // UART4开始字符串270
-char uart_4_beginz [] = "fiftz";    // UART4开始字符串260
+char uart_4_beginz [] = "fiftz";   // UART4开始字符串260
 char uart_4_beging[] = "fiftg";    // UART4开始字符串250
 char uart_4_beginh[] = "fifth";    // UART4开始字符串240
 char uart_4_begini[] = "fifti";    // UART4开始字符串230
@@ -46,6 +46,9 @@ char uart_4_beginw[] = "fiftw";    // UART4开始字符串
 char uart_4_beginx[] = "fiftx";    // UART4开始字符串
 
 char uart_4_begin_abc[] = "abc"; // UART4开始字符串abc
+
+char uart1_begin[]="E";
+char uart1_stop[]="S";
 /**
  * @brief 初始化通信模块
  * @param 无
@@ -59,7 +62,7 @@ void My_Communication_Init(void)
     uart_rx_interrupt(UART_1, 1);                                  // 使能UART1接收中断
     uart_rx_interrupt(UART_4, 1);                                  // 使能UART4接收中断
     NVIC_SetPriority(LPUART1_IRQn, 0);                             // 设置UART1中断优先级
-    NVIC_SetPriority(LPUART4_IRQn, 1);                             // 设置UART4中断优先级
+    NVIC_SetPriority(LPUART4_IRQn, 0);                             // 设置UART4中断优先级
 }
 
 
@@ -356,6 +359,5 @@ void uart_data_handle(void)
             near_card_x = right_data[3] * 256 + right_data[4];
         }
         near_card_y = right_data[5] * 256 + right_data[6];
-        uart_write_string(UART_4, str); // 发送串口数据
     }
 }

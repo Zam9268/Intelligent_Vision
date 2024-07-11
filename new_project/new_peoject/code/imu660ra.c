@@ -15,6 +15,7 @@ float Angle_world;//用于计算卡片全局坐标的车辆角度
 float Angle_arrive_card;//用于总钻风微调
 float Angle_ramp;
 float Angle_Island;
+float Angle_Island_back;
 float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
@@ -97,8 +98,28 @@ void Get_angle()
 	 Angle_arrive_card+=fil_Gyro_z*dt;//用于总钻风调整
 	 Angle_ramp+=fil_Gyro_z*dt;//用于坡道绕行
 	 Angle_Island+=fil_Gyro_z*dt;//用于环岛分类
+	 Angle_Island_back+=fil_Gyro_z*dt;//用于环岛分类
+	 
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
+
+	 if(Angle_z>=360) Angle_z=Angle_z-360;
+	 if(Angle_z<=-360) Angle_z=Angle_z+360;
+
+	 if(Angle_world>=360) Angle_world=Angle_world-360;
+	 if(Angle_world<=-360) Angle_world=Angle_world+360;
+
+	 if(Angle_arrive_card>=360) Angle_arrive_card=Angle_arrive_card-360;
+	 if(Angle_arrive_card<=-360) Angle_arrive_card=Angle_arrive_card+360;
+
+	 if(Angle_ramp>=360) Angle_ramp=Angle_ramp-360;
+	 if(Angle_ramp<=-360) Angle_ramp=Angle_ramp+360;
+
+	 if(Angle_Island>=360) Angle_Island=Angle_Island-360;
+	 if(Angle_Island<=-360) Angle_Island=Angle_Island+360;
+
+	 if(Angle_Island_back>=360) Angle_Island_back=Angle_Island_back-360;
+	 if(Angle_Island_back<=-360) Angle_Island_back=Angle_Island_back+360;
 }
 /****************************** BEFIN ********************************
 **@Name       : Kalman_Filter_x
