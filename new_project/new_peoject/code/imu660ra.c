@@ -16,6 +16,8 @@ float Angle_arrive_card;//用于总钻风微调
 float Angle_ramp;
 float Angle_Island;
 float Angle_Island_back;
+float Angle_Crossing;
+float Angle_Crossing_Panduan;		
 float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];
@@ -98,7 +100,9 @@ void Get_angle()
 	 Angle_arrive_card+=fil_Gyro_z*dt;//用于总钻风调整
 	 Angle_ramp+=fil_Gyro_z*dt;//用于坡道绕行
 	 Angle_Island+=fil_Gyro_z*dt;//用于环岛分类
-	 Angle_Island_back+=fil_Gyro_z*dt;//用于环岛分类
+	 Angle_Island_back+=fil_Gyro_z*dt;//用于环岛后退
+	 Angle_Crossing+=fil_Gyro_z*dt;//用于十字分类
+	 Angle_Crossing_Panduan+=fil_Gyro_z*dt;//用于十字检测
 	 
 	 if(Angle_Z>=360) Angle_Z=Angle_Z-360;
 	 if(Angle_Z<=-360) Angle_Z=Angle_Z+360;
@@ -120,6 +124,12 @@ void Get_angle()
 
 	 if(Angle_Island_back>=360) Angle_Island_back=Angle_Island_back-360;
 	 if(Angle_Island_back<=-360) Angle_Island_back=Angle_Island_back+360;
+
+	 if(Angle_Crossing>=360) Angle_Crossing=Angle_Crossing-360;
+	 if(Angle_Crossing<=-360) Angle_Crossing=Angle_Crossing+360;
+
+	 if(Angle_Crossing_Panduan>=360) Angle_Crossing_Panduan=Angle_Crossing_Panduan-360;
+	 if(Angle_Crossing_Panduan<=-360) Angle_Crossing_Panduan=Angle_Crossing_Panduan+360;
 }
 /****************************** BEFIN ********************************
 **@Name       : Kalman_Filter_x

@@ -83,6 +83,21 @@
 #define Car_Go_Island_Outside_Again			18//向环岛外前进
 #define Car_Turn_Out_Island					19//出环
 
+//******************十字状态*********************/
+#define Car_Crossing_Enter					 0//进入十字
+#define Car_Turn_Inside						 1//转向中心
+#define Car_Find_Art1						 2//art1粗对准
+#define Car_Find_Art4						 3//art4细对准
+#define Crossing_Card_Classify_Pick			 4//十字的卡片分类和拾取
+#define Car_Crossing_Turn_Outside			 5//转向十字外部区域
+#define Car_Go_Crossing_Outside				 6//向左十字右边前进至目标行
+#define Car_Go_Crossing_Upline				 7//十字内巡上边线
+#define Car_Go_Crossing_Zone_Outside		 8//对准十字区域
+#define Car_Crossing_Zone_Classify			 9//十字区域识别分类与放置
+#define Step_Back_Crossing_Center			 10//往后退至循迹行
+#define Car_Turn_Out_Crossing				 11//出十字
+
+
 #define A_card   	8
 #define B_card   	5
 #define C_card   	4
@@ -124,7 +139,8 @@ typedef struct{
 	uint8 Card_Type;    //卡片对应的类别
     int Card_PWM_Duty;//卡片对应的角度
 }card;
-extern float top_error;
+extern float right_top_error, last_right_top_error; // 与目标行数的加权误差
+extern float left_top_error, last_left_top_error; // 与目标行数的加权误差
 extern int card_center_x;
 extern int card_center_y;
 extern int arrive_card_flag;
@@ -187,6 +203,7 @@ extern int classify_type;
 extern int num_card_x,num_card_y;
 extern uint8 numcard_classify;
 extern int delta_class_x,delta_class_y;
+extern float delta_crossing_x,delta_crossing_y;
 extern uint8 Find_num;		//识别完毕的标志位
 extern int banmaxian_finish;
 extern uint8 class_step;
@@ -219,6 +236,12 @@ extern uint8 back_flag;
 extern uint8 ahead_flag;
 extern int second_right_lie_island_upline_position;
 extern float test_top_error;
+extern int Crossing_mode;
+extern float crossing_card_center_x,crossing_card_center_y;
+extern float crossing_correct_again_x,crossing_correct_again_y;
+extern int left_lie_island_upline_position;
+extern float record_crossing_zone_x,record_crossing_zone_y;    //记录完成十字卡片的区域坐标
+extern float delta_crossing_class_x,delta_crossing_class_y;
 
 extern int pid_motor[4];
 
@@ -228,6 +251,7 @@ extern pid_info Angle_turn_pid;
 
 extern pid_info distance_pid[4];
 
+extern card cross_card[5];
 
 
 void Motor_Init(void);
@@ -236,7 +260,8 @@ void Read_Encoder(void);
 void Car_Inverse_kinematics_solution(float target_Vx, float target_Vy, float target_Vz);
 void Move_Transfrom(float target_Vx, float target_Vy, float target_Vz);
 void car_run(void);
-void car_run_upline(int target_line);
+void car_run_upline_right(int target_line);
+void car_run_upline_left(int target_line);
 void car_stop(void);
 void PidInit(void);
 void Pos_PidInit(void);
@@ -260,4 +285,5 @@ void car_findcard(int *mode);
 void car_findcard_new(int *mode);
 void Left_Island_pick_and_move(int *Island_step);
 void card_final_classify(int *classify_step);
+void Left_Crossing_pick_and_move(int *Cross_step);
 #endif
