@@ -46,6 +46,8 @@ uint8 Island_State = 0;                    // record the state of the island on 
 uint8 Cross_State = 0;                     // record the state of the cross road
 uint8 Cross_Handle_Flag = 0;               // record the flag of the cross road
 uint8 Cross_Way_change = 0;                // 在十字中进行转向捡卡片
+uint8 left_turn_flag = 0;                  // 左转弯标志位，十字中拾取堆叠卡片的转向方向
+uint8 right_turn_flag = 0;                 // 右转弯标志位，十字中拾取堆叠卡片的转向方向
 uint8 max_left_line = 0;                   // record the max left line
 uint8 last_max_left_line = 0;              // record the last max left line
 uint8 max_right_line = 0;                  // record the max right line
@@ -2633,9 +2635,8 @@ uint8 Find_Max_right_line(void)
  * @param null
  * @return null
  */
-void Cross_Detect(void)/*7月11更新：要拾取十字中心卡片堆的状态是状态4（Cross_State==4），注意拾取完的话就要将Cross_State置0和Cross_Handle_Flag置0*/
+void Cross_Detect(void) /*7月11更新：要拾取十字中心卡片堆的状态是状态4（Cross_State==4），注意拾取完的话就要将Cross_State置0和Cross_Handle_Flag置0*/
 {
-
     int down_search_start = 0;  // the down point of finding the crossing
     if (Cross_Handle_Flag == 1) // start to analyze the crossing if the state is corssing
     {
@@ -2681,47 +2682,69 @@ void Cross_Detect(void)/*7月11更新：要拾取十字中心卡片堆的状态�
             }
         }
 
-        /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
-        if (Cross_State == 0) // 当十字状态置为0的时候
-        {
-            Cross_State++; // 十字状态置为1
-        }
-        else if (Cross_State == 1)
-        {
-            if (Right_Up_Find >= 60 && Left_Up_Find >= 60)
-            {
-                Cross_State = 2;
-            }
-        }
-        else if (Cross_State == 2)
-        {
-            if ((abs(Last_Left_Up_Find - Left_Up_Find) >= 20 && Left_Up_Find != 0) || abs(Last_Right_Up_Find - Right_Up_Find) >= 20 && Right_Up_Find != 0)
-            {
-                Cross_State = 3;
-            }
-        }
-        else if (Cross_State == 3)
-        {
-            if (Left_Up_Find >= 90 || Right_Up_Find >= 90)
-            {
-                Cross_State = 4;
-            }
-        }
-        else if (Cross_State == 4)
-        {
-            // if (Left_Lost_Time>=10 ||)
-            // {
-            //     Cross_Way_change = 1;
-            //     Cross_State = 0;
-            //     Cross_Handle_Flag = 0;
-            // }
-        }
-
+        // ips114_show_int(188, 90, Left_Lost_Time, 3);
+        // ips114_show_int(188, 100, Right_Lost_Time, 3);
+        // ips114_show_uint(188, 110, Both_Lost_Time, 3);
         /*显示代码*/
-        ips114_draw_line(98, 60, left_line[Left_Up_Find], Left_Up_Find, RGB565_GREEN);
-        ips114_draw_line(98, 60, right_line[Right_Up_Find], Right_Up_Find, RGB565_BLUE);
-        ips114_draw_line(98, 60, left_line[Left_Down_Find], Left_Down_Find, RGB565_RED);
-        ips114_draw_line(98, 60, right_line[Right_Down_Find], Right_Down_Find, RGB565_YELLOW);
+        // ips114_draw_line(98, 60, left_line[Left_Up_Find], Left_Up_Find, RGB565_GREEN);
+        // ips114_draw_line(98, 60, right_line[Right_Up_Find], Right_Up_Find, RGB565_BLUE);
+        // ips114_draw_line(98, 60, left_line[Left_Down_Find], Left_Down_Find, RGB565_RED);
+        // ips114_draw_line(98, 60, right_line[Right_Down_Find], Right_Down_Find, RGB565_YELLOW);
+    }
+}
+
+/*十字状态机切换，一定要放在Cross_Detect()的后面*/
+void Cross_State_Change(void)
+{
+    /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
+    if (Cross_State == 0) // 当十字状态置为0的时候
+    {
+        Cross_State++; // 十字状态置为1
+    }
+    else if (Cross_State == 1)
+    {
+        if (Right_Up_Find >= 60 && Left_Up_Find >= 60)
+        {
+            Cross_State = 2;
+        }
+    }
+    else if (Cross_State == 2)
+    {
+        if ((abs(Last_Left_Up_Find - Left_Up_Find) >= 20 && Left_Up_Find != 0) || abs(Last_Right_Up_Find - Right_Up_Find) >= 20 && Right_Up_Find != 0)
+        {
+            Cross_State = 3;
+        }
+    }
+    else if (Cross_State == 3)
+    {
+        if (Left_Up_Find >= 90 || Right_Up_Find >= 90 && Both_Lost_Time <= 20)
+        {
+            Cross_State = 4;
+        }
+    }
+    else if (Cross_State == 4) // 防止出現return
+    {
+        if (Left_Lost_Time == 1 && Right_Lost_Time == 1 && Both_Lost_Time == 1) // 左转标志位
+        {
+
+            left_turn_flag = 1; // 左转标志位，此时要进行左转
+            Cross_State = 5;
+        }
+    }
+    else if (Cross_State == 5)
+    {
+        if (Left_Lost_Time >= 20 && Right_Lost_Time <= 2 && Both_Lost_Time <= 1)
+        {
+            Cross_State = 6;
+            Cross_Way_change = 1;
+            left_turn_flag = 1;
+        }
+        else if (Right_Lost_Time >= 20 && Left_Lost_Time <= 2 && Both_Lost_Time <= 1) // 右转标志位
+        {
+            Cross_Way_change = 1;
+            right_turn_flag = 1; // 右转标志位，此时要进行右转
+            Cross_State = 6;
+        }
     }
 }
 
@@ -3785,7 +3808,7 @@ uint8 Top_Top_Line_Search_Island(uint8 center_row)
  */
 void Island_Detect(void)
 {
-    if (left_island_flag == 0 && right_island_flag == 0)
+    if (left_island_flag == 0 && right_island_flag == 0 || Cross_Handle_Flag == 1)
     {
         return;
     }
@@ -4100,6 +4123,13 @@ void Zebra_Stripes_Detect_new(void)
 
 void test2(void)
 {
+    ips114_show_uint(188, 10, left_turn_flag, 2);
+    ips114_show_uint(188, 20, Cross_State, 2);
+    ips114_show_uint(188, 30, right_turn_flag, 2);
+
+    ips114_show_int(188, 90, Left_Lost_Time, 3);
+    ips114_show_int(188, 100, Right_Lost_Time, 3);
+    ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
     if (Road_Type == STRAIGHT_ROAD)
         type = 1;
@@ -4117,13 +4147,16 @@ void test2(void)
         type = 7;
     else if (Road_Type == RAMP)
         type = 8;
-    else if (Road_Type == LEFT_LUZHANG)/*左避障函数，在Outer_Analyse函数进行检测*/
+    else if (Road_Type == LEFT_LUZHANG) /*左避障函数，在Outer_Analyse函数进行检测*/
         type = 9;
-    else if (Road_Type == RIGHT_LUZHANG)//同上
+    else if (Road_Type == RIGHT_LUZHANG) // 同上
         type = 10;
-    if (Cross_Handle_Flag == 1)//如果检测到十字，该标志位就会置为1，那么就会开始运行十字环岛检测函数
+    if (Cross_Handle_Flag == 1) // 如果检测到十字，该标志位就会置为1，那么就会开始运行十字环岛检测函数
+    {
         Cross_Detect();
-    if (left_island_flag || right_island_flag)//如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
+        Cross_State_Change();
+    }
+    if (left_island_flag || right_island_flag) // 如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
         Island_Detect();
 
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
@@ -4133,10 +4166,10 @@ void test2(void)
         ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
         // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
     }
-    ips114_show_uint(188, 10, Cross_Handle_Flag, 2);
 
-    ips114_show_uint(188, 20, Cross_State, 2);
-    ips114_show_uint(188, 30, Cross_Way_change, 2);
+    // ips114_show_uint(0, 0, Left_Lost_Time, 3);
+    // ips114_show_uint(0, 10, Right_Lost_Time, 3);
+    // ips114_show_uint(0, 20, Both_Lost_Time, 3);
     // for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     // {
     //     ips114_draw_point(i, Island_surrond[i], RGB565_RED);
@@ -4196,10 +4229,6 @@ void test2(void)
     //    ips114_show_uint(188, 40, number_card_real_y, 3);
 
     // ips114_show_uint(188, 50, Boundry_Start_Right, 3);
-
-    ips114_show_int(188, 90, Left_Lost_Time, 3);
-    ips114_show_int(188, 100, Right_Lost_Time, 3);
-    ips114_show_uint(188, 110, Both_Lost_Time, 3);
 
     // ips114_show_int(188, 70, lower_row_center_threshold, 3);
     // ips114_show_int(188, 80, center_straight_left_card_y, 3);
