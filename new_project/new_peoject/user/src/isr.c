@@ -64,10 +64,9 @@ extern uint8 Longest_Column_Fixed;
 uint8 seconds = 0;
 uint8 ramp_begin_detect_flag = 0;
 uint8 change = 0;
-
-extern char uart_1_begin[]; // UART4开始字符串
-extern char uart_1_stop[];   // UART4开始字符串abc
-
+extern uint8 test_flag;
+char uart1_begin[] = "E";
+char uart1_stop[] = "S";
 void CSI_IRQHandler(void)
 {
     CSI_DriverIRQHandler(); // ????SDK??????��???? ?????????????????????????????
@@ -90,12 +89,12 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH1))
     {
-        static uint8 key_xiaodou=0;
+        static uint8 key_xiaodou = 0;
         key_xiaodou++;
-        if(key_xiaodou==4)//消抖间隔为20ms
+        if (key_xiaodou == 4) // 消抖间隔为20ms
         {
             key_scan();
-			key_xiaodou=0;
+            key_xiaodou = 0;
         }
         // ��ȡ������
         //  Read_Encoder();
@@ -106,16 +105,16 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH2))
     {
-			if(Longest_Column_Fixed==1)
-			{
-				static uint8 counnt=0;
-				counnt++;
-				if(counnt==20)
-				{
-					counnt=0;
-					Longest_Column_Fixed=0;
-				}
-			}
+        if (Longest_Column_Fixed == 1)
+        {
+            static uint8 counnt = 0;
+            counnt++;
+            if (counnt == 20)
+            {
+                counnt = 0;
+                Longest_Column_Fixed = 0;
+            }
+        }
         if (init_flag == 0) // 开机后计时1s，用于定时初始化（防止开机就�?坡道�?
         {
             init_count++;
@@ -156,9 +155,9 @@ void PIT_IRQHandler(void)
             // send_deal();
             uart_write_string(UART_4, uart_4_begin);
         }
-		if(classify_art2_flag == 1)
-		{
-			uart_write_string(UART_4, uart_4_begin_abc);
+        if (classify_art2_flag == 1)
+        {
+            uart_write_string(UART_4, uart_4_begin_abc);
         }
         pit_flag_clear(PIT_CH3);
     }
@@ -174,10 +173,12 @@ void LPUART1_IRQHandler(void)
         // #if DEBUG_UART_USE_INTERRUPT       // 如果使用 debug 中断
         //         debug_interrupr_handler(); // 调用 debug 中断处理函数，将接收到的数据保存到 debug 缓冲区中
         // #endif                             // 如果没有修改 DEBUG_UART_INDEX 的话就不需要去掉
-        extern void UART1_handler(void); //?????????
-                                         //			 if(uart1_flag==OPEN)
-                                         //			 {
-        UART1_handler();
+            extern void UART1_handler(void); //?????????
+                                             //			 if(uart1_flag==OPEN)
+                                             //			 {
+            UART1_handler();
+        
+
         //			 }
     }
 
