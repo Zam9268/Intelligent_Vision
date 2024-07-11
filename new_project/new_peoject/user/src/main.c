@@ -222,7 +222,7 @@ int main(void)
 //         right_lie_island_upline_position=Top_Top_Line_Search_Island(100,0);//持续从第100行往上扫上边线
 //        right_lie_island_upline_position = Top_Top_Line_Search_Island(110, 0);;//从119行开始往40行扫下边线，取最右列的行坐标
 	//    Left_Island_pick_and_move(&Island_mode);
-        Left_Crossing_pick_and_move(&Crossing_mode);
+        // Left_Crossing_pick_and_move(&Crossing_mode);
         // right_lie_island_upline_position = Top_Top_Line_Search_Island(40, 1);
 
 	// car_run_upline(90);
