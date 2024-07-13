@@ -138,7 +138,10 @@ typedef struct{
 typedef struct{
 	uint8 Card_Type;    //卡片对应的类别
     int Card_PWM_Duty;//卡片对应的角度
+	int Card_Put_Out_Finish;//卡片放置完成的标志位
 }card;
+
+extern uint8 find_card_allow;
 extern float right_top_error, last_right_top_error; // 与目标行数的加权误差
 extern float left_top_error, last_left_top_error; // 与目标行数的加权误差
 extern int card_center_x;
@@ -242,6 +245,11 @@ extern float crossing_correct_again_x,crossing_correct_again_y;
 extern int left_lie_island_upline_position;
 extern float record_crossing_zone_x,record_crossing_zone_y;    //记录完成十字卡片的区域坐标
 extern float delta_crossing_class_x,delta_crossing_class_y;
+extern uint8 Left_Island_Finish;
+extern uint8 Left_Crossing_Finish;
+extern uint8 Cross_allow_flag;
+extern uint8 Island_allow_flag;
+extern int zebra_card_x,zebra_card_y;
 
 extern int pid_motor[4];
 

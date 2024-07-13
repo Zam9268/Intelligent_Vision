@@ -13,9 +13,11 @@ uint8 left_line_out[IMAGE_HEIGHT], right_line_out[IMAGE_HEIGHT];
 uint8 the_maxlen_position;        // record  the max length of the white column
 uint8 my_new_lower_black_row = 0; // count the number of black points in a row
 uint8 pick_up_mode_change = 0;
+uint8 Zebra_Classify_flag = 0;
 uint8 num; //
 uint8 up_right_row = 0;
 uint8 down_right_row = 0;
+uint8 up_mid_row = 0;
 uint8 up_left_row = 0;
 uint8 down_left_row = 0;
 uint8 Longest_White_Column_Left[2];                                                  // Record the longest white column in this iteration
@@ -125,6 +127,7 @@ extern uint8 seconds;
 extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始就误判坡道标志位
 extern uint8 visual_show2;           // 按键处理显示模式
 extern uint8 Longest_Column_Fixed;
+extern uint8 stop_detect_flag;
 extern char uart_4_begina[]; // UART4开始字符串310
 extern char uart_4_beginb[]; // UART4开始字符串300
 extern char uart_4_beginc[]; // UART4开始字符串290
@@ -2703,6 +2706,8 @@ void Cross_Detect(void) /*7月11更新：要拾取十字中心卡片堆的状态
 /*十字状态机切换，一定要放在Cross_Detect()的后面*/
 void Cross_State_Change(void)
 {
+    if(stop_detect_flag==1)
+        return;
     /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
     if (Cross_State == 0) // 当十字状态置为0的时候
     {
@@ -2724,14 +2729,14 @@ void Cross_State_Change(void)
     }
     else if (Cross_State == 3)
     {
-        if (Left_Up_Find >= 90 || Right_Up_Find >= 90 && Both_Lost_Time <= 10)
+        if (Left_Up_Find >= 70 || Right_Up_Find >= 70 && Both_Lost_Time <= 20)
         {
             Cross_State = 4;
         }
     }
     else if (Cross_State == 4) // 防止出現return
     {
-        if (Left_Lost_Time <=5 && Right_Lost_Time <=5 && Both_Lost_Time <= 3) // 左转标志位
+        if (Left_Lost_Time <=19 && Right_Lost_Time <=19 && Both_Lost_Time <= 19) // 左转标志位
         {
 
             left_turn_flag = 1; // 左转标志位，此时要进行左转
@@ -2754,6 +2759,29 @@ void Cross_State_Change(void)
         }
     }
 }
+
+/*十字状态机切换，一定要放在Cross_Detect()的后面*/
+void Cross_State_Change_Plus(void)
+{
+    /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
+    if (Cross_State == 0) // 当十字状态置为0的时候
+    {
+        if(Longest_White_Column_Left[1]<=40)
+        {
+            Cross_State = 6;
+            Cross_Way_change = 1;
+            left_turn_flag = 1;
+        }
+        else if(Longest_White_Column_Left[1]>=140)
+        {
+            Cross_State=6;
+            Cross_Way_change=1;
+            right_turn_flag=1;
+        }
+    }
+}
+
+
 
 unsigned int Road_Min_Width[2] = {188, 0}; // Record the number of rows and width corresponding to the minimum road width
 unsigned int Road_up_wide[5] = {0};
@@ -3248,7 +3276,7 @@ void send_deal(void)
 float Top_Line_Err_Right(uint8 target_row)
 {
     right_err = 0.0;                             // 使用前先清零
-    for (uint8 i = IMAGE_WIDTH -55; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
+    for (uint8 i = IMAGE_WIDTH/2+5 ; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
     {
         right_err += target_row-Island_surrond[i];
     }
@@ -3823,11 +3851,11 @@ int Top_Top_Line_Search_Crossing(int center_row, int end_row, int Up_Or_Low)
 }
 /*
 输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
-          上边线和下边线的选择  0:自定义 1:下边线
+          上边线和下边线的选择  0:自定义 1:下边线 2:中间点行坐标
 输出结果：上边线/下边线的最右列的行坐标，取上边线的最靠右的点的行坐标作为返回值？
 
 */
-int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
+int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low_Or_Mid)
 {
 
 //    uint8 mode = 0;
@@ -3912,30 +3940,60 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
         /**/
         // uint8 choose_mode = 0;
 
-        if (Up_Or_Low == 0)//返回上边线的最右列的值
-        {
+        // if (Up_Or_Low_Or_Mid == 0)//返回上边线的最右列的值
+        // {
 
-            // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
-            // {
-            //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
-            // }
+        //     // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
+        //     // {
+        //     //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
+        //     // }
+        //     up_right_row = top_island_surround[185];//上边线最右列的行坐标
+        //     return up_right_row;                         //提供返回值
+        //     // ips114_show_uint(188, 20, max_row, 3);
+        //     // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
+        // }
+        // else if(Up_Or_Low_Or_Mid == 1)//返回下边线的最右列的值1
+        // {
+
+        //     // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
+        //     // {
+        //     //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
+        //     // }
+        //     down_right_row = low_island_surround[185];//下边线最右列的行坐标
+        //     return down_right_row;                         //提供返回值
+        //     // ips114_show_uint(188, 20, max_row, 3);
+        //     // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
+        // }
+        //  else if(Up_Or_Low_Or_Mid == 2)//返回下边线的最中间列的值1
+        // {
+
+        //     // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
+        //     // {
+        //     //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
+        //     // }
+        //     up_mid_row = top_island_surround[92];//下边线最中间列的行坐标
+        //     return up_mid_row;                         //提供返回值
+        //     // ips114_show_uint(188, 20, max_row, 3);
+        //     // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
+        // }
+        switch (Up_Or_Low_Or_Mid)
+        {
+           case 0:
             up_right_row = top_island_surround[185];//上边线最右列的行坐标
-            return up_right_row;                         //提供返回值
-            // ips114_show_uint(188, 20, max_row, 3);
-            // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
-        }
-        else//返回下边线的最右列的值1
-        {
-
-            // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
-            // {
-            //     ips114_draw_line(0, 0, i, top_island_surround[i], RGB565_BLUE);
-            // }
+            return up_right_row;
+            break;
+           case 1:
             down_right_row = low_island_surround[185];//下边线最右列的行坐标
-            return down_right_row;                         //提供返回值
-            // ips114_show_uint(188, 20, max_row, 3);
-            // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
-        }
+            return down_right_row;
+            break;
+           case 2:
+            up_mid_row = top_island_surround[92];//下边线最中间列的行坐标
+            return up_mid_row;          
+            break;
+        }   
+					return 0;
+                    
+
 //    }
 }
 /**
@@ -4288,10 +4346,14 @@ void test2(void)
         type = 9;
     else if (Road_Type == RIGHT_LUZHANG) // 同上
         type = 10;
+    if(type==5)
+    {
+        Zebra_Classify_flag =1; //识别出斑马线
+    }
     if (Cross_Handle_Flag == 1) // 如果检测到十字，该标志位就会置为1，那么就会开始运行十字环岛检测函数
     {
         Cross_Detect();
-        Cross_State_Change();
+        Cross_State_Change_Plus();
     }
     if (left_island_flag || right_island_flag) // 如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
         Island_Detect();
