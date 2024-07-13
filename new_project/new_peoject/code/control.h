@@ -183,6 +183,7 @@ extern float dis_kd;//距离环kd
 extern float dis_error;
 extern float dis_change[4];//存放距离环输出结果
 extern int CSI_correct_flag;
+extern uint8 Find_card_allow;
 extern int card_y[10];
 extern int card_x[10];
 extern int Put_flag;

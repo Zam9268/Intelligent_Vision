@@ -175,7 +175,7 @@ uint8 *Sobel_Edge(uint8 *image4)
 }
 
 /**
- * @brief Scharr算子（Sobel算子改进版，边缘更明显）
+ * @brief Scharr算子（Sobel算子改进版，边缘更明显），在18届的基础上，增加了自己的部分修改，使阈值可调，防止赛道内也会出现奇怪的边缘
  * @time_consuming：3760us(InvSqrt,很稳定)/3400us(sqrt,波动大，最高3680，最低3300)
  * @param image5
  * @return uint8*
@@ -186,20 +186,20 @@ extern uint8 pick_up_mode;//拾取模式
 uint8 *Scharr_Edge(uint8 *image5,int threshold)
 {
     static uint8 begin_flag=0;//开始标志位
-    the_max_G=0;
+    the_max_G=0;//当前最大梯度值初始化
     static uint8 scharr_image[IMAGE_HEIGHT][IMAGE_WIDTH];//Scharr边缘检测图像数组
     int Gx,Gy,G;//定义梯度的值
     uint8 scharr_fix[9];//3*3卷积核
-    for(int j=0;j<IMAGE_WIDTH;j++)
+    for(int j=0;j<IMAGE_WIDTH;j++)//获得当前图像的灰度值
     {
         scharr_image[0][j]=*(image5);
         image5++;//地址自增
     }
-    for(int i=1;i<IMAGE_HEIGHT-1;i++)//？
+    for(int i=1;i<IMAGE_HEIGHT-1;i++)//通过for循环求出对应的梯度，所以实际上二值化后的图像中，第0行，第119行，第0列，第187列的灰度值不为0或255
     {
         scharr_image[i][0]=*(image5);//第一列不作处理
         image5++;//地址自增
-        for(int j=1;j<IMAGE_WIDTH-1;j++)
+        for(int j=1;j<IMAGE_WIDTH-1;j++)//求出各个方向的梯度，对应的算子在下面
         {
             scharr_fix[0]=*(image5-IMAGE_WIDTH-1);
             scharr_fix[1]=*(image5-IMAGE_WIDTH);
@@ -213,17 +213,17 @@ uint8 *Scharr_Edge(uint8 *image5,int threshold)
             Gx=(3*scharr_fix[2]+10*scharr_fix[5]+3*scharr_fix[8])-(3*scharr_fix[0]+10*scharr_fix[3]+3*scharr_fix[6]);//x方向梯度
             Gy=(3*scharr_fix[0]+10*scharr_fix[1]+3*scharr_fix[2])-(3*scharr_fix[6]+10*scharr_fix[7]+3*scharr_fix[8]);//y方向梯度
             G=InvSqrt(Gx*Gx+Gy*Gy);//梯度
-            if(G>the_max_G) the_max_G=G;//最大梯度值
-            if(abs(the_last_max_G-G)>=threshold) G=0;//梯度值小于阈值的置为0
+            if(G>the_max_G) the_max_G=G;//存储最大梯度值
+            if(abs(the_last_max_G-G)>=threshold) G=0;//梯度值小于阈值的置为0，设置为黑色像素点
             G=G>255?255:0;//限幅
-            if(G!=255&&G!=0) G=0;//非边缘点置为0，这里就直接做二值化处理就行了，后面就不用二值化处理了
+            if(G!=255&&G!=0) G=0;//非边缘点置为0，这里就直接做二值化处理就行了，后面就不用二值化处理了，省时间
             scharr_image[i][j]=G;
             image5++;//地址自增
         }
         scharr_image[i][IMAGE_WIDTH-1]=*(image5);//最后一列不做处理
         image5++;//地址自增
     }
-    for(int j=0;j<IMAGE_WIDTH;j++)
+    for(int j=0;j<IMAGE_WIDTH;j++)//图像的指针传递
     {
         scharr_image[IMAGE_HEIGHT-1][j]=*(image5);
         image5++;//地址自增
