@@ -8,6 +8,9 @@ extern float Angle_arrive_card;
 extern float Angle_ramp;
 extern float Angle_Island;
 extern float Angle_Island_back;
+extern float Angle_Crossing;
+extern float Angle_Crossing_Panduan;
+extern float Angle_Zebra; //斑马线解算世界坐标		
 extern float kal_angle;
 extern float coe_Gyro_z;
 extern float IMU660ra_FIFO[11];

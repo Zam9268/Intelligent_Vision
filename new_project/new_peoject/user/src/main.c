@@ -214,13 +214,15 @@ int main(void)
                ips114_show_uint(0, 120, right_data[2], 3);
 					// Top_Line_Center_Get_Center();
         test();
+//        car_run_upline_left(95);
 //	right_lie_island_upline_position=Top_Top_Line_Search_Island(110,50, 0);//持续从119行往上到20行找下边线数组最右侧行坐标标
         // ips114_show_int(0,20,right_lie_island_upline_position,4);//一次扫线
 //	 car_run_upline(95);
         // CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
 //         right_lie_island_upline_position=Top_Top_Line_Search_Island(100,0);//持续从第100行往上扫上边线
 //        right_lie_island_upline_position = Top_Top_Line_Search_Island(110, 0);;//从119行开始往40行扫下边线，取最右列的行坐标
-	   Left_Island_pick_and_move(&Island_mode);
+	//    Left_Island_pick_and_move(&Island_mode);
+        // Left_Crossing_pick_and_move(&Crossing_mode);
         // right_lie_island_upline_position = Top_Top_Line_Search_Island(40, 1);
 
 	// car_run_upline(90);
@@ -230,12 +232,12 @@ int main(void)
 		// test_arm();
 //					gpio_set_level(C11, 1);
 		// ips114_show_int(188,60,Edge_threshold,4);
-//       ips114_show_float(0,0,test_top_error,3,4);//显示上边线归一化后的误差
-//       ips114_show_float(0,40,top_error,3,4);//显示上边线归一化后的误差
-//       ips114_show_float(90,0,Speed[0].target_speed,3,2);//显示上边线归一化后的误差
-//       ips114_show_float(90,20,Speed[1].target_speed,3,2);//显示上边线归一化后的误差
-//       ips114_show_float(90,40,Speed[2].target_speed,3,2);//显示上边线归一化后的误差
-//       ips114_show_float(90,60,Speed[3].target_speed,3,2);//显示上边线归一化后的误差
+       ips114_show_float(0,0,Cross_State,3,4);//显示上边线归一化后的误差
+//      ips114_show_float(0,40,left_top_error,3,4);//显示上边线归一化后的误差
+//      ips114_show_float(90,0,Speed[0].target_speed,3,2);//显示上边线归一化后的误差
+//      ips114_show_float(90,20,Speed[1].target_speed,3,2);//显示上边线归一化后的误差
+//      ips114_show_float(90,40,Speed[2].target_speed,3,2);//显示上边线归一化后的误差
+//      ips114_show_float(90,60,Speed[3].target_speed,3,2);//显示上边线归一化后的误差
 //        ips114_show_int(0,20,car_run_mode,4);//卡片坐标,即时更新
 //        ips114_show_int(0,40,Traffic_count,3);
 //        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
@@ -244,14 +246,29 @@ int main(void)
 //			 
 	 ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
          ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
+         ips114_show_int(120,40, delta_crossing_class_x,4);//卡片坐标,即时更新
+	 ips114_show_int(120,60, delta_crossing_class_y,4);//卡片坐标,即时更新
+        //  ips114_show_int(120,40, delta_x,4);//卡片坐标,即时更新
+	//  ips114_show_int(120,60, delta_y,4);//卡片坐标,即时更新
+        //  ips114_show_int(120,80, near_card_x,4);//卡片坐标,即时更新
+	//  ips114_show_int(120,100, near_card_y,4);//卡片坐标,即时更新
+        //  ips114_show_int(120,40, delta_crossing_x,4);//卡片坐标,即时更新
+	//  ips114_show_int(120,60, delta_crossing_y,4);//卡片坐标,即时更新
+         ips114_show_int(0,0,Angle_Crossing_Panduan,3);//左十字补线显示
+         ips114_show_int(0,20,Crossing_mode,3);//左十字模式显示
+				 
+//				 ips114_show_int(0,30,crossing_correct_again_x,3);//左十字卡片定位坐标
+//				 ips114_show_int(0,40,crossing_correct_again_y,3);//左十字卡片定位坐标
+//				 ips114_show_int(0,30,crossing_card_center_x,3);//左十字卡片定位坐标
+//				 ips114_show_int(0,40,crossing_card_center_y,3);//左十字卡片定位坐标
 //        ips114_show_int(90,40,record_island_zone_x,4);//卡片坐标,即时更新
 //        ips114_show_int(90,60,record_island_zone_y,4);//卡片坐标,即时更新
 //****************************************测试圆环卡片的类型记录*****************//
-//    ips114_show_int(60,0,Island_card[0].Card_Type,4);//卡片坐标,即时更新
-//    ips114_show_int(60,20,Island_card[1].Card_Type,4);//卡片坐标,即时更新
-// 	 ips114_show_int(60,40,Island_card[2].Card_Type,4);//卡片坐标,即时更新
-// 	 ips114_show_int(60,60,Island_card[3].Card_Type,4);//卡片坐标,即时更新
-//    ips114_show_int(60,80,Island_card[4].Card_Type,4);//校准步数
+    ips114_show_int(60,0,cross_card[0].Card_Type,4);//卡片坐标,即时更新
+    ips114_show_int(60,20,cross_card[1].Card_Type,4);//卡片坐标,即时更新
+ 	 ips114_show_int(60,40,cross_card[2].Card_Type,4);//卡片坐标,即时更新
+ 	 ips114_show_int(60,60,cross_card[3].Card_Type,4);//卡片坐标,即时更新
+    ips114_show_int(60,80,cross_card[4].Card_Type,4);//校准步数
 //****************************************************************************//
 //	 ips114_show_int(80,0,Island_card[0].Card_PWM_Duty,4);//卡片坐标,即时更新
 //   ips114_show_int(80,20,Island_card[1].Card_PWM_Duty,4);//卡片坐标,即时更新
@@ -275,16 +292,16 @@ int main(void)
 //        ips114_show_int(120,80,delta_x,4);//卡片坐标,即时更新
 //        ips114_show_int(120,100,delta_y,4);//卡片坐标,即时更新
         
-	ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
-       ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
-       ips114_show_float(90,40,test_top_error,2,3);//卡片坐标,即时更新
-			 ips114_show_float(90,60,top_error,2,3);//卡片坐标,即时更新
+// 	ips114_show_int(90,0,now_distance_x,4);//卡片坐标,即时更新
+//        ips114_show_int(90,20,now_distance_y,4);//卡片坐标,即时更新
+//        ips114_show_float(90,40,test_top_error,2,3);//卡片坐标,即时更新
+// 	ips114_show_float(90,60,top_error,2,3);//卡片坐标,即时更新
 	//*****************测试art1对正(粗对正和对正卡片区域)时的变量*******************//
 	//  ips114_show_int(120,0,Island_x,4);//卡片坐标,即时更新
         //  ips114_show_int(120,20,Island_y,4);//卡片坐标,即时更新
-	 ips114_show_int(120,40,delta_island_class_x,4);//卡片坐标,即时更新
-	 ips114_show_int(120,60,delta_island_class_y,4);//卡片坐标,即时更新
-        ips114_show_int(120,100,island_class_step,4);//校准步数
+	//  ips114_show_int(120,40,delta_island_class_x,4);//卡片坐标,即时更新
+	//  ips114_show_int(120,60,delta_island_class_y,4);//卡片坐标,即时更新
+        // ips114_show_int(120,100,island_class_step,4);//校准步数
         //  ips114_show_int(90,40,delta_island_x,4);//卡片坐标,即时更新
         //  ips114_show_int(90,60,delta_island_y,4);//卡片坐标,即时更新
 //*******************测试art4的变量*********************//
@@ -295,7 +312,7 @@ int main(void)
 //				ips114_show_int(90,80,CSI_correct_flag,4);//卡片坐标,即时更新
 //******************************************************//
 //	 ips114_show_int(90,80,right_lie_island_upline_position,4);//最右列的行坐标
-          ips114_show_int(0,20,Island_mode,3);//左环岛模式显示
+        //   ips114_show_int(0,20,Island_mode,3);//左环岛模式显示
         //  ips114_show_int(0,20,right_lie_island_upline_position,4);//一次扫线
         //  ips114_show_int(0,40,second_right_lie_island_upline_position,4);//二次扫线
         //  ips114_show_int(0,60,shabi_saoxian_step,4);//傻逼扫线的步数

@@ -16,6 +16,8 @@ uint8 pick_up_mode_change = 0;
 uint8 num; //
 uint8 up_right_row = 0;
 uint8 down_right_row = 0;
+uint8 up_left_row = 0;
+uint8 down_left_row = 0;
 uint8 Longest_White_Column_Left[2];                                                  // Record the longest white column in this iteration
 uint8 Last_Longest_White_Column_Left[2];                                             // Record the longest white column in the previous iteration to prevent white column fluctuations in some areas
 uint8 Left_Line_Start, Right_Line_Start;                                             // Starting point of the left and right lines
@@ -67,6 +69,8 @@ int center[IMAGE_HEIGHT]; // record the center line's column
 int Island_surrond[IMAGE_WIDTH] = {0};
 uint8 top_island_surround[IMAGE_WIDTH] = {0};
 uint8 low_island_surround[IMAGE_WIDTH] = {0};
+uint8 top_crossing_surround[IMAGE_WIDTH] = {0};
+uint8 low_crossing_surround[IMAGE_WIDTH] = {0};
 uint8 top_island_flag = 0;
 uint8 straight_card_left_down_point[2] = {0};
 uint8 straight_card_left_up_point[2] = {0}; // 如果想要找左上角的坐标，就必须要用距离小值的方法进行求解
@@ -102,7 +106,9 @@ float Right_derivative[IMAGE_HEIGHT] = {0.0};
 float top_island_err = 0.00;
 float err = 0.00;
 float last_err = 0.00;
-float island_err = 0.00; // 记录环岛时的误差
+float island_err = 0.00;
+float right_err = 0.00; // 记录环岛时的误差 right_err
+float left_err = 0.00;   // 左前瞻的误差
 float new_island_err = 0.00;
 float crossing_arround_err = 0.00; // 记录十字巡上边线时的误差
 /*the following is the information for receiving data through the serial port*/
@@ -2716,7 +2722,7 @@ void Cross_State_Change(void)
     /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
     if (Cross_State == 0) // 当十字状态置为0的时候
     {
-        Cross_State = 1; // 十字状态置为1
+        Cross_State=1; // 十字状态置为1
     }
     else if (Cross_State == 1)
     {
@@ -2734,14 +2740,14 @@ void Cross_State_Change(void)
     }
     else if (Cross_State == 3)
     {
-        if (Left_Up_Find >= 90 || Right_Up_Find >= 90 && Both_Lost_Time <= 20) // 左上右上拐点下降到一定高度时
+        if (Left_Up_Find >= 90 || Right_Up_Find >= 90 && Both_Lost_Time <= 10)
         {
             Cross_State = 4;
         }
     }
     else if (Cross_State == 4) //
     {
-        if (Left_Lost_Time == 1 && Right_Lost_Time == 1 && Both_Lost_Time == 1) // 此时左右边线连续，不丢线
+        if (Left_Lost_Time <=5 && Right_Lost_Time <=5 && Both_Lost_Time <= 3) // 左转标志位
         {
 
             left_turn_flag = 1; // 左转标志位，此时要进行左转
@@ -2750,13 +2756,13 @@ void Cross_State_Change(void)
     }
     else if (Cross_State == 5)
     {
-        if (Left_Lost_Time >= 20 && Right_Lost_Time <= 2 && Both_Lost_Time <= 1) // 左边线丢线，为左弯道，故此时为左十字
+        if (Left_Lost_Time >= 20 && Right_Lost_Time <=5 && Both_Lost_Time <= 5)
         {
             Cross_State = 6;
             Cross_Way_change = 1;
             left_turn_flag = 1;
         }
-        else if (Right_Lost_Time >= 20 && Left_Lost_Time <= 2 && Both_Lost_Time <= 1) // 右边线丢线，为右弯道，故此时为右十字
+        else if (Right_Lost_Time >= 20 && Left_Lost_Time <= 5 && Both_Lost_Time <= 5) // 右转标志位
         {
             Cross_Way_change = 1;
             right_turn_flag = 1; // 右转标志位，此时要进行右转
@@ -3099,7 +3105,7 @@ void Top_Line_Search(void)
     }
 
     uint8 right_max_point = 0;
-    /*第一部分：扫线*/
+    /*第一部分：扫线 扫全屏*/
     for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
     {
         for (uint8 j = IMAGE_HEIGHT - 1; j >= 1; j--)
@@ -3258,27 +3264,57 @@ void send_deal(void)
     else if (real_y <= 180)
         uart_write_string(UART_4, uart_4_begino);
 }
-
-float Top_Line_Err(uint8 target_row)
+//**
+//* @brief 输入:目标行
+//* @param 输出上边线右前瞻误差 24/7/9 4:00(这b车是真不想调了)
+//* @return 无
+// */
+float Top_Line_Err_Right(uint8 target_row)
 {
-    island_err = 0.0;                                          // 使用前先清零
-    for (uint8 i = IMAGE_WIDTH - 55; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
+    right_err = 0.0;                             // 使用前先清零
+    for (uint8 i = IMAGE_WIDTH -55; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
     {
-        island_err += target_row - Island_surrond[i];
+        right_err += target_row-Island_surrond[i];
     }
-    island_err = island_err / 50; // 取平均值，不加权重了
+    right_err = right_err / 50; // 取平均值，不加权重了
 
     /*在丢线时，要对err进行合理的限幅*/
     /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
-    if (island_err >= 25.0)
+    if (right_err >= 25.0)
     {
-        island_err = 25.0; // island_err的最小值
+        right_err = 25.0; // right_err的最小值
     }
-    else if (island_err <= -25.0)
+    else if (right_err <= -25.0)
     {
-        island_err = -25.0;
+        right_err = -25.0;
     }
-    return island_err;
+    return right_err;
+}
+//**
+//* @brief 输入:目标行
+//* @param 输出上边线右前瞻误差 24/7/9 4:00(这b车是真不想调了)
+//* @return 无
+// */
+float Top_Line_Err_Left(uint8 target_row)
+{
+    left_err = 0.0;                             // 使用前先清零
+    for (uint8 i = IMAGE_WIDTH/2 - 10; i > 0; i--) // 记录对应的误差(这里类似于前瞻误差)
+    {
+        left_err += target_row-Island_surrond[i];
+    }
+    left_err = left_err / 50; // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    if (left_err >= 25.0)
+    {
+        left_err = 25.0; // left_err的最小值
+    }
+    else if (left_err <= -25.0)
+    {
+        left_err = -25.0;
+    }
+    return left_err;
 }
 
 /*
@@ -3752,7 +3788,63 @@ void Finnal_Zebra_Number_Find(void)
         // }
     }
 }
+//*输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
+//*上边线和下边线的选择  0:自定义 1:下边线
+//*输出结果：上边线/下边线的最左列的行坐标，取上边线的最靠左的点的行坐标作为返回值？
+int Top_Top_Line_Search_Crossing(int center_row, int end_row, int Up_Or_Low)
+{
+        /*先扫两段线*/
+        /*************扫下边线(没用上) end_row没用上 对应1************/
+        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)              //从最底下往上扫线，扫到目标行
+        {
+            for (uint8 i = IMAGE_HEIGHT - 2; i >= center_row; i--)
+            {
+                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
+                {
+                    low_crossing_surround[j] = i - 1;               //存入行坐标
+                    break;
+                }
+                else if (i == center_row)                         //到目标行都没扫到，则认为是丢线
+                {
+                    low_crossing_surround[j] = IMAGE_HEIGHT - 2;
+                }
+            }
+        }
+        /*************扫上边线(自定义起始行) 对应0************/
+        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)
+        {
+            for (uint8 i = center_row; i >= end_row; i--)                //
+            {
+                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
+                {
+                    top_crossing_surround[j] = i - 1;                //存入行坐标
+                    break;
+                }
+                else if (i == end_row)
+                {
+                    top_crossing_surround[j] = end_row;                     //丢线，认为是第5行
+                }
+            }
+        }
 
+        /*逆时针写法*/
+        /**/
+        // uint8 choose_mode = 0;
+
+        if (Up_Or_Low == 0)//返回上边线的最右列的值
+        {
+            up_left_row = top_crossing_surround[10];//上边线最右列的行坐标
+            return up_left_row;                         //提供返回值
+        }
+        else//返回下边线的最右列的值1
+        {
+
+            down_left_row = low_crossing_surround[10];//下边线最右列的行坐标
+            return down_left_row;                         //提供返回值
+
+        }
+//    }
+}
 /*
 输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
           上边线和下边线的选择  0:自定义 1:下边线
@@ -4152,7 +4244,7 @@ void Crossing_picking_detect(void)
     case 2: // 状态2，捡完所以卡片，开始巡边线
     {
         Top_Line_Search(); // 扫线
-        crossing_arround_err = Top_Line_Err(80);
+        crossing_arround_err = Top_Line_Err_Right(80);
     }
     break;
     }

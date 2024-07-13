@@ -13,6 +13,7 @@ extern int center[IMAGE_HEIGHT]; // ��������
 extern uint8 pick_up_mode;       // 捡卡片模式
 extern int center_x, center_y;   // 卡片中心坐标
 extern uint8 type;               // 元素类型变量
+extern uint8 Cross_State;
 typedef enum
 {
     STRAIGHT_ROAD,
@@ -68,7 +69,8 @@ float Err_Handle(void);
 float Island_Surround(uint8 target_row);
 void Top_Line_Road_Search(void);
 void Top_Line_Search(void);
-float Top_Line_Err(uint8 target_row);
+float Top_Line_Err_Right(uint8 target_row);
+float Top_Line_Err_Left(uint8 target_row);
 void Outer_Analyse(void);
 void K_Draw_Line(float k, int startX, int startY, int endY);
 void Draw_Line(int startX, int startY, int endX, int endY);
@@ -94,5 +96,6 @@ void send_deal(void);
 int Continuity_Change_Left_Island_Up(int start, int end); // 连续性阈值设置为5;
 int Continuity_Change_Right_Island_Up(int start, int end);
 int Top_Top_Line_Search_Island(int center_row, int end_row,int Up_Or_Low);
+int Top_Top_Line_Search_Crossing(int center_row, int end_row, int Up_Or_Low);
 
 #endif
