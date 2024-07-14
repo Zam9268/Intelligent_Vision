@@ -17,6 +17,7 @@ extern uint8 Cross_State;
 extern uint8 Cross_Handle_Flag;
 extern uint8 left_island_flag, right_island_flag;
 extern uint8 Zebra_Classify_flag;
+extern uint8 Zebra_catch_flag;
 typedef enum
 {
     STRAIGHT_ROAD,
@@ -72,6 +73,8 @@ float Err_Handle(void);
 float Island_Surround(uint8 target_row);
 void Top_Line_Road_Search(void);
 void Top_Line_Search(void);
+void Top_Line_x_Search(void);
+float Top_Line_x_Err_Right(uint8 target_row);
 float Top_Line_Err_Right(uint8 target_row);
 float Top_Line_Err_Left(uint8 target_row);
 void Outer_Analyse(void);

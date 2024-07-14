@@ -19,7 +19,8 @@ float Angle_Island_back;
 float Angle_Island_Zero;
 float Angle_Crossing;
 float Angle_Crossing_Panduan;
-float Angle_Zebra; //斑马线解算世界坐标		
+float Angle_Zebra; //斑马线解算世界坐标
+float Angle_Zebra_dis; //斑马线距离解算掉头距离		
 float kal_angle=0;
 float coe_Gyro_z=0.2;
 float IMU660ra_FIFO[11];

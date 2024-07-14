@@ -109,6 +109,7 @@ float top_island_err = 0.00;
 float err = 0.00;
 float last_err = 0.00;
 float island_err = 0.00;
+float zebra_err = 0.00;
 float right_err = 0.00; // 记录环岛时的误差 right_err
 float left_err = 0.00;   // 左前瞻的误差
 float new_island_err = 0.00;
@@ -1437,7 +1438,7 @@ void Outer_Analyse(void)
 
     // if (Road_Type == STRAIGHT_ROAD)
     // Ramp_Detect();
-    Zebra_Stripes_Detect_new();
+    Zebra_Stripes_Detect();
     // if (Road_Type == RAMP)
     //     Ramp_to_Straight_Detect(); //??????
 
@@ -3121,6 +3122,41 @@ void Top_Line_Road_Search(void)
         }
     }
 }
+//** */
+//*扫全屏, 平移扫线 */
+void Top_Line_x_Search(void)
+{
+    /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
+    lowest_row = 0;
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++) // 初始化坐标
+    {
+        Island_surrond[i] = 0;
+    }
+
+    uint8 right_max_point = 0;
+    /*第一部分：扫线 扫全屏*/
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        for (uint8 j = IMAGE_HEIGHT - 1; j >= 1; j--)
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
+            {
+                Island_surrond[i] = j + 1;
+                if (j + 1 > lowest_row)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
+                if (j <= 5 ) // 比第5行小就认为是丢线
+                {
+                    Island_surrond[i] = 5;
+                }
+                break;
+            }
+        }
+    }
+}
 /*从下而上对上边线进行循迹：正常寻迹*/
 void Top_Line_Search(void)
 {
@@ -3291,6 +3327,32 @@ void send_deal(void)
         uart_write_string(UART_4, uart_4_beginn);
     else if (real_y <= 180)
         uart_write_string(UART_4, uart_4_begino);
+}
+//**
+//* @brief 输入:目标行
+//* @param 输出上边线整线误差 24/7/9 4:00(这b车是真不想调了)
+//* @return 无
+// */
+float Top_Line_x_Err_Right(uint8 target_row)
+{
+    zebra_err = 0.00;                           // 使用前先清零
+    for (uint8 i = 5; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
+    {
+        zebra_err += target_row-Island_surrond[i];
+    }
+    zebra_err = zebra_err / 90; // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    if (zebra_err >= 25.0)
+    {
+        zebra_err = 25.0; // zebra_err
+    }
+    else if (zebra_err <= -25.0)
+    {
+        zebra_err = -25.0;
+    }
+    return zebra_err;
 }
 //**
 //* @brief 输入:目标行
