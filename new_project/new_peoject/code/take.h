@@ -12,9 +12,9 @@
 #define SERVO_MOTOR_DUTY(x)             ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/90.0))    //舵机角度转换成对应的pwm值
 #define SERVO_MOTOR_DUTY_360(x)         ((float)PWM_DUTY_MAX/(1000.0/(float)SERVO_MOTOR_FREQ)*(0.5+(float)(x)/180.0))    //舵机角度转换成对应的pwm值
 
-#define class_1_angle            100    //a类对应舵机角度173度
-#define class_2_angle            66    //b类对应舵机角度113度
-#define class_3_angle            30     //c类对应舵机角度53度
+#define class_1_angle            92    //a类对应舵机角度173度
+#define class_2_angle            56    //b类对应舵机角度113度
+#define class_3_angle            20     //c类对应舵机角度53度
 
 #define class_first_angle            20      //环岛第一张卡片分类区域 173
 #define class_second_angle           56     //环岛第二张卡片区域

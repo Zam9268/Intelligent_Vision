@@ -14,8 +14,9 @@ extern uint8 pick_up_mode;       // 捡卡片模式
 extern int center_x, center_y;   // 卡片中心坐标
 extern uint8 type;               // 元素类型变量
 extern uint8 Cross_State;
-extern uint8 right_island_flag;  //右环岛标志位
 extern uint8 Cross_Handle_Flag;
+extern uint8 left_island_flag, right_island_flag;
+extern uint8 Zebra_Classify_flag;
 typedef enum
 {
     STRAIGHT_ROAD,

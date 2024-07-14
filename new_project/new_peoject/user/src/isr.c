@@ -55,6 +55,7 @@ extern char uart_4_begin[];
 extern char uart_4_begin_abc[];
 extern fifo_struct uart_data_fifo; // UART数据FIFO结构体
 extern uint8 uart_get_data[64];
+extern uint8 stop_detect_flag;
 int count = 0;
 int arm_flag = 0;
 unsigned int init_count = 0;
@@ -65,6 +66,9 @@ uint8 seconds = 0;
 uint8 ramp_begin_detect_flag = 0;
 uint8 change = 0;
 extern uint8 test_flag;
+extern uint8 island_stop_flag;
+extern uint8 normal_stop_flag;
+extern uint8 delay_place_flag;
 //char uart1_begin[] = "E";
 //char uart1_stop[] = "S";
 void CSI_IRQHandler(void)
@@ -139,7 +143,46 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
-
+        if(stop_detect_flag==1)
+        {
+            static uint8 my_counttttt=0;
+            my_counttttt++;
+            if(my_counttttt==20)
+            {
+                my_counttttt=0;
+                stop_detect_flag=0;
+            }
+        }
+        if(island_stop_flag==1)//环岛停止标志位
+        {
+            static uint8 my_new_coount=0;
+            my_new_coount++;
+            if(my_new_coount==20)
+            {
+                island_stop_flag=0;
+                my_new_coount=0;
+            }
+        }
+        if(normal_stop_flag==1)
+        {
+            static uint8 cco=0;
+            cco++;
+            if(cco==30)//10s后正常寻迹
+            {
+                normal_stop_flag=0;
+                cco=0;
+            }
+        }
+        if(delay_place_flag==1)
+        {
+            static uint8 myyy=0;
+            myyy++;
+            if(myyy==20)
+            {
+                delay_place_flag=0;
+                myyy=0;
+            }
+        }
         my_sceond_count++;
         if (my_sceond_count == 2)
         {
