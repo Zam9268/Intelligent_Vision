@@ -1646,8 +1646,8 @@ void car_findcard(int *mode)
       //   *mode = Car_go;
       //   return;
       // }
-      else
-      {
+//      else
+//      {
         if (only_one) // 只执行一次
         {
           Card_dis_car_x = 0;
@@ -1664,7 +1664,7 @@ void car_findcard(int *mode)
           target_type = *mode;             // 测试变量使用
           return;
         }
-      }
+//      }
     }
     else
     {
@@ -2083,7 +2083,12 @@ void card_final_classify(int *classify_step)
     if (Traffic_Finish == FINISH && Supply_Finish == FINISH && Weapon_Finish == FINISH) // 三类区域都已经识别完成
     {
       *classify_step = Turn_back; // 转回正常寻迹
-      Card_dis_car_x = 0;0;
+      Card_dis_car_x = 0;
+      Card_dis_car_y = 0; // 卡片里程计清空
+    }
+    if (now_distance_y > 300 && now_distance_y < 800 && now_distance_x < 450 && now_distance_x > -450) // art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
+    {
+      zebra_card_x = (int)Zebra_x + now_distance_x/10;
       zebra_card_y = (int)Zebra_y + now_distance_y/10; //解算出的新坐标,单位为cm
       delta_zebra_x = zebra_card_x - last_zebra_card_x;//算出差值
       delta_zebra_y = zebra_card_y - last_zebra_card_y;//算出差值
@@ -2121,12 +2126,7 @@ void card_final_classify(int *classify_step)
       Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
     }
   }
-  if (*classify_step == Catch_card) // 寻找卡片分类区
-      Card_dis_car_y = 0; // 卡片里程计清空
-    }
-    if (now_distance_y > 300 && now_distance_y < 800 && now_distance_x < 450 && now_distance_x > -450) // art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
-    {
-      zebra_card_x = (int)Zebra_x + now_distance_x/1域
+  if (*classify_step == Catch_card) // 寻找卡片分类区域
   {
     if (classify_correct_finish == 1) // 到达了数字分类卡片区域，准备识别
     {
@@ -2800,7 +2800,6 @@ else if(*Island_step==Car_Go_Island_Right_Zone)
      }
     }
     *Island_step=Car_Go_Island_Right_Zone;
-    island_found
   }
 }
 // /*****************************************环岛内巡上边线*****************************/

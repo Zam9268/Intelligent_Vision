@@ -247,7 +247,7 @@ extern uint8 Crossing_Finish;
 extern uint8 Cross_Allow_flag; // 十字允许标志位
 extern uint8 Island_Allow_flag;//环岛允许标志位
 extern uint8 Zebra_Allow_flag; //斑马线允许标志位
-extern uint8 Left_Island_Done;
+extern uint8 Left_Island_Done; //左环岛完成标志
 
 extern int pid_motor[4];
 

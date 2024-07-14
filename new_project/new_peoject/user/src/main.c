@@ -94,6 +94,7 @@ extern uint8 left_island_flag;
 extern uint8 record_abc_card_type;
 extern uint8 transform_buffer[16];
 extern uint8 shabi_saoxian_step;
+extern uint8 Zebra_catch_flag;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -366,7 +367,7 @@ int main(void)
                              Zebra_catch_flag = 0;           //干废斑马线识别条件
                              break;
                          }
-                         else if(Cross_Handle_Flag = 1 && Cross_Allow_flag = READY && Crossing_Finish == NOT_FINISH)
+                         else if(Cross_Handle_Flag == 1 && Cross_Allow_flag == READY && Crossing_Finish == NOT_FINISH)
                          {
                              car_run_mode = 5;               //十字处理
                              Find_card_allow = NOT_READY;    //不允许寻卡
@@ -377,7 +378,7 @@ int main(void)
                              Zebra_catch_flag = 0;          //干废斑马线识别条件
                              break;
                          }
-                         else if(Zebra_catch_flag = 1 && Zebra_Allow_flag = READY && Zebra_Finish == NOT_FINISH)
+                         else if(Zebra_catch_flag == 1 && Zebra_Allow_flag == READY && banmaxian_finish == NOT_FINISH)
                          {
                              car_run_mode = 1;               //斑马线处理
                              Find_card_allow = NOT_READY;    //不允许寻卡
@@ -448,7 +449,7 @@ int main(void)
                                 break;       
                             }
                         case 5:             //十字处理
-                           if(Cross_Allow_flag = READY && Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
+                           if(Cross_Allow_flag == READY && Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
                            {
                               car_run_mode = 5;               //锁住状态
                               Cross_Allow_flag = READY;       //允许十字

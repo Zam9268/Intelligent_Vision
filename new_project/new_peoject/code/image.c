@@ -3937,7 +3937,7 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low_Or_Mid
     /**/
     // uint8 choose_mode = 0;
 
-    if (Up_Or_Low == 0) // 返回上边线的最右列的值
+    if (Up_Or_Low_Or_Mid == 0) // 返回上边线的最右列的值
     {
 
         // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
@@ -3949,7 +3949,7 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low_Or_Mid
         // ips114_show_uint(188, 20, max_row, 3);
         // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
     }
-    else if(Up_Or_Low == 1)// 返回下边线的最右列的值1
+    else if(Up_Or_Low_Or_Mid == 1)// 返回下边线的最右列的值1
     {
 
         // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
@@ -3961,7 +3961,7 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low_Or_Mid
         // ips114_show_uint(188, 20, max_row, 3);
         // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
     }
-    else  if(Up_Or_Low == 2)
+    else  if(Up_Or_Low_Or_Mid == 2)
     {
         mid_right_row = top_island_surround[90];
         return mid_right_row;
@@ -4288,7 +4288,7 @@ void Zebra_Stripes_Detect_new(void)
         Road_Type = STRAIGHT_ROAD;
     }
 }
-
+uint8 Zebra_catch_flag = 0;
 void test2(void)
 {
     /*当判断到不同的元素的时候，变量type就会赋值给对应的初值*/
@@ -4319,7 +4319,10 @@ void test2(void)
     }
     if (left_island_flag || right_island_flag) // 如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
         Island_Detect();
-
+    if(type==5)
+		{
+			Zebra_catch_flag = 1;
+		}
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
