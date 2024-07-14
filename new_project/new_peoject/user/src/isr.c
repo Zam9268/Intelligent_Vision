@@ -65,7 +65,7 @@ extern uint8 Longest_Column_Fixed;
 uint8 seconds = 0;
 uint8 ramp_begin_detect_flag = 0;
 uint8 change = 0;
-extern uint8 test_flag;
+extern int test_flag;
 extern uint8 island_stop_flag;
 extern uint8 normal_stop_flag;
 extern uint8 delay_place_flag;

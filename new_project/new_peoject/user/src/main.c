@@ -283,11 +283,11 @@ int main(void)
                         ips114_show_int(90, 10, left_island_flag, 3);  // 左环岛标志位显示
                         ips114_show_int(90, 20, Island_allow_flag, 3); // 左环岛标志位显示
 
-//        ips114_show_int(0,40,Traffic_count,3);
-//        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
-//	ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
-//	ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
-//			 
+        ips114_show_int(0,40,Traffic_count,3);
+        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
+	ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
+	ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
+			 
 	       ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
          ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
 

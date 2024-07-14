@@ -1787,9 +1787,6 @@ void car_findcard(int *mode)
     else
     {
       car_run_mode = 0;
-      Island_allow_flag = NOT_READY;               //关闭环岛
-      Cross_allow_flag =  NOT_READY;                //关闭十字
-      banmaxian_allow_flag = NOT_READY;            //关闭斑马线
       car_run(); // 正常巡线模式
       *mode = Car_go;
       return;
@@ -1849,7 +1846,7 @@ void car_findcard(int *mode)
   {
     if (fabsf(Angle_Z - turn_angle) <= 4) // 陀螺仪转向识别
     {
-
+      
       Vz = 0;                    // 清0Vz
       *mode = Car_find_card_cor; // 模式转变
       only_one = 1;
@@ -1871,7 +1868,10 @@ void car_findcard(int *mode)
     }
     else
     {
-      banmaxian_allow_flag = NOT_READY; // 此时关闭斑马线，因为转向外侧会判断成斑马线(不知道行不行)
+      Island_allow_flag = NOT_READY;               //关闭环岛
+      Cross_allow_flag =  NOT_READY;                //关闭十字
+      banmaxian_allow_flag = NOT_READY;            //关闭斑马线
+      // banmaxian_allow_flag = NOT_READY; // 此时关闭斑马线，因为转向外侧会判断成斑马线(不知道行不行)
       Turn_Angle_PD(turn_angle);        // 准备Vz转速
       Vx = 0;
       Vy = 0;                                      // x,y静止
@@ -2184,7 +2184,7 @@ void card_final_classify(int *classify_step)
   //******************************向右转向***************************//
   if (*classify_step == Find_banmaxian && banmaxian_finish == NOT_FINISH) // 找到斑马线,且处理还未完成
   {
-    if (abs(Angle_Z - turn_once_side_angle) <= 4) // 转到了目标角度
+    if (abs(Angle_Z - turn_once_side_angle) <= 4 && turn_once_side_angle!=0) // 转到了目标角度
     {
       *classify_step = Find_upline; // 转变成上边线寻迹
       car_stop();                   // 停车，清零速度
@@ -2200,7 +2200,6 @@ void card_final_classify(int *classify_step)
       correct_y = 0;            // 清零修正的x，y距离
       Angle_arrive_card = 0;    // 清零角度
       arrive_card_flag = CLOSE; // 开启总钻风微调时的里程计计数
-      classify_type = *classify_step;
       return;
     }
     else
@@ -2254,7 +2253,7 @@ void card_final_classify(int *classify_step)
         turn_other_side_angle=turn_other_side_angle+360;//限幅
       *classify_step = Zebra_Turn_Other_Side;
     }
-    else if (now_distance_y > 250 && now_distance_y < 600 && now_distance_x < 150 && now_distance_x > -150) // art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
+    else if (now_distance_y > 250 && now_distance_y < 600 && now_distance_x < 200 && now_distance_x > -200) // art1识别到坐标,设置识别区间为右中平面，实在不行就直接上世界坐标解算来判断
     {
       zebra_card_x = (int)Zebra_x + now_distance_x / 10;
       zebra_card_y = (int)Zebra_y + now_distance_y / 10; // 解算出的新坐标,单位为cm
@@ -2451,7 +2450,7 @@ void card_final_classify(int *classify_step)
     {
       *classify_step = Go_back;
       Vx = 0;
-      Turn_Angle_PD(-90 + Now_angle);                              // 此处可以根据实际情况修改，提供Vz的车头修正速度
+      Turn_Angle_PD(Angle_Z);                              // 此处可以根据实际情况修改，提供Vz的车头修正速度
       Vy = Distance_pid(&distance_pid[0], 0, (int)Card_dis_car_y); // 向后退
       Car_Inverse_kinematics_solution(Vx, Vy, Vz);                 // 麦轮控制，为target_speed赋值
       return;

@@ -1438,7 +1438,7 @@ void Outer_Analyse(void)
 
     // if (Road_Type == STRAIGHT_ROAD)
     // Ramp_Detect();
-    Zebra_Stripes_Detect();
+    Zebra_Stripes_Detect_new();
     // if (Road_Type == RAMP)
     //     Ramp_to_Straight_Detect(); //??????
 
@@ -2774,6 +2774,25 @@ void Cross_State_Change(void)
             Cross_State = 6;
         }
     }
+}
+
+void Cross_State_Change_Plus(void)
+{
+	if(Cross_State==0)
+	{
+		if(Longest_White_Column_Left[1]<=40)
+		{
+			Cross_State = 6;
+            Cross_Way_change = 1;
+            left_turn_flag = 1;
+		}
+		else if (Longest_White_Column_Left[1]>=145) // 右转标志位
+        {
+            Cross_Way_change = 1;
+            right_turn_flag = 1; // 右转标志位，此时要进行右转
+            Cross_State = 6;
+        }
+	}
 }
 
 unsigned int Road_Min_Width[2] = {188, 0}; // 记录最小道路宽度对应的行数和宽度
@@ -4475,13 +4494,13 @@ void test2(void)
     {
         Zebra_catch_flag = 1;
     }
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    {
-        // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
-        // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
-        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-        // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-    }
+    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    // {
+    //     // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
+    //     // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+    //     ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    //     // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    // }
 
     // ips114_show_uint(0, 0, Left_Lost_Time, 3);
     // ips114_show_uint(0, 10, Right_Lost_Time, 3);
@@ -4511,13 +4530,16 @@ void test2(void)
         // ips114_show_int(188,30,real_right_down_x,4);
         // ips114_show_int(188,45,real_right_down_y,4);
     }
-    if (visual_show2 == 1)
-    {
-        ips114_show_uint(188, 80, Island_State, 2);
-    }
+    // if (visual_show2 == 1)
+    // {
+    //     ips114_show_uint(188, 80, Island_State, 2);
+    // }
 
     //    ips114_show_uint(188,120,threshold,3);
-    ips114_displayimage03x(*Image_Use, 188, 120);
+    
+        ips114_displayimage03x(*Image_Use, 188, 120);
+    
+    
 
     float my_err = Err_Handle();
     ips114_show_float(188, 0, my_err, 3, 3);
