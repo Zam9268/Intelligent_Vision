@@ -1587,18 +1587,18 @@ void find_crossing_classify(float Traverse_island_distance, float Straight_islan
   {
   case 1:                                     // 前进道合适区域
     Turn_Angle_PD(Angle_Z);                   // 锁住现在车头的位置，提供速度Vz
-    if (delta_crossing_class_y > 45 && crossing_class_step == 1) // y距离过大，要前进
+    if (delta_crossing_class_y > 40 && crossing_class_step == 1) // y距离过大，要前进
     {
       Vx = 0; // 前进
       Vy = 5;
     }
-    else if (delta_crossing_class_y < 42 && crossing_class_step == 1) // y距离过小，要后退
+    else if (delta_crossing_class_y < 35 && crossing_class_step == 1) // y距离过小，要后退
     {
       Vx = 0; // 停车
       Vy = -5;
     }
     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-    if (delta_crossing_class_y <= 45 && delta_crossing_class_y >= 42)
+    if (delta_crossing_class_y <= 40 && delta_crossing_class_y >= 35)
     {
       Vx = 0; // 停车
       Vy = 0;
@@ -1607,17 +1607,17 @@ void find_crossing_classify(float Traverse_island_distance, float Straight_islan
     break;
   case 2:
     Turn_Angle_PD(Angle_Z);                                       // 锁住现在车头的位置，提供速度Vz
-    if (delta_crossing_class_x > -10 && crossing_class_step == 2) // 距离过大，右移
+    if (delta_crossing_class_x > -3 && crossing_class_step == 2) // 距离过大，右移
     {
       Vx = 5; // 右移
       Vy = 0; // 前进
     }
-    else if (delta_crossing_class_x < -20 && crossing_class_step == 2) // 超过，左移
+    else if (delta_crossing_class_x < -6 && crossing_class_step == 2) // 超过，左移
     {
       Vx = -5; // 左移
       Vy = 0;
     }
-    else if (delta_crossing_class_x <= -10 && delta_crossing_class_x >= -20 && crossing_class_step == 2)
+    else if (delta_crossing_class_x <= -3 && delta_crossing_class_x >= -6 && crossing_class_step == 2)
     {
       Vx = 0; //
       Vy = 0; // 停车
@@ -2562,12 +2562,6 @@ void Left_Island_pick_and_move(int *Island_step)
       car_stop();
       system_delay_ms(500);
       arrive_island_center_flag = NOT_READY;
-      //  Angle_Island = 0;                            //第一次用来对停车的位置做一个初步定位
-      // //  Island_classify_flag=OPEN;                   //打开环岛里程计模式
-      //  Island_x=0;
-      //  Island_y=0;                                  //环岛里程计清零
-      // now_distance_x=0;
-      // now_distance_y=0;
       now_Island_angle = Angle_Z;      //记录下环岛转向前的角度
       Angle_Island_Zero = 0;           //专门用来圆环转向的角度
      turn_IsLand_angel = Angle_Z+90;  //向左转向90度
@@ -2670,7 +2664,7 @@ else if(*Island_step==Island_Card_Correct)
    }
    else
    {
-    if(now_distance_x != 0 && now_distance_y> 100 && now_distance_y <600)      //目前先使用art1做矫正
+    if(now_distance_x != 0 && now_distance_y> 100 && now_distance_y <700)      //目前先使用art1做矫正
     {
       if(allow_flag==OPEN)
       {
@@ -2972,7 +2966,7 @@ else if(*Island_step==Island_Card_Classify_Pick)//环岛卡片的分类
     Vx=0;
     Turn_Angle_PD(turn_outside_island_angle);           //准备Vz转速，锁住车头
     Car_Inverse_kinematics_solution(Vx, Vy, Vz);        //麦轮控制，为target_speed赋值
-    right_lie_island_upline_position=Top_Top_Line_Search_Island(119,30, 2);//持续从110行往上到20行找下边线数组中间行坐标
+    right_lie_island_upline_position=Top_Top_Line_Search_Island(119,40, 2);//持续从119行往上到40行找下边线数组中间行坐标
     if(right_lie_island_upline_position<60  && right_lie_island_upline_position>50)
     {
       back_flag=FINISH;
@@ -3048,7 +3042,7 @@ else if(*Island_step==Car_Go_Island_Right_Zone)
 // /*****************************************环岛内巡上边线*****************************/
 else if(*Island_step==Car_Go_Find_Upline_Inside_Island)
 {
-    if(now_distance_x > -500 && now_distance_x < 200 && now_distance_y> 100  && now_distance_y< 750)//设定一个识别区间(先暂时这样，后续可能会使用到世界坐标)，该判断条件更优先x区间限制只扫右平面 y区间屏蔽放下的卡片
+    if(now_distance_x > -200 && now_distance_x < 200 && now_distance_y> 100  && now_distance_y< 750)//设定一个识别区间(先暂时这样，后续可能会使用到世界坐标)，该判断条件更优先x区间限制只扫右平面 y区间屏蔽放下的卡片
   {
     record_island_catch_angle = Angle_Island_back;                    //记录下本次识别到的角度值
     delta_record_island_angle = record_island_catch_angle - last_record_island_catch_angle;//对比上一捕获到卡片时的角度
@@ -4299,8 +4293,8 @@ void Left_Crossing_pick_and_move(int *Cross_step)
     {
       if(allow_crossing_flag==OPEN)                        //只执行一次
       {
-        crossing_correct_again_x=(float)near_card_x-5;
-        crossing_correct_again_y=(float)near_card_y+2;        //再次微调的art4输入距离
+        crossing_correct_again_x=(float)near_card_x+20;
+        crossing_correct_again_y=(float)near_card_y+20;     //再次微调的art4输入距离
         correct_art2_flag=CLOSE;                            //关闭art4修正中断
         allow_crossing_flag=CLOSE;
       }
@@ -4388,8 +4382,8 @@ if(left_lie_island_upline_position>110 && left_lie_island_upline_position<118)  
     now_distance_x=0;
     now_distance_y=0;                                   //下一步要用的坐标清零
     Angle_Crossing_Panduan = 0;                         //用于判断是否为重复检测
-    NVIC_SetPriority(LPUART1_IRQn, 0);	//降低art1的中断优先级,为下一步art4再矫正做准备
-    *Cross_step=Car_Go_Crossing_Upline;                    //切换模式
+    NVIC_SetPriority(LPUART1_IRQn, 3);	                //降低art1的中断优先级,为下一步art4再矫正做准备
+    *Cross_step=Car_Go_Crossing_Upline;                 //切换模式
     return;
   }
   else
@@ -4450,7 +4444,7 @@ else if(*Cross_step==Car_Go_Crossing_Upline)
   }
   else
   {
-    if(now_distance_x <100  && now_distance_x > -500 && now_distance_y> 200  && now_distance_y<800 )
+    if(now_distance_x <200  && now_distance_x > -200 && now_distance_y> 200  && now_distance_y<800 )
     {
       catch_crossing_zone = READY;
     }
@@ -4483,7 +4477,7 @@ else if(*Cross_step==Car_Go_Crossing_Zone_Outside)
     record_crossing_zone_x=0;
     record_crossing_zone_y=0;
     crossing_classify_correct_finish=NOT_FINISH;
-    crossing_class_step=1;                                //校准步数初始化为1  
+    crossing_class_step=1;                              //校准步数初始化为1  
     /************************/
     found = NOT_READY;                                  //找到标志
     record_cross_abc_flag = NOT_FINISH;                 //清空记录完成的标志位
@@ -4491,7 +4485,7 @@ else if(*Cross_step==Car_Go_Crossing_Zone_Outside)
     card_abc=0;                                         //先清零再使用
     classify_art2_flag=OPEN;                            //打开发送字母的art4中断
     correct_art2_flag=CLOSE;                            //关闭art4修正中断
-    *Cross_step=Car_Crossing_Zone_Classify;                  //识别环岛的区域类型
+    *Cross_step=Car_Crossing_Zone_Classify;             //识别环岛的区域类型
        return;
   }
   else
