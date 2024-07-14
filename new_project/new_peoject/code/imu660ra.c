@@ -103,7 +103,7 @@ void Get_angle()
 	 Angle_arrive_card+=fil_Gyro_z*dt;//用于总钻风调整
 	 Angle_ramp+=fil_Gyro_z*dt;//用于坡道绕行
 	 Angle_Island+=fil_Gyro_z*dt;//用于环岛分类
-	 Angle_Island_back+=fil_Gyro_z*dt;//用于环岛后退
+	 Angle_Island_back+=fil_Gyro_z*dt;//用于环岛校验
 	 Angle_Island_Zero+=fil_Gyro_z*dt;//专门用来环岛转向
 	 Angle_Crossing+=fil_Gyro_z*dt;//用于十字分类
 	 Angle_Crossing_Panduan+=fil_Gyro_z*dt;//用于十字检测
