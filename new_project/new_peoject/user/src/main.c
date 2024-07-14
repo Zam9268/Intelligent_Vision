@@ -126,8 +126,8 @@ int main(void)
         //    system_delay_ms(10000);         //
         // key_init(10);//?????????
         // pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
-        // while(1)//????????1s???????
-        // {
+        //       while(1)//????????1s???????
+        //        {
         //     static unsigned int key_count=0;
         //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
         //     {
@@ -178,7 +178,7 @@ int main(void)
         pit_ms_init(PIT_CH3, 500); // 25ms
         //
 
-//        uart_write_string(UART_1, uart1_begin);
+        //        uart_write_string(UART_1, uart1_begin);
         // target_motor[1]=1000;
         // target_motor[3]=1000;
         //    float other_data[5]={1.0,2.0,3.0,4.0,5.0};
@@ -187,10 +187,10 @@ int main(void)
         Longest_White_Column_Left[1] = 94;
 
         // Road_Type = STRAIGHT_ROAD;
-        //             Speed[3].target_speed=30.0;
-        //             Speed[2].target_speed=30.0;
-        //             Speed[1].target_speed=30.0;
-        //             Speed[0].target_speed=30.0;//?????
+        //  Speed[3].target_speed=30.0;
+        //  Speed[2].target_speed=30.0;
+        //  Speed[1].target_speed=30.0;
+        //  Speed[0].target_speed=30.0;//?????
 
         int once = 1;
         int one_time = 1;
@@ -208,7 +208,7 @@ int main(void)
         while (1)
         {
                 my_key_handle(); // 别删，调总钻风的阈值
-//					uart_write_string(UART_1, uart1_begin);
+                                 //					uart_write_string(UART_1, uart1_begin);
                 //                seekfree_assistant_oscilloscope_send(&oscilloscope_data);
                 //                oscilloscope_data.data[0] = Speed[0].now_speed;
                 //                oscilloscope_data.data[1] = Speed[1].now_speed;
@@ -218,53 +218,60 @@ int main(void)
                 // ips114_show_int(0, 20, near_card_y, 3);
                 // ips114_show_uint(0, 40, card_type, 3);
                 // ips114_show_uint(0, 60, card_abc, 3);
-        //        ips114_show_uint(0, 80, right_data[0], 3);
-        //        ips114_show_uint(0, 100, right_data[1], 3);
-        //        ips114_show_uint(0, 120, right_data[2], 3);
-					// Top_Line_Center_Get_Center();
-        test();
-//        car_run_upline_left(95);
-//	right_lie_island_upline_position=Top_Top_Line_Search_Island(110,50, 0);//持续从119行往上到20行找下边线数组最右侧行坐标标
-        // ips114_show_int(0,20,right_lie_island_upline_position,4);//一次扫线
-//	 car_run_upline(95);
-        // CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
-//         right_lie_island_upline_position=Top_Top_Line_Search_Island(100,0);//持续从第100行往上扫上边线
-//        right_lie_island_upline_position = Top_Top_Line_Search_Island(110, 0);;//从119行开始往40行扫下边线，取最右列的行坐标
-	//    Left_Island_pick_and_move(&Island_mode);
-        // Left_Crossing_pick_and_move(&Crossing_mode);
-        // right_lie_island_upline_position = Top_Top_Line_Search_Island(40, 1);
+                //        ips114_show_uint(0, 80, right_data[0], 3);
+                //        ips114_show_uint(0, 100, right_data[1], 3);
+                //        ips114_show_uint(0, 120, right_data[2], 3);
+                // Top_Line_Center_Get_Center();
+                test();
+                // car_run();
+                //        car_run_upline_left(95);
+                //	right_lie_island_upline_position=Top_Top_Line_Search_Island(110,50, 0);//持续从119行往上到20行找下边线数组最右侧行坐标标
+                // ips114_show_int(0,20,right_lie_island_upline_position,4);//一次扫线
+                //	 car_run_upline(95);
+                // CSI_correct_island_correct(int Island_center_card_x, int Island_center_card_y);
+                //         right_lie_island_upline_position=Top_Top_Line_Search_Island(100,0);//持续从第100行往上扫上边线
+                //        right_lie_island_upline_position = Top_Top_Line_Search_Island(110, 0);;//从119行开始往40行扫下边线，取最右列的行坐标
+                //    Left_Island_pick_and_move(&Island_mode);
+                // Left_Crossing_pick_and_move(&Crossing_mode);
+                // right_lie_island_upline_position = Top_Top_Line_Search_Island(40, 1);
 
-	// car_run_upline(90);
-//					Car_Inverse_kinematics_solution(Vx, Vy, Vz);        //麦轮控制，为target_speed赋值
-//	car_findcard(&car_mode);//模式选择
-//					correct_art2_flag=1;
-		// test_arm();
-//					gpio_set_level(C11, 1);
-		// ips114_show_int(188,60,Edge_threshold,4);
-//        ips114_show_float(0,0,Cross_State,3,4);//显示上边线归一化后的误差
-//      ips114_show_float(0,40,left_top_error,3,4);//显示上边线归一化后的误差
-//      ips114_show_float(90,0,Speed[0].target_speed,3,2);//显示上边线归一化后的误差
-//      ips114_show_float(90,20,Speed[1].target_speed,3,2);//显示上边线归一化后的误差
-//      ips114_show_float(90,40,Speed[2].target_speed,3,2);//显示上边线归一化后的误差
-//      ips114_show_float(90,60,Speed[3].target_speed,3,2);//显示上边线归一化后的误差
-if(visual_show2==1)
+                // car_run_upline(90);
+                //					Car_Inverse_kinematics_solution(Vx, Vy, Vz);        //麦轮控制，为target_speed赋值
+                //	car_findcard(&car_mode);//模式选择
+                //					correct_art2_flag=1;
+                // test_arm();
+                //					gpio_set_level(C11, 1);
+                // ips114_show_int(188,60,Edge_threshold,4);
+                //        ips114_show_float(0,0,Cross_State,3,4);//显示上边线归一化后的误差
+                //      ips114_show_float(0,40,left_top_error,3,4);//显示上边线归一化后的误差
+                //      ips114_show_float(90,0,Speed[0].target_speed,3,2);//显示上边线归一化后的误差
+                //      ips114_show_float(90,20,Speed[1].target_speed,3,2);//显示上边线归一化后的误差
+                //      ips114_show_float(90,40,Speed[2].target_speed,3,2);//显示上边线归一化后的误差
+                //      ips114_show_float(90,60,Speed[3].target_speed,3,2);//显示上边线归一化后的误差
+                if (visual_show2 == 1)
                 {
-                        ips114_show_int(0,0,right_data[0],4);
-                        ips114_show_int(0,20,right_data[1],4);
-                        ips114_show_int(0,40,right_data[2],4);
-                        ips114_show_int(0,60,right_data[3],4);
-                        ips114_show_int(0,80,right_data[4],4);
-                        ips114_show_int(0,100,right_data[5],4);
-												ips114_show_int(90,0,right_data[6],4);
-                        ips114_show_int(90,20,right_data[7],4);
-                        ips114_show_int(90,40,right_data[8],4);
-												ips114_show_uint(90,60,Cross_State,2);
-												ips114_show_uint(90,80,type,2);
-                                                                                                ips114_show_uint(90,100,Longest_White_Column_Left[1],3);
+                        ips114_show_int(0, 0, right_data[0], 4);
+                        ips114_show_int(0, 20, right_data[1], 4);
+                        ips114_show_int(0, 40, right_data[2], 4);
+                        ips114_show_int(0, 60, right_data[3], 4);
+                        ips114_show_int(0, 80, right_data[4], 4);
+                        ips114_show_int(0, 100, right_data[5], 4);
+                        ips114_show_int(90, 0, right_data[6], 4);
+                        ips114_show_int(90, 20, right_data[7], 4);
+                        ips114_show_int(90, 40, right_data[8], 4);
+                        ips114_show_uint(90, 60, Cross_State, 2);
+                        ips114_show_uint(90, 80, type, 2);
+                        ips114_show_uint(90, 100, Longest_White_Column_Left[1], 3);
                 }
                 else
                 {
 
+                        ips114_show_int(0, 0, car_run_mode, 4);         // 卡片坐标,即时更新
+                        ips114_show_int(0, 20, Cross_State, 3);         // 显示十字状态位
+                        ips114_show_int(0, 30, Cross_Handle_Flag, 3);   // 显示是否找到十字的标志位
+                        ips114_show_int(0, 45, Crossing_mode, 3);       // 左十字模式显示
+                        ips114_show_int(0, 60, Cross_allow_flag, 3);    // 左十字模式显示
+                        ips114_show_int(0, 80, Crossing_Zone_count, 3); // 左十字模式显示
         ips114_show_int(0,0,car_run_mode,4);//卡片坐标,即时更新
         ips114_show_int(0,20,Cross_State,3);//显示十字状态位
         ips114_show_int(0,30,Cross_Handle_Flag,3);//显示是否找到十字的标志位
@@ -272,10 +279,9 @@ if(visual_show2==1)
         ips114_show_int(0,60,Cross_allow_flag,3);//左十字模式显示
 			  ips114_show_int(0,80,Crossing_Zone_count,3);//左十字模式显示
 
-        ips114_show_int(90,0,Island_mode,3);//环岛模式显示
-        ips114_show_int(90,10,left_island_flag,3);//左环岛标志位显示
-        ips114_show_int(90,20,Island_allow_flag,3);//左环岛标志位显示
-
+                        ips114_show_int(90, 0, Island_mode, 3);        // 环岛模式显示
+                        ips114_show_int(90, 10, left_island_flag, 3);  // 左环岛标志位显示
+                        ips114_show_int(90, 20, Island_allow_flag, 3); // 左环岛标志位显示
 
 //        ips114_show_int(0,40,Traffic_count,3);
 //        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
@@ -285,17 +291,17 @@ if(visual_show2==1)
 	       ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
          ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
 
-        //  ips114_show_int(60,0,cross_card[0].Card_Type,4);//卡片坐标,即时更新
-        //  ips114_show_int(60,20,cross_card[1].Card_Type,4);//卡片坐标,即时更新
-        //  ips114_show_int(60,40,cross_card[2].Card_Type,4);//卡片坐标,即时更新
-        //   ips114_show_int(60,60,cross_card[3].Card_Type,4);//卡片坐标,即时更新
-        //   ips114_show_int(60,80,cross_card[4].Card_Type,4);//校准步数
+                        //  ips114_show_int(60,0,cross_card[0].Card_Type,4);//卡片坐标,即时更新
+                        //  ips114_show_int(60,20,cross_card[1].Card_Type,4);//卡片坐标,即时更新
+                        //  ips114_show_int(60,40,cross_card[2].Card_Type,4);//卡片坐标,即时更新
+                        //   ips114_show_int(60,60,cross_card[3].Card_Type,4);//卡片坐标,即时更新
+                        //   ips114_show_int(60,80,cross_card[4].Card_Type,4);//校准步数
 
-        //  ips114_show_int(60,0,Island_card[0].Card_Type,4);//卡片坐标,即时更新
-        //  ips114_show_int(60,20,Island_card[1].Card_Type,4);//卡片坐标,即时更新
-        //  ips114_show_int(60,40,Island_card[2].Card_Type,4);//卡片坐标,即时更新
-        //   ips114_show_int(60,60,Island_card[3].Card_Type,4);//卡片坐标,即时更新
-        //   ips114_show_int(60,80,Island_card[4].Card_Type,4);//校准步数
+                        //  ips114_show_int(60,0,Island_card[0].Card_Type,4);//卡片坐标,即时更新
+                        //  ips114_show_int(60,20,Island_card[1].Card_Type,4);//卡片坐标,即时更新
+                        //  ips114_show_int(60,40,Island_card[2].Card_Type,4);//卡片坐标,即时更新
+                        //   ips114_show_int(60,60,Island_card[3].Card_Type,4);//卡片坐标,即时更新
+                        //   ips114_show_int(60,80,Island_card[4].Card_Type,4);//校准步数
 
          ips114_show_int(60,0,type,4);//元素类型
 				 ips114_show_int(60,20,Vy,4);//元素类型
@@ -605,8 +611,6 @@ if(visual_show2==1)
                 // 							ips114_show_int(90,0, card_classify,4);
                 //         ips114_show_int(90,20,card_center_x,4);
                 //         ips114_show_int(90,40,card_center_y,4);//显示卡片中心坐标
-                
-                        
 
                 //					      Turn_Angle_PD(90);
                 //					      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值

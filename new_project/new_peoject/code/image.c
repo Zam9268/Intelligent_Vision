@@ -111,7 +111,7 @@ float last_err = 0.00;
 float island_err = 0.00;
 float zebra_err = 0.00;
 float right_err = 0.00; // 记录环岛时的误差 right_err
-float left_err = 0.00;   // 左前瞻的误差
+float left_err = 0.00;  // 左前瞻的误差
 float new_island_err = 0.00;
 float crossing_arround_err = 0.00; // 记录十字巡上边线时的误差
 /*the following is the information for receiving data through the serial port*/
@@ -1922,7 +1922,6 @@ uint8 Image_Get_Down(void)
     return threshold;
 }
 
-
 /**
  * @brief 简单连续性检测（一般不会用）
  * @param line 边线数组的地址
@@ -1930,7 +1929,7 @@ uint8 Image_Get_Down(void)
  */
 uint8 Continuity_detect(uint8 *line)
 {
-    uint8 max_uncontinuity = 0; //返回的变量
+    uint8 max_uncontinuity = 0; // 返回的变量
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         if (line[i] - line[i - 1] > max_uncontinuity)
@@ -1938,7 +1937,7 @@ uint8 Continuity_detect(uint8 *line)
             max_uncontinuity = line[i] - line[i - 1];
         }
     }
-    return max_uncontinuity; //返回值
+    return max_uncontinuity; // 返回值
 }
 
 /**
@@ -1952,7 +1951,7 @@ void Derivative_Change(void)
     for (uint8 i = IMAGE_HEIGHT - 1; i >= 1; i--)
     {
         Left_derivative[i] = (left_line[i] - left_line[i - 1]) / 2;
-        Right_derivative[i] = (right_line[i] - right_line[i - 1]) / 2; //求出左右边线的一阶导数
+        Right_derivative[i] = (right_line[i] - right_line[i - 1]) / 2; // 求出左右边线的一阶导数
     }
 }
 
@@ -2061,9 +2060,9 @@ void Draw_Line(int startX, int startY, int endX, int endY)
         endY = MT9V03X_H - 1;
     else if (endY <= 0)
         endY = 0;
-    if (startX == endX) 
+    if (startX == endX)
     {
-        if (startY > endY) 
+        if (startY > endY)
         {
             start = endY;
             end = startY;
@@ -2076,7 +2075,7 @@ void Draw_Line(int startX, int startY, int endX, int endY)
             Image_Use[i - 1][startX] = BLACK_POINT;
         }
     }
-    else if (startY == endY) 
+    else if (startY == endY)
     {
         if (startX > endX) // 垂直
         {
@@ -2146,14 +2145,14 @@ int Monotonicity_Change_Right(int start, int end)
 {
     int i, monotonicity_change_line = 0;
     if (Right_Lost_Time >= 0.9 * IMAGE_HEIGHT)
-        return 1; //如果右边线丢失的时间超过图像高度的90%，返回1
+        return 1; // 如果右边线丢失的时间超过图像高度的90%，返回1
     if (start >= IMAGE_HEIGHT - 1 - 5)
-        start = IMAGE_HEIGHT - 1 - 5; //起始位置限制
+        start = IMAGE_HEIGHT - 1 - 5; // 起始位置限制
     if (end <= 5)
-        end = 5; //结束位置限制
+        end = 5; // 结束位置限制
     if (start <= end)
-        return monotonicity_change_line; //如果起始位置小于等于结束位置，返回0，表示没有单调性变化点
-    for (i = start; i >= end; i--)       //从起始位置向结束位置遍历
+        return monotonicity_change_line; // 如果起始位置小于等于结束位置，返回0，表示没有单调性变化点
+    for (i = start; i >= end; i--)       // 从起始位置向结束位置遍历
     {
         /*判断是否为单调性变化点，要求当前点的值小于等于前后5个点的值*/
         if (right_line[i] <= right_line[i + 5] && right_line[i] <= right_line[i - 5] &&
@@ -2166,7 +2165,7 @@ int Monotonicity_Change_Right(int start, int end)
             break;
         }
     }
-    return monotonicity_change_line; //返回单调性变化点的行数
+    return monotonicity_change_line; // 返回单调性变化点的行数
 }
 
 /**
@@ -2177,14 +2176,14 @@ int Monotonicity_Change_Right(int start, int end)
 float Err_Handle(void)
 {
     /* 简化的错误处理算法，只考虑下半部分图像 */
-    last_err = err; //保存上一次的误差值
-    int weight_count = 0;                                     //权重计数器
-    for (int i = IMAGE_HEIGHT - 1; i > IMAGE_HEIGHT / 2; i--) //遍历下半部分图像
+    last_err = err;                                           // 保存上一次的误差值
+    int weight_count = 0;                                     // 权重计数器
+    for (int i = IMAGE_HEIGHT - 1; i > IMAGE_HEIGHT / 2; i--) // 遍历下半部分图像
     {
         err += (IMAGE_WIDTH / 2 - ((left_line[i] + right_line[i]) >> 1)) * Weight[i];
-        weight_count += Weight[i]; //累加权重
+        weight_count += Weight[i]; // 累加权重
     }
-    err = err / weight_count; 
+    err = err / weight_count;
     return err;
 }
 
@@ -2728,7 +2727,7 @@ void Cross_State_Change(void)
     /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
     if (Cross_State == 0) // 当十字状态置为0的时候
     {
-        Cross_State=1; // 十字状态置为1
+        Cross_State = 1; // 十字状态置为1
     }
     else if (Cross_State == 1)
     {
@@ -2762,7 +2761,7 @@ void Cross_State_Change(void)
     }
     else if (Cross_State == 5)
     {
-        if (Left_Lost_Time >= 20 && Right_Lost_Time <=5 && Both_Lost_Time <= 5)
+        if (Left_Lost_Time >= 20 && Right_Lost_Time <= 5 && Both_Lost_Time <= 5)
         {
             Cross_State = 6;
             Cross_Way_change = 1;
@@ -2777,30 +2776,7 @@ void Cross_State_Change(void)
     }
 }
 
-/*十字状态机切换，一定要放在Cross_Detect()的后面*/
-void Cross_State_Change_Plus(void)
-{
-    /*上面的部分是补线的部分，下面的部分是自己增添的部分*/
-    if (Cross_State == 0) // 当十字状态置为0的时候
-    {
-        if(Longest_White_Column_Left[1]<=40)
-        {
-            Cross_State = 6;
-            Cross_Way_change = 1;
-            left_turn_flag = 1;
-        }
-        else if(Longest_White_Column_Left[1]>=140)
-        {
-            Cross_State=6;
-            Cross_Way_change=1;
-            right_turn_flag=1;
-        }
-    }
-}
-
-
-
-unsigned int Road_Min_Width[2] = {188, 0}; // Record the number of rows and width corresponding to the minimum road width
+unsigned int Road_Min_Width[2] = {188, 0}; // 记录最小道路宽度对应的行数和宽度
 unsigned int Road_up_wide[5] = {0};
 uint8 my_count = 0;
 /**
@@ -3191,6 +3167,40 @@ void Top_Line_Search(void)
         }
     }
 }
+/*从下而上对上边线进行循迹：斑马线部分的扫线*/
+void Top_Line_Zebra_Search(void)
+{
+    /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
+    lowest_row = 0;
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++) // 初始化坐标
+    {
+        Island_surrond[i] = 0;
+    }
+
+    uint8 right_max_point = 0;
+    /*第一部分：扫线 扫全屏*/
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        for (uint8 j = IMAGE_HEIGHT - 1; j >= 1; j--)
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
+            {
+                Island_surrond[i] = j + 1;
+                if (j + 1 > lowest_row)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
+                if (j <= 5) // 超过在第5行就认为是丢线
+                {
+                    Island_surrond[i] = 119;
+                }
+                break;
+            }
+        }
+    }
+}
 
 void Top_Line_Search_Island(void)
 {
@@ -3364,7 +3374,33 @@ float Top_Line_Err_Right(uint8 target_row)
     right_err = 0.0;                             // 使用前先清零
     for (uint8 i = IMAGE_WIDTH/2+5 ; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
     {
-        right_err += target_row-Island_surrond[i];
+        right_err += target_row - Island_surrond[i];
+    }
+    right_err = right_err / 50; // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    if (right_err >= 25.0)
+    {
+        right_err = 25.0; // right_err的最小值
+    }
+    else if (right_err <= -25.0)
+    {
+        right_err = -25.0;
+    }
+    return right_err;
+}
+//**
+//* @brief 输入:目标行
+//* @param 输出上边线离车误差误差 24/7/9 4:00(这b车是真不想调了)
+//* @return 无
+// */
+float Top_Line_Err_Zebra_Right(uint8 target_row)
+{
+    right_err = 0.0;                            // 使用前先清零
+    for (uint8 i = 5; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于误差)
+    {
+        right_err += target_row - Island_surrond[i];
     }
     right_err = right_err / 50; // 取平均值，不加权重了
 
@@ -3387,10 +3423,10 @@ float Top_Line_Err_Right(uint8 target_row)
 // */
 float Top_Line_Err_Left(uint8 target_row)
 {
-    left_err = 0.0;                             // 使用前先清零
-    for (uint8 i = IMAGE_WIDTH/2 - 10; i > 0; i--) // 记录对应的误差(这里类似于前瞻误差)
+    left_err = 0.0;                                  // 使用前先清零
+    for (uint8 i = IMAGE_WIDTH / 2 - 10; i > 0; i--) // 记录对应的误差(这里类似于前瞻误差)
     {
-        left_err += target_row-Island_surrond[i];
+        left_err += target_row - Island_surrond[i];
     }
     left_err = left_err / 50; // 取平均值，不加权重了
 
@@ -3883,57 +3919,56 @@ void Finnal_Zebra_Number_Find(void)
 //*输出结果：上边线/下边线的最左列的行坐标，取上边线的最靠左的点的行坐标作为返回值？
 int Top_Top_Line_Search_Crossing(int center_row, int end_row, int Up_Or_Low)
 {
-        /*先扫两段线*/
-        /*************扫下边线(没用上) end_row没用上 对应1************/
-        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)              //从最底下往上扫线，扫到目标行
+    /*先扫两段线*/
+    /*************扫下边线(没用上) end_row没用上 对应1************/
+    for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++) // 从最底下往上扫线，扫到目标行
+    {
+        for (uint8 i = IMAGE_HEIGHT - 2; i >= center_row; i--)
         {
-            for (uint8 i = IMAGE_HEIGHT - 2; i >= center_row; i--)
+            if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
             {
-                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
-                {
-                    low_crossing_surround[j] = i - 1;               //存入行坐标
-                    break;
-                }
-                else if (i == center_row)                         //到目标行都没扫到，则认为是丢线
-                {
-                    low_crossing_surround[j] = IMAGE_HEIGHT - 2;
-                }
+                low_crossing_surround[j] = i - 1; // 存入行坐标
+                break;
+            }
+            else if (i == center_row) // 到目标行都没扫到，则认为是丢线
+            {
+                low_crossing_surround[j] = IMAGE_HEIGHT - 2;
             }
         }
-        /*************扫上边线(自定义起始行) 对应0************/
-        for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)
+    }
+    /*************扫上边线(自定义起始行) 对应0************/
+    for (uint8 j = 0; j <= IMAGE_WIDTH - 2; j++)
+    {
+        for (uint8 i = center_row; i >= end_row; i--) //
         {
-            for (uint8 i = center_row; i >= end_row; i--)                //
+            if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
             {
-                if (Image_Use[i][j] == BLACK_POINT && Image_Use[i - 1][j] == WHITE_POINT)
-                {
-                    top_crossing_surround[j] = i - 1;                //存入行坐标
-                    break;
-                }
-                else if (i == end_row)
-                {
-                    top_crossing_surround[j] = end_row;                     //丢线，认为是第5行
-                }
+                top_crossing_surround[j] = i - 1; // 存入行坐标
+                break;
+            }
+            else if (i == end_row)
+            {
+                top_crossing_surround[j] = end_row; // 丢线，认为是第5行
             }
         }
+    }
 
-        /*逆时针写法*/
-        /**/
-        // uint8 choose_mode = 0;
+    /*逆时针写法*/
+    /**/
+    // uint8 choose_mode = 0;
 
-        if (Up_Or_Low == 0)//返回上边线的最右列的值
-        {
-            up_left_row = top_crossing_surround[10];//上边线最右列的行坐标
-            return up_left_row;                         //提供返回值
-        }
-        else//返回下边线的最右列的值1
-        {
+    if (Up_Or_Low == 0) // 返回上边线的最右列的值
+    {
+        up_left_row = top_crossing_surround[10]; // 上边线最右列的行坐标
+        return up_left_row;                      // 提供返回值
+    }
+    else // 返回下边线的最右列的值1
+    {
 
-            down_left_row = low_crossing_surround[10];//下边线最右列的行坐标
-            return down_left_row;                         //提供返回值
-
-        }
-//    }
+        down_left_row = low_crossing_surround[10]; // 下边线最右列的行坐标
+        return down_left_row;                      // 提供返回值
+    }
+    //    }
 }
 /*
 输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
@@ -4383,7 +4418,7 @@ void Zebra_Stripes_Detect_new(void)
     */
     uint8 zebra_count = 0;
 
-    for (uint8 i = 30; i <= IMAGE_HEIGHT - 31; i++)
+    for (uint8 i = 10; i <= IMAGE_HEIGHT - 10; i++)
     {
         if ((abs(left_line[i] - right_line[i]) < abs(left_line[i - 20] - right_line[i - 20])) && abs(left_line[i] - right_line[i]) <= 20)
         {
@@ -4436,10 +4471,10 @@ void test2(void)
     }
     if (left_island_flag || right_island_flag) // 如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
         Island_Detect();
-    if(type==5)
-		{
-			Zebra_catch_flag = 1;
-		}
+    if (type == 5)
+    {
+        Zebra_catch_flag = 1;
+    }
     for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
     {
         // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
