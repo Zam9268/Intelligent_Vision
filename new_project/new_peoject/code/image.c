@@ -16,6 +16,7 @@ uint8 pick_up_mode_change = 0;
 uint8 num; //
 uint8 up_right_row = 0;
 uint8 down_right_row = 0;
+uint8 mid_right_row = 0;
 uint8 up_left_row = 0;
 uint8 down_left_row = 0;
 uint8 Longest_White_Column_Left[2];                                                  // Record the longest white column in this iteration
@@ -3272,7 +3273,7 @@ void send_deal(void)
 float Top_Line_Err_Right(uint8 target_row)
 {
     right_err = 0.0;                             // 使用前先清零
-    for (uint8 i = IMAGE_WIDTH -55; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
+    for (uint8 i = IMAGE_WIDTH/2+5; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
     {
         right_err += target_row-Island_surrond[i];
     }
@@ -3847,11 +3848,11 @@ int Top_Top_Line_Search_Crossing(int center_row, int end_row, int Up_Or_Low)
 }
 /*
 输入参数：目标行，上边线数组top_island_surround[IMAGE_WIDTH]通过目标行向上循迹得到
-          上边线和下边线的选择  0:自定义 1:下边线
+          上边线和下边线的选择  0:自定义 1:下边线  2:中间线
 输出结果：上边线/下边线的最右列的行坐标，取上边线的最靠右的点的行坐标作为返回值？
 
 */
-int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
+int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low_Or_Mid)
 {
 
     //    uint8 mode = 0;
@@ -3948,7 +3949,7 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
         // ips114_show_uint(188, 20, max_row, 3);
         // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
     }
-    else // 返回下边线的最右列的值1
+    else if(Up_Or_Low == 1)// 返回下边线的最右列的值1
     {
 
         // for (uint8 i = 0; i < IMAGE_WIDTH; i++)
@@ -3960,6 +3961,12 @@ int Top_Top_Line_Search_Island(int center_row, int end_row, int Up_Or_Low)
         // ips114_show_uint(188, 20, max_row, 3);
         // ips114_draw_line(0, max_row, 188, max_row, RGB565_YELLOW);
     }
+    else  if(Up_Or_Low == 2)
+    {
+        mid_right_row = top_island_surround[90];
+        return mid_right_row;
+    }
+    return 0;
     //    }
 }
 /**

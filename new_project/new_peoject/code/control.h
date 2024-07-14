@@ -180,6 +180,7 @@ extern float dis_kd;//距离环kd
 extern float dis_error;
 extern float dis_change[4];//存放距离环输出结果
 extern int CSI_correct_flag;
+extern uint8 Find_card_allow;
 extern int card_y[10];
 extern int card_x[10];
 extern int Put_flag;
@@ -242,6 +243,11 @@ extern float crossing_correct_again_x,crossing_correct_again_y;
 extern int left_lie_island_upline_position;
 extern float record_crossing_zone_x,record_crossing_zone_y;    //记录完成十字卡片的区域坐标
 extern float delta_crossing_class_x,delta_crossing_class_y;
+extern uint8 Crossing_Finish;
+extern uint8 Cross_Allow_flag; // 十字允许标志位
+extern uint8 Island_Allow_flag;//环岛允许标志位
+extern uint8 Zebra_Allow_flag; //斑马线允许标志位
+extern uint8 Left_Island_Done;
 
 extern int pid_motor[4];
 
