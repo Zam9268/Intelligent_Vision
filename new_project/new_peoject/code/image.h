@@ -71,6 +71,8 @@ float Err_Handle(void);
 float Island_Surround(uint8 target_row);
 void Top_Line_Road_Search(void);
 void Top_Line_Search(void);
+void Top_Line_Zebra_Search(void);
+float Top_Line_Err_Zebra_Right(uint8 target_row);
 float Top_Line_Err_Right(uint8 target_row);
 float Top_Line_Err_Left(uint8 target_row);
 void Outer_Analyse(void);

@@ -118,8 +118,8 @@ int main(void)
         //    system_delay_ms(10000);         //
         // key_init(10);//?????????
         // pit_ms_init(PIT_CH3,10);    // ???3?????, 10ms????????????
-        // while(1)//????????1s???????
-        // {
+//       while(1)//????????1s???????
+//        {
         //     static unsigned int key_count=0;
         //     if(key_get_state(KEY_1)==KEY_LONG_PRESS)   //????1????
         //     {
@@ -158,7 +158,7 @@ int main(void)
         ips114_set_color(RGB565_RED, RGB565_BLACK);
         //----------模块初始化--------------------//
         ips114_clear();     // 清屏
-                            // Motor_Init();              // 电机初始化
+       // Motor_Init();              // 电机初始化
         Encoder_Init();     // 编码器初始化
         Camera_Init();      // 摄像头初始化
         my_imu660ra_init(); // 陀螺仪初始化，开机需静置一段时间
@@ -179,10 +179,10 @@ int main(void)
         Longest_White_Column_Left[1] = 94;
 
         // Road_Type = STRAIGHT_ROAD;
-        //             Speed[3].target_speed=30.0;
-        //             Speed[2].target_speed=30.0;
-        //             Speed[1].target_speed=30.0;
-        //             Speed[0].target_speed=30.0;//?????
+                   //  Speed[3].target_speed=30.0;
+                   //  Speed[2].target_speed=30.0;
+                   //  Speed[1].target_speed=30.0;
+                   //  Speed[0].target_speed=30.0;//?????
 
         int once = 1;
         int one_time = 1;
@@ -210,11 +210,12 @@ int main(void)
                 // ips114_show_int(0, 20, near_card_y, 3);
                 // ips114_show_uint(0, 40, card_type, 3);
                 // ips114_show_uint(0, 60, card_abc, 3);
-               ips114_show_uint(0, 80, right_data[0], 3);
-               ips114_show_uint(0, 100, right_data[1], 3);
-               ips114_show_uint(0, 120, right_data[2], 3);
+//               ips114_show_uint(0, 80, right_data[0], 3);
+//               ips114_show_uint(0, 100, right_data[1], 3);
+//               ips114_show_uint(0, 120, right_data[2], 3);
 					// Top_Line_Center_Get_Center();
         test();
+       // car_run();
 //        car_run_upline_left(95);
 //	right_lie_island_upline_position=Top_Top_Line_Search_Island(110,50, 0);//持续从119行往上到20行找下边线数组最右侧行坐标标
         // ips114_show_int(0,20,right_lie_island_upline_position,4);//一次扫线
@@ -233,8 +234,10 @@ int main(void)
 		// test_arm();
 //					gpio_set_level(C11, 1);
 		// ips114_show_int(188,60,Edge_threshold,4);
-       ips114_show_float(0,0,Cross_State,3,4);//显示上边线归一化后的误差
-//      ips114_show_float(0,40,left_top_error,3,4);//显示上边线归一化后的误差
+		    ips114_show_int(0,0,car_run_mode,3);
+       ips114_show_int(0,10,Cross_State,3);//显示上边线归一化后的误差
+			 ips114_show_int(0,20,Crossing_mode,3);//左十字模式显示
+//      ips114_show_float(,40,left_top_error,3,4);//显示上边线归一化后的误差
 //      ips114_show_float(90,0,Speed[0].target_speed,3,2);//显示上边线归一化后的误差
 //      ips114_show_float(90,20,Speed[1].target_speed,3,2);//显示上边线归一化后的误差
 //      ips114_show_float(90,40,Speed[2].target_speed,3,2);//显示上边线归一化后的误差
@@ -247,16 +250,16 @@ int main(void)
 //			 
 	 ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
          ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
-         ips114_show_int(120,40, delta_crossing_class_x,4);//卡片坐标,即时更新
-	 ips114_show_int(120,60, delta_crossing_class_y,4);//卡片坐标,即时更新
+//         ips114_show_int(120,40, delta_crossing_class_x,4);//卡片坐标,即时更新
+//	 ips114_show_int(120,60, delta_crossing_class_y,4);//卡片坐标,即时更新
         //  ips114_show_int(120,40, delta_x,4);//卡片坐标,即时更新
 	//  ips114_show_int(120,60, delta_y,4);//卡片坐标,即时更新
         //  ips114_show_int(120,80, near_card_x,4);//卡片坐标,即时更新
 	//  ips114_show_int(120,100, near_card_y,4);//卡片坐标,即时更新
         //  ips114_show_int(120,40, delta_crossing_x,4);//卡片坐标,即时更新
 	//  ips114_show_int(120,60, delta_crossing_y,4);//卡片坐标,即时更新
-         ips114_show_int(0,0,Angle_Crossing_Panduan,3);//左十字补线显示
-         ips114_show_int(0,20,Crossing_mode,3);//左十字模式显示
+//         ips114_show_int(0,0,Angle_Crossing_Panduan,3);//左十字补线显示
+//         ips114_show_int(0,20,Crossing_mode,3);//左十字模式显示
 				 
 //				 ips114_show_int(0,30,crossing_correct_again_x,3);//左十字卡片定位坐标
 //				 ips114_show_int(0,40,crossing_correct_again_y,3);//左十字卡片定位坐标
@@ -277,8 +280,8 @@ int main(void)
 //	 ips114_show_int(80,60,Island_card[3].Card_PWM_Duty,4);//卡片坐标,即时更新
 //   ips114_show_int(80,80,Island_card[4].Card_PWM_Duty,4);//校准步数
 // 	 ips114_show_int(80,100,record_abc_flag,4);//记录的字母类型
-//         ips114_show_int(120,100,record_abc_card_type,4);//记录的字母类型
-//         ips114_show_int(120,120,card_abc,4);//传入的字母类型
+         ips114_show_int(120,100,record_abc_card_type,4);//记录的字母类型
+         ips114_show_int(120,120,card_abc,4);//传入的字母类型
 //        ips114_show_int(90,40,classify_mode,4);//卡片坐标,即时更新
 //        ips114_show_int(90,60,class_step,4);//卡片坐标,即时更新
 //        ips114_show_int(90,80,classify_correct_finish,4);//卡片坐标,即时更新
