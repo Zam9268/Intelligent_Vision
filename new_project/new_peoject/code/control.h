@@ -253,6 +253,8 @@ extern uint8 Cross_allow_flag;
 extern uint8 Island_allow_flag;
 extern int zebra_card_x,zebra_card_y;
 extern uint8 Zebra_card_count;
+extern int Right_Island_mode;
+extern uint8 Right_Island_Finish;
 
 extern int pid_motor[4];
 
@@ -295,6 +297,7 @@ void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
 void Left_Island_pick_and_move(int *Island_step);
+void Right_Island_pick_and_move(int *Island_step);
 void card_final_classify(int *classify_step);
 void Left_Crossing_pick_and_move(int *Cross_step);
 #endif

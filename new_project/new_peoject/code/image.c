@@ -4160,10 +4160,11 @@ void Island_Detect(void)
     continuity_change_right_flag = Continuity_Change_Right_Island(IMAGE_HEIGHT - 1, 10); // find the position of the right boundary continuity row
     monotonicity_change_right_flag = Monotonicity_Change_Right(MT9V03X_H - 1 - 10, 10);
     monotonicity_change_left_flag = Monotonicity_Change_Left(MT9V03X_H - 1 - 10, 10);
-
-    // ips114_show_uint(188, 40, Island_State, 3);
-    // ips114_show_uint(188, 50, continuity_change_left_flag, 3);
-    // ips114_show_uint(188, 60, Boundry_Start_Left, 3);
+    ips114_draw_line(94,60,right_line[continuity_change_right_flag],continuity_change_right_flag,RGB565_RED);
+    ips114_draw_line(94,60,right_line[monotonicity_change_right_flag],monotonicity_change_right_flag,RGB565_GREEN);
+    ips114_show_uint(188, 40, Island_State, 3);
+    ips114_show_uint(188, 50, continuity_change_right_flag, 3);
+    ips114_show_uint(188, 60, monotonicity_change_right_flag, 3);
 
     /*the code of ips*/
     /*test the left island firstly*/
