@@ -109,6 +109,7 @@ float top_island_err = 0.00;
 float err = 0.00;
 float last_err = 0.00;
 float island_err = 0.00;
+float zebra_err = 0.00;
 float right_err = 0.00; // 记录环岛时的误差 right_err
 float left_err = 0.00;  // 左前瞻的误差
 float new_island_err = 0.00;
@@ -2775,6 +2776,25 @@ void Cross_State_Change(void)
     }
 }
 
+void Cross_State_Change_Plus(void)
+{
+	if(Cross_State==0)
+	{
+		if(Longest_White_Column_Left[1]<=40)
+		{
+			Cross_State = 6;
+            Cross_Way_change = 1;
+            left_turn_flag = 1;
+		}
+		else if (Longest_White_Column_Left[1]>=145) // 右转标志位
+        {
+            Cross_Way_change = 1;
+            right_turn_flag = 1; // 右转标志位，此时要进行右转
+            Cross_State = 6;
+        }
+	}
+}
+
 unsigned int Road_Min_Width[2] = {188, 0}; // 记录最小道路宽度对应的行数和宽度
 unsigned int Road_up_wide[5] = {0};
 uint8 my_count = 0;
@@ -3097,6 +3117,41 @@ void Top_Line_Road_Search(void)
         }
     }
 }
+//** */
+//*扫全屏, 平移扫线 */
+void Top_Line_x_Search(void)
+{
+    /*使用前要先将坐标全部清零*/
+    Top_Line_Continues_flag = 0;
+    lowest_row = 0;
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++) // 初始化坐标
+    {
+        Island_surrond[i] = 0;
+    }
+
+    uint8 right_max_point = 0;
+    /*第一部分：扫线 扫全屏*/
+    for (uint8 i = 0; i <= IMAGE_WIDTH - 1; i++)
+    {
+        for (uint8 j = IMAGE_HEIGHT - 1; j >= 1; j--)
+        {
+            if (Image_Use[j][i] == BLACK_POINT && Image_Use[j + 1][i] == WHITE_POINT)
+            {
+                Island_surrond[i] = j + 1;
+                if (j + 1 > lowest_row)
+                {
+                    lowest_row = j + 1;
+                    lowest_column = i;
+                }
+                if (j <= 5 ) // 比第5行小就认为是丢线
+                {
+                    Island_surrond[i] = 5;
+                }
+                break;
+            }
+        }
+    }
+}
 /*从下而上对上边线进行循迹：正常寻迹*/
 void Top_Line_Search(void)
 {
@@ -3301,6 +3356,32 @@ void send_deal(void)
         uart_write_string(UART_4, uart_4_beginn);
     else if (real_y <= 180)
         uart_write_string(UART_4, uart_4_begino);
+}
+//**
+//* @brief 输入:目标行
+//* @param 输出上边线整线误差 24/7/9 4:00(这b车是真不想调了)
+//* @return 无
+// */
+float Top_Line_x_Err_Right(uint8 target_row)
+{
+    zebra_err = 0.00;                           // 使用前先清零
+    for (uint8 i = 5; i < IMAGE_WIDTH - 5; i++) // 记录对应的误差(这里类似于前瞻误差)
+    {
+        zebra_err += target_row-Island_surrond[i];
+    }
+    zebra_err = zebra_err / 90; // 取平均值，不加权重了
+
+    /*在丢线时，要对err进行合理的限幅*/
+    /*这里修改过，这是在斑马线的处扫上边线的限幅，和环岛处的限幅不是一样的，后面要重新改一下限幅*/
+    if (zebra_err >= 25.0)
+    {
+        zebra_err = 25.0; // zebra_err
+    }
+    else if (zebra_err <= -25.0)
+    {
+        zebra_err = -25.0;
+    }
+    return zebra_err;
 }
 //**
 //* @brief 输入:目标行
@@ -4079,10 +4160,11 @@ void Island_Detect(void)
     continuity_change_right_flag = Continuity_Change_Right_Island(IMAGE_HEIGHT - 1, 10); // find the position of the right boundary continuity row
     monotonicity_change_right_flag = Monotonicity_Change_Right(MT9V03X_H - 1 - 10, 10);
     monotonicity_change_left_flag = Monotonicity_Change_Left(MT9V03X_H - 1 - 10, 10);
-
-    // ips114_show_uint(188, 40, Island_State, 3);
-    // ips114_show_uint(188, 50, continuity_change_left_flag, 3);
-    // ips114_show_uint(188, 60, Boundry_Start_Left, 3);
+    ips114_draw_line(94,60,right_line[continuity_change_right_flag],continuity_change_right_flag,RGB565_RED);
+    ips114_draw_line(94,60,right_line[monotonicity_change_right_flag],monotonicity_change_right_flag,RGB565_GREEN);
+    ips114_show_uint(188, 40, Island_State, 3);
+    ips114_show_uint(188, 50, continuity_change_right_flag, 3);
+    ips114_show_uint(188, 60, monotonicity_change_right_flag, 3);
 
     /*the code of ips*/
     /*test the left island firstly*/
@@ -4413,13 +4495,13 @@ void test2(void)
     {
         Zebra_catch_flag = 1;
     }
-    for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
-    {
-        // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
-        // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
-        ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-        // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
-    }
+    // for (uint8 i = 0; i < IMAGE_HEIGHT - 1; i++)
+    // {
+    //     // ips114_draw_line(0, 0, left_line_out[i], i, RGB565_GREEN);
+    //     // ips114_draw_line(188, 0, right_line_out[i], i, RGB565_BLUE);
+    //     ips114_draw_point((left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    //     // ips114_draw_line(0, 0, (left_line[i] + right_line[i]) / 2, i, RGB565_RED);
+    // }
 
     // ips114_show_uint(0, 0, Left_Lost_Time, 3);
     // ips114_show_uint(0, 10, Right_Lost_Time, 3);
@@ -4449,13 +4531,16 @@ void test2(void)
         // ips114_show_int(188,30,real_right_down_x,4);
         // ips114_show_int(188,45,real_right_down_y,4);
     }
-    if (visual_show2 == 1)
-    {
-        ips114_show_uint(188, 80, Island_State, 2);
-    }
+    // if (visual_show2 == 1)
+    // {
+    //     ips114_show_uint(188, 80, Island_State, 2);
+    // }
 
     //    ips114_show_uint(188,120,threshold,3);
-    ips114_displayimage03x(*Image_Use, 188, 120);
+    
+        ips114_displayimage03x(*Image_Use, 188, 120);
+    
+    
 
     float my_err = Err_Handle();
     ips114_show_float(188, 0, my_err, 3, 3);

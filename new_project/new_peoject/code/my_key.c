@@ -62,7 +62,7 @@ uint8 visual_menu = 0;   // 视觉处理菜单
 uint8 electric_menu = 0; // 电控处理菜单
 uint8 visual_mode = 0;   // 视觉处理模式，1选择总钻风阈值调节 2选择识别分类art亮度调节    3.选择目标检测art亮度调节
 uint8 visual_show2 = 0;
-uint8 test_flag = 0;
+int test_flag = 0;
 typedef enum
 {
     FIRST_MENU,
@@ -107,13 +107,13 @@ void my_key_handle(void)
     }
     else if (keys[2].single_flag == 1)
     {
-        test_flag = 1;
+        test_flag++;
         visual_show2 = 1;
         keys[2].single_flag = 0;
     }
     else if (keys[3].single_flag == 1)
     {
-        test_flag = 0;
+        test_flag--;
         visual_show2 = 0;
         keys[3].single_flag = 0;
     }
@@ -130,21 +130,17 @@ void my_key_handle(void)
 
 uint8 guangbiao_position = 1; // 光标位置，初始化为1
 
-uint8 choose_mode_flag = 0;                                                                                                                   // 选择模式标志位
-uint8 return_flag = 0;                                                                                                                        // 返回标志位
-uint8 reset_flag = 0;                                                                                                                         // 复位标志位
-uint8 cengji_count = 1;                                                                                                                       // 层级计数
-uint8 first_mode = 1;                                                                                                                         // 第一级
-char mode_name[10][20] = {"Edge_threshold", "normal_speed", "top_line_speed", "cross_island", "MT9V034_light"} extern float target_all_speed; // 正常循迹目标速度
-extern float target_upline_speed;                                                                                                             // 巡线上边界目标速度
-extern float left_top_kp = 0.6f;                                                                                                              // 左上边界比例系数
-extern float right_top_kp = 0.76f;                                                                                                            // 右上边界比例系数
-extern float left_top_kd = 0.30f;                                                                                                             // 左上边界微分系数
-extern float right_top_kd = 0.25f;                                                                                                            // 右上边界微分系数
-uint8 muce_left_or_right_pick = 0;                                                                                                            // 目测捡卡片的是左环岛还是右十字，0默认为左十字
-uint8 muce_island_left_or_right = 0;
-uint8 run_flag = 0;      // 运动标志位                                                                                                         // 目测卡片环岛，0为左环岛
-int MT9V30X_pugaodu = 0; // MT9V30X图像附加曝光度
+uint8 choose_mode_flag = 0; // 选择模式标志位
+uint8 return_flag = 0;      // 返回标志位
+uint8 reset_flag = 0;       // 复位标志位
+uint8 cengji_count = 0;     // 层级计数
+uint8 first_mode = 1;       // 第一级
+char mode_name[10][20] = {"Edge_threshold", "normal_speed", "top_line_speed", "cross_island", "MT9V034_light"};
+extern float target_all_speed;       // 正常循迹目标速度
+extern float target_upline_speed;    // 巡线上边界目标速度
+uint8 muce_left_or_right_pick = 0;   // 目测捡卡片的是左环岛还是右十字，0默认为左十字
+uint8 muce_island_left_or_right = 0; // 目测卡片环岛，0为左环岛
+int MT9V30X_pugaodu = 0;             // MT9V30X图像附加曝光度
 void my_key_handle_plus(void)
 {
     if (keys[0].single_flag == 1)
@@ -328,98 +324,66 @@ void my_key_handle_plus(void)
         /*显示部分菜单*/
         if (first_mode == 1)
         {
-            ips114_show_string(0, 0, mode_name[0][20]);
-            ips114_show_string(0, 20, mode_name[1][20]);
-            ips114_show_string(0, 40, mode_name[2][20]);
+            ips114_show_string(0, 0, &mode_name[0][20]);
+            ips114_show_string(0, 20, &mode_name[1][20]);
+            ips114_show_string(0, 40, &mode_name[2][20]);
 
             /*光标显示*/
-            ips114_show_char(0, 90, "<------");
+            ips114_show_string(0, 90, "<------");
         }
         else
         {
-            ips114_show_string(0, 0, mode_name[first_mode - 1][20]);
-            ips114_show_string(0, 20, mode_name[first_mode][20]);
-            ips114_show_string(0, 40, mode_name[first_mode + 1][20]);
+            ips114_show_string(0, 0, &mode_name[first_mode - 1][20]);
+            ips114_show_string(0, 20, &mode_name[first_mode][20]);
+            ips114_show_string(0, 40, &mode_name[first_mode + 1][20]);
 
             /*光标显示*/
-            ips114_show_char(0, 20, "<------");
+            ips114_show_string(0, 20, "<------");
         }
     }
     else if (choose_mode_flag == 2) // 进入单级菜单调节
     {
         switch (first_mode)
+        {
         case 1: // 阈值调节
         {
             ips114_show_string(0, 0, "+100");
             ips114_show_string(0, 20, "-100");
-            ips114_show_uint(0, 40, Edge_threshold);
+            ips114_show_int(0, 40, Edge_threshold, 4);
         }
         break;
         case 2:
         {
             ips114_show_string(0, 0, "+1.00");
             ips114_show_string(0, 20, "-1.00");
-            ips114_show_float(0, 40, target_all_speed);
+            ips114_show_float(0, 40, target_all_speed, 3, 3);
+            break;
         }
-        break;
         case 3:
         {
             ips114_show_string(0, 0, "+1.00");
             ips114_show_string(0, 20, "-1.00");
-            ips114_show_float(0, 40, target_upline_speed);
+            ips114_show_float(0, 40, target_upline_speed, 3, 3);
+            break;
         }
-        break;
+
         case 4:
         {
             ips114_show_string(0, 0, "crossing");
             ips114_show_string(0, 20, "island");
             ips114_show_string(0, 40, "cross_or_isand");
+            break;
         }
-        break;
         case 5:
         {
             ips114_show_string(0, 0, "+1");
             ips114_show_string(0, 20, "-1");
-            ips114_show_uint(0, 40, MT9V30X_pugaodu + 32); // 32是固定值
+            ips114_show_uint(0, 40, MT9V30X_pugaodu + 32, 3); // 32是固定值
+            break;
         }
-        break;
-        case 6:
-        {
-            ips114_show_string(0, 0, "+0.05");
-            ips114_show_string(0, 20, "-0.05");
-            ips114_show_float(0, 40, left_top_kp);
-        }
-        break;
-        case 7:
-        {
-            ips114_show_string(0, 0, "+0.05");
-            ips114_show_string(0, 20, "-0.05");
-            ips114_show_float(0, 40, right_top_kp);
-        }
-        break;
-        case 8:
-        {
-            ips114_show_string(0, 0, "+0.05");
-            ips114_show_string(0, 20, "-0.05");
-            ips114_show_float(0, 40, left_top_kd);
-        }
-        break;
-        case 9:
-        {
-            ips114_show_string(0, 0, "+0.05");
-            ips114_show_string(0, 20, "-0.05");
-            ips114_show_float(0, 40, right_top_kd);
-        }
-        break;
-        case 10:
-        {
-            ips114_show_string(0, 0, "run");
-            ips114_show_string(0, 40, "run_mode");
-        }
-        break;
+
         default:
             break;
+        }
     }
-
-    
 }

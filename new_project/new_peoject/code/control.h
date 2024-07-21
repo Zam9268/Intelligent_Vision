@@ -51,14 +51,14 @@
 #define Pick_up_card 4		  // 机械臂拾取卡片
 #define Car_turn_again 5	  // 回正
 
-#define Find_banmaxian 0		// 找到斑马线
-#define Find_upline 1			// 上边线寻迹
-#define Catch_card 2			// 向卡片前进识别
-#define Watch_card 3			// 看卡片上的数字类型
-#define Putout_card 4			// 放置卡片
-#define Go_back 5				// 后退至y处原本的位置
-#define Turn_back 6				// 返回正常寻迹
-#define Zebra_Turn_Other_Side 7 // 向斑马线另一侧找卡片
+#define Find_banmaxian      	0//找到斑马线
+#define Find_upline         	1//上边线寻迹
+#define Catch_card          	2//向卡片前进识别
+#define Watch_card          	3//看卡片上的数字类型
+#define Putout_card         	4//放置卡片
+#define Go_back             	5//后退至y处原本的位置
+#define Turn_back           	6//返回正常寻迹
+#define Zebra_Turn_Other_Side 	7//向斑马线另一侧找卡片
 
 // #define Catch_zeropoint    				0//找到原点处的元素标志
 #define Arrive_zeropoint 0			// 到达原点处
@@ -251,8 +251,10 @@ extern uint8 Left_Island_Finish;
 extern uint8 Left_Crossing_Finish;
 extern uint8 Cross_allow_flag;
 extern uint8 Island_allow_flag;
-extern int zebra_card_x, zebra_card_y;
+extern int zebra_card_x,zebra_card_y;
 extern uint8 Zebra_card_count;
+extern int Right_Island_mode;
+extern uint8 Right_Island_Finish;
 
 extern int pid_motor[4];
 
@@ -294,6 +296,7 @@ void find_classify(int Traverse_distance, int Straight_distance);
 void car_findcard(int *mode);
 void car_findcard_new(int *mode);
 void Left_Island_pick_and_move(int *Island_step);
+void Right_Island_pick_and_move(int *Island_step);
 void card_final_classify(int *classify_step);
 void Left_Crossing_pick_and_move(int *Cross_step);
 #endif
