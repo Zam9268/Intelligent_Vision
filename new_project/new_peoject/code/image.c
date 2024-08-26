@@ -129,6 +129,7 @@ extern uint8 ramp_begin_detect_flag; // 坡道检测标志位，防止刚开始�
 extern uint8 visual_show2;           // 按键处理显示模式
 extern uint8 Longest_Column_Fixed;
 extern uint8 stop_detect_flag;
+extern uint8 zebra_ff;
 extern char uart_4_begina[]; // UART4开始字符串310
 extern char uart_4_beginb[]; // UART4开始字符串300
 extern char uart_4_beginc[]; // UART4开始字符串290
@@ -4491,7 +4492,7 @@ void test2(void)
     }
     if (left_island_flag || right_island_flag) // 如果检测导环岛的状态1条件，该标志位就会置1，从而使得环岛检测函数开始运行
         Island_Detect();
-    if (type == 5)
+    if (type == 5 && zebra_ff==1)
     {
         Zebra_catch_flag = 1;
     }

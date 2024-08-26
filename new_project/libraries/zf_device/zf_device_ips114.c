@@ -65,7 +65,7 @@ static ips114_dir_enum          ips114_display_dir  = IPS114_DEFAULT_DISPLAY_DIR
 static ips114_font_size_enum    ips114_display_font = IPS114_DEFAULT_DISPLAY_FONT;
 static uint8                    ips114_x_max        = 240;
 static uint8                    ips114_y_max        = 135;
-
+extern uint8 visual_show2;
 #if IPS114_USE_SOFT_SPI
 static soft_spi_info_struct             ips114_spi;
 //-------------------------------------------------------------------------------------------------------------------
@@ -377,6 +377,7 @@ void ips114_set_color (const uint16 pen, const uint16 bgcolor)
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_draw_point (uint16 x, uint16 y, const uint16 color)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -401,6 +402,7 @@ void ips114_draw_point (uint16 x, uint16 y, const uint16 color)
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_draw_line (uint16 x_start, uint16 y_start, uint16 x_end, uint16 y_end, const uint16 color)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x_start < ips114_x_max);
@@ -464,6 +466,7 @@ void ips114_draw_line (uint16 x_start, uint16 y_start, uint16 x_end, uint16 y_en
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_char (uint16 x, uint16 y, const char dat)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -551,6 +554,7 @@ void ips114_show_char (uint16 x, uint16 y, const char dat)
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_string (uint16 x, uint16 y, const char dat[])
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -581,6 +585,7 @@ void ips114_show_string (uint16 x, uint16 y, const char dat[])
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_int (uint16 x, uint16 y, const int32 dat, uint8 num)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -620,6 +625,7 @@ void ips114_show_int (uint16 x, uint16 y, const int32 dat, uint8 num)
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_uint (uint16 x, uint16 y, const uint32 dat, uint8 num)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -662,6 +668,7 @@ void ips114_show_uint (uint16 x, uint16 y, const uint32 dat, uint8 num)
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_float (uint16 x, uint16 y, const double dat, uint8 num, uint8 pointnum)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -705,6 +712,7 @@ void ips114_show_float (uint16 x, uint16 y, const double dat, uint8 num, uint8 p
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_binary_image (uint16 x, uint16 y, const uint8 *image, uint16 width, uint16 height, uint16 dis_width, uint16 dis_height)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -760,6 +768,7 @@ void ips114_show_binary_image (uint16 x, uint16 y, const uint8 *image, uint16 wi
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_gray_image (uint16 x, uint16 y, const uint8 *image, uint16 width, uint16 height, uint16 dis_width, uint16 dis_height, uint8 threshold)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);
@@ -820,6 +829,7 @@ void ips114_show_gray_image (uint16 x, uint16 y, const uint8 *image, uint16 widt
 //-------------------------------------------------------------------------------------------------------------------
 void ips114_show_rgb565_image (uint16 x, uint16 y, const uint16 *image, uint16 width, uint16 height, uint16 dis_width, uint16 dis_height, uint8 color_mode)
 {
+    if(visual_show2==1) return;
     // 如果程序在输出了断言信息 并且提示出错位置在这里
     // 那么一般是屏幕显示的时候超过屏幕分辨率范围了
     zf_assert(x < ips114_x_max);

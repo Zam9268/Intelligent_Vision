@@ -57,6 +57,7 @@ extern fifo_struct uart_data_fifo; // UART数据FIFO结构体
 extern uint8 uart_get_data[64];
 extern uint8 stop_detect_flag;
 int count = 0;
+uint8 zebra_ff=0;
 int arm_flag = 0;
 unsigned int init_count = 0;
 extern uint8 init_flag;
@@ -143,6 +144,12 @@ void PIT_IRQHandler(void)
 
     if (pit_flag_get(PIT_CH3))
     {
+        static uint8 seconddd=0;
+        seconddd++;
+        if(seconddd==20)
+        {
+            zebra_ff=1;
+        }
         if(stop_detect_flag==1)
         {
             static uint8 my_counttttt=0;

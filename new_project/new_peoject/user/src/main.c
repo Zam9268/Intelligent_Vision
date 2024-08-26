@@ -101,6 +101,7 @@ extern float left_top_kp;
 extern float left_top_kd;                              // 左上边线kp，kd
 extern float right_top_kp;
 extern float right_top_kd;                             // 右上边线kp,kd
+extern uint8 Island_dir;
 // ????????????????????????????????????
 // ????? ?????????????????
 // ????? project->clean  ?????????????????
@@ -193,7 +194,9 @@ int main(void)
         //  Speed[0].target_speed=30.0;//?????
 
         int once = 1;
+        int cross_one = 1;
         int one_time = 1;
+        int one = 1; //只执行一次
         uint8 temp = 0;
         uint8 type_count = 0;
         int car_run_mode = 0;
@@ -265,6 +268,7 @@ int main(void)
                 }
                 else
                 {
+			ips114_show_int(0,120,Edge_threshold,4);
 
                         ips114_show_int(0, 0, car_run_mode, 4);         // 卡片坐标,即时更新
                         ips114_show_int(0, 20, Cross_State, 3);         // 显示十字状态位
@@ -279,20 +283,22 @@ int main(void)
 //        ips114_show_int(0,60,Cross_allow_flag,3);//左十字模式显示
 //			  ips114_show_int(0,80,Crossing_Zone_count,3);//左十字模式显示
 
-                        ips114_show_int(90, 0, Island_mode, 3);        // 环岛模式显示
-                        ips114_show_int(90, 10, right_island_flag, 3);  // 右环岛标志位显示
-                        ips114_show_int(90, 20, Island_allow_flag, 3); // 左环岛标志位显示
-			ips114_show_int(90, 30, record_abc_card_type, 3); // 环岛区域识别出的卡片放置区域类型显示
-                        ips114_show_int(90, 40, card_abc, 3);  // 左环岛标志位显示
-                        ips114_show_int(90, 50, Island_State, 3);        // 环岛模式显示
+                        ips114_show_int(90, 0, banmaxian_allow_flag, 3);        // 环岛模式显示
+                        ips114_show_int(90, 20, type, 3);  // 右环岛标志位显示
+                        // ips114_show_int(90, 20, left_island_flag, 3);  // 右环岛标志位显示
+                        // ips114_show_int(90, 30, Island_allow_flag, 3); // 左环岛标志位显示
+			// ips114_show_int(90, 40, record_abc_card_type, 3); // 环岛区域识别出的卡片放置区域类型显示
+                        // ips114_show_int(90, 50, card_abc, 3);  // 左环岛标志位显示
+                        // ips114_show_int(90, 60, Island_State, 3);        // 环岛模式显示
+                        // ips114_show_int(90, 70, Island_dir, 3);        // 环岛模式显示
 
-        ips114_show_int(0,40,Traffic_count,3);
-        ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
-	ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
-	ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
+												ips114_show_int(0,40,Traffic_count,3);
+												ips114_show_int(0,60,Weapon_count,3);//第一次捕捉到卡片的y坐标
+												ips114_show_int(0,80,Supply_count,3);//第一次捕捉到卡片的y坐标
+												ips114_show_int(120,0,banmaxian_allow_flag,4);//卡片坐标,即时更新
 			 
-	       ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
-         ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
+												ips114_show_int(120,0,now_distance_x,4);//卡片坐标,即时更新
+												ips114_show_int(120,20,now_distance_y,4);//卡片坐标,即时更新
 
                         //  ips114_show_int(60,0,cross_card[0].Card_Type,4);//卡片坐标,即时更新
                         //  ips114_show_int(60,20,cross_card[1].Card_Type,4);//卡片坐标,即时更新
@@ -300,13 +306,13 @@ int main(void)
                         //   ips114_show_int(60,60,cross_card[3].Card_Type,4);//卡片坐标,即时更新
                         //   ips114_show_int(60,80,cross_card[4].Card_Type,4);//校准步数
 
-                          ips114_show_int(60,0,Island_card[0].Card_Type,4);//第一张卡片
-                          ips114_show_int(60,20,Island_card[1].Card_Type,4);//第二张卡片
-                          ips114_show_int(60,40,Island_card[2].Card_Type,4);//第三张卡片类型
-                           ips114_show_int(60,60,Island_card[3].Card_Type,4);//第四张卡片类型
-                           ips114_show_int(60,80,Island_card[4].Card_Type,4);//第五张卡片类型
+//                          ips114_show_int(60,0,Island_card[0].Card_Type,4);//第一张卡片
+//                          ips114_show_int(60,20,Island_card[1].Card_Type,4);//第二张卡片
+//                          ips114_show_int(60,40,Island_card[2].Card_Type,4);//第三张卡片类型
+//                           ips114_show_int(60,60,Island_card[3].Card_Type,4);//第四张卡片类型
+//                           ips114_show_int(60,80,Island_card[4].Card_Type,4);//第五张卡片类型
 
-//         ips114_show_int(60,0,type,4);//元素类型
+         ips114_show_int(60,0,type,4);//元素类型
 //				 ips114_show_int(60,20,Vy,4);//元素类型
 //				 ips114_show_int(60,30,Vx,4);//元素类型
         //  ips114_show_int(60,20,classify_mode,4);//斑马线分类函数的模式
@@ -385,6 +391,415 @@ int main(void)
 	//  ips114_show_int(0,100,card_classify_count,4);//卡片坐标,即时更新
 	//  ips114_show_int(0,80,left_island_flag,4);//卡片坐标,即时更新
         // ips114_show_int(90,80,CSI_correct_flag,4);//卡片坐标,即时更新
+        //  if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH)//环岛识别+未完成+允许处理
+                         //  {
+                         //      car_run_mode = 4;                  //环岛处理
+                        //       find_card_allow = NOT_READY;       //不允许寻卡
+                       //        Cross_allow_flag = NOT_READY;       //不允许十字
+                         //      banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                         //      Cross_Handle_Flag = 0;              //干废十字识别条件
+                         //      Zebra_catch_flag = 0;               //干废斑马线识别条件
+                         //      break;
+                        //  }
+//                        if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)
+//                          {
+//                              car_run_mode = 5;                 //十字处理
+//                              find_card_allow = NOT_READY;      //不允许寻卡
+//                              Island_allow_flag = NOT_READY;    //不允许环岛
+//                              banmaxian_allow_flag = NOT_READY; //不允许斑马线
+// 															Cross_allow_flag = READY;
+//                              left_island_flag = 0;             //干废环岛识别条件
+//                              right_island_flag = 0;            //干废环岛识别条件
+//                              Zebra_catch_flag = 0;             //干废斑马线识别条件
+//                              break;
+//                          }
+//*********************保底*************/
+    if(left_island_flag || right_island_flag && Island_allow_flag == READY  && Left_Island_Finish ==NOT_FINISH)//识别出环岛
+    {
+//       island_stop_flag =1;//开定时器
+      if(one)
+      {
+        island_stop_flag =1;//开定时器
+        Left_Island_Finish = FINISH;
+        Island_allow_flag = NOT_READY;
+        now_distance_x=0;
+        now_distance_y=0;
+        one = 0;           //只清一次
+        car_run_mode = 0;   //保持捡卡片模式
+      }  
+//       car_run_mode = 0;   //保持捡卡片模式
+    }
+     if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//识别出环岛
+    {
+      if(cross_one)
+      {
+        stop_detect_flag =1;//开定时器屏蔽
+        Cross_allow_flag = NOT_READY; //关闭判断
+        Left_Crossing_Finish = NOT_READY;//关闭判断
+        now_distance_x=0;
+        now_distance_y=0;
+        cross_one = 0;           //只清一次
+        car_run_mode = 0;   //保持捡卡片模式
+      }  
+//       car_run_mode = 0;   //保持捡卡片模式
+    }
+    if(Zebra_Classify_flag==1 && banmaxian_allow_flag==READY)//斑马线
+   {
+      correct_art2_flag=CLOSE;
+      car_run_mode=1;//更改寻迹模式
+        if(one_time)
+       {
+	now_distance_x=0;
+	now_distance_y=0;
+	one_time=0;
+       }
+   }
+//     if((type == 9 || type == 10) &&  ramp_allow==READY && ramp_finish == NOT_FINISH ) //识别出路障
+//    {
+//      if(once)
+//     {
+//      Angle_ramp=0;//为里程计准备
+//      ramp_x=0;
+//      ramp_y=0;
+//      ramp_step=1;
+//      car_run_mode=2;//更换模式
+//      car_stop();
+//      find_ramp = 1;
+//      once=0;
+//     }
+//    }
+   switch(car_run_mode)
+	{
+	 case 0:
+	   car_findcard(&car_mode);//模式选择
+	   car_run_mode=0;
+	 break;
+	  case 1://斑马线处理
+	    card_final_classify(&classify_mode);
+           if(banmaxian_finish==FINISH)
+           {
+              car_run_mode=3;
+              break;  
+           }
+           else
+           {
+              car_run_mode=1;
+              break;  
+           }
+	 case 2:
+	  ramp_cross(60, 70);//坡道绕行函数
+	  Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+	  if(ramp_finish==1)
+          {
+            car_run_mode=0;
+            type = 0; //清零type
+            Zebra_Classify_flag = 0;
+            banmaxian_allow_flag = READY; //做完避障之后再打开斑马线
+            break;    
+          }
+          else
+          {
+            car_run_mode=2;
+            break;     
+          }
+	 break;	
+        case 3:
+            car_run();
+            car_run_mode=3;//所有任务做完之后，只进行正常寻迹
+	    break;
+//            case 4:             //环岛处理
+                        //     if(Left_Island_Finish == NOT_FINISH && Island_allow_flag == READY )
+                        //     {
+                        //        car_run_mode = 4;                //锁住状态
+                        //        Cross_Handle_Flag = 0;           //干废十字识别条件
+                        //        Zebra_catch_flag = 0;            //干废斑马线识别条件
+                        //        Cross_allow_flag = NOT_READY;    //不允许十字
+                        //        banmaxian_allow_flag = NOT_READY;//不允许斑马线
+                        //        Left_Island_pick_and_move(&Island_mode);
+                        //        break;
+                        //     }
+                        //     else if(Left_Island_Finish == FINISH)
+                        //     {
+                        //         car_run_mode = 0;
+                        //         Island_allow_flag = NOT_READY;  //不再允许环岛
+                        //        // banmaxian_allow_flag = NOT_READY;//不允许斑马线
+                        //           banmaxian_allow_flag = READY; //允许斑马线
+                        //         left_island_flag = 0;           //重置环岛识别条件
+                        //         right_island_flag = 0;          //重置环岛识别条件
+                        //         if(Left_Crossing_Finish == NOT_FINISH)
+                        //         {
+                        //            Cross_allow_flag = READY;   //允许十字     
+                        //         }
+                        //         else if(Left_Crossing_Finish == FINISH)//十字未完成
+                        //         {
+                        //            Cross_allow_flag = NOT_READY;  //不再允许十字
+                        //         }
+                        //         break;       
+                        //     }
+//                         case 5:             //十字处理
+//                            if(Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
+//                            {
+//                               car_run_mode = 5;               //锁住状态
+//                               Cross_allow_flag = READY;       //允许十字
+//                                find_card_allow = NOT_READY;    //不允许寻卡
+//                                banmaxian_allow_flag = READY;   //不允许斑马线
+//				  banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+//                                Island_allow_flag = NOT_READY;  //不允许环岛
+//                                left_island_flag = 0;           //干废环岛识别条件
+//                                right_island_flag = 0;          //干废环岛识别条件
+//                                Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                               Left_Crossing_pick_and_move(&Crossing_mode);
+//                               break;
+//                            }
+//                            else if(Left_Crossing_Finish == FINISH)//十字处理完成
+//                            {
+//                               car_run_mode = 0;
+//                               Cross_allow_flag = NOT_READY;   //不再允许十字
+//                               if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+//                               {
+//                                  Island_allow_flag = READY;  //允许环岛
+//                               }
+//                               else if(Left_Island_Finish == FINISH)//环岛完成
+//                               { 
+//                                  Island_allow_flag = NOT_READY;  //不再允许环岛
+//                               }                                                      
+//                               banmaxian_allow_flag = READY;   //允许斑马线
+//                               Cross_Handle_Flag = 0;          //重置十字识别条件
+//                               Zebra_catch_flag = 0;           //重置斑马线识别条件
+//                               break;
+	}		
+//         switch(car_run_mode)
+//        {
+//                 	 case 0:
+//                          if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH)//环岛识别+未完成+允许处理
+//                          {
+//                              car_run_mode = 0;                  //对环岛处理
+//                              island_stop_flag =1;               //环岛停止检测卡片(在定时器中)
+//                              car_findcard(&car_mode);
+//                              break;
+//                          }
+//                         //  if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH)//环岛识别+未完成+允许处理
+//                         //  {
+//                         //      car_run_mode = 4;                  //环岛处理
+//                         //      find_card_allow = NOT_READY;       //不允许寻卡
+//                         //      Cross_allow_flag = NOT_READY;       //不允许十字
+//                         //      banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+//                         //      Cross_Handle_Flag = 0;              //干废十字识别条件
+//                         //      Zebra_catch_flag = 0;               //干废斑马线识别条件
+//                         //      break;
+//                         //  }
+//                          if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)
+//                          {
+//                              car_run_mode = 5;                 //十字处理
+//                              Island_allow_flag = NOT_READY;    //不允许环岛
+//                              banmaxian_allow_flag = NOT_READY; //不允许斑马线
+// 													    Cross_allow_flag = READY;					//
+//                              left_island_flag = 0;             //干废环岛识别条件
+//                              right_island_flag = 0;            //干废环岛识别条件
+//                              Zebra_catch_flag = 0;             //干废斑马线识别条件
+//                              break;
+//                          }
+//                            else if((type == 9 || type == 10) && ramp_allow==READY && ramp_finish == NOT_FINISH)//识别出左路障或者右路障，且允许处理，且未完成
+//                         {
+//                            if(once)
+//                           {
+//                             Angle_ramp=0;    //准备坡道里程计的变量
+//                             ramp_x=0;
+//                             ramp_y=0;
+//                             ramp_step=1;     //坡道调整步数置1
+//                 	    car_stop();      //停车
+//                             find_ramp = OPEN;//坡道里程计打开
+//                             once=0;        
+//                            }
+//                              ramp_allow = READY;              //只允许避障处理  
+//                              find_card_allow = NOT_READY;     //不允许寻卡
+//                              Island_allow_flag = NOT_READY;   //不允许环岛
+//                              Cross_allow_flag = NOT_READY;    //不允许十字
+//                              banmaxian_allow_flag = NOT_READY;//不允许斑马线
+// 			     break;
+//                         }
+//                           else if(Zebra_catch_flag == 1 && banmaxian_allow_flag == READY && banmaxian_finish == NOT_FINISH)
+//                          {
+//                              car_run_mode = 1;               //斑马线处理
+//                              find_card_allow = NOT_READY;    //不允许寻卡
+//                              Island_allow_flag = NOT_READY;  //不允许环岛
+//                              Cross_allow_flag = NOT_READY;   //不允许十字
+//                              left_island_flag = 0;           //干废环岛识别条件
+//                              right_island_flag = 0;          //干废环岛识别条件
+//                              Cross_Handle_Flag = 0;          //干废十字识别条件
+//                              break;
+//                          }
+//                          else if(find_card_allow==READY)
+//                          {
+//                         //     car_findcard(&car_mode);//模式选择
+//                              car_run_mode=6;
+//                              find_card_allow = NOT_READY;    //不允许寻卡
+//                              Island_allow_flag = NOT_READY;  //不允许环岛
+//                              Cross_allow_flag = NOT_READY;   //不允许十字
+//                              left_island_flag = 0;           //干废环岛识别条件
+//                              right_island_flag = 0;          //干废环岛识别条件
+//                              Cross_Handle_Flag = 0;          //干废十字识别条件
+//                             break;
+//                          }
+//                 	 case 1://斑马线处理
+//                           if(banmaxian_finish==FINISH)
+//                           {
+//                              car_run_mode=3;   //只做循迹任务 
+//                           }
+//                           else
+//                           {
+//                             car_run_mode=1;    //锁住状态
+//                             card_final_classify(&classify_mode);
+//                           }
+//                 	 break;
+//                 	 case 2:
+//                 	  if(ramp_finish==FINISH)//绕行完成
+//                           {
+//                              car_run_mode=0;                 //回归到捡卡片模式
+//                              Cross_Handle_Flag = 0;          //重置十字识别条件
+//                              Zebra_catch_flag = 0;           //重置斑马线识别条件
+//                              left_island_flag = 0;           //重置环岛识别条件
+//                              right_island_flag = 0;          //重置环岛识别条件
+//                              find_card_allow = NOT_READY;     //不允许寻卡
+
+//                              if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+//                             {
+//                               Island_allow_flag = READY;  //允许环岛
+//                             }
+//                              else if(Left_Island_Finish == FINISH)//环岛完成
+//                             { 
+//                               Island_allow_flag = NOT_READY;  //不再允许环岛
+//                             }         
+//                              if(Left_Crossing_Finish == NOT_FINISH)
+//                             {
+//                               Cross_allow_flag = READY;   //允许十字     
+//                             }
+//                              else if(Left_Crossing_Finish == FINISH)//十字未完成
+//                             {
+//                               Cross_allow_flag = NOT_READY;  //不再允许十字
+//                             }
+//                              banmaxian_allow_flag = READY;//允许斑马线
+//                              normal_stop_flag = 1;        //开定时器延时
+// 			     type = 0;
+// 			     break;
+//                           }
+//                            else if(ramp_finish==NOT_FINISH)
+//                          {
+//                              car_run_mode=2;
+//                              ramp_cross(60, 70);//坡道绕行函数
+//                 	      Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//                              ramp_allow = READY;              //只允许避障处理  
+//                              find_card_allow = NOT_READY;     //不允许寻卡
+//                              Island_allow_flag = NOT_READY;   //不允许环岛
+//                              Cross_allow_flag = NOT_READY;    //不允许十字
+//                              banmaxian_allow_flag = NOT_READY;//不允许斑马线
+//                              Cross_Handle_Flag = 0;          //干废十字识别条件
+//                              Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                              left_island_flag = 0;           //干废环岛识别条件
+//                              right_island_flag = 0;          //干废环岛识别条件
+// 			     break;
+//                          }
+//                 	 break;
+//                          case 3:
+//                             car_run_mode = 3;//锁状态
+//                             car_run();
+//                             break;
+//                         //  case 4:             //环岛处理
+//                         //     if(Left_Island_Finish == NOT_FINISH && Island_allow_flag == READY )
+//                         //     {
+//                         //        car_run_mode = 4;               //锁住状态
+//                         //        Cross_Handle_Flag = 0;          //干废十字识别条件
+//                         //        Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                         //        find_card_allow = NOT_READY;    //不允许寻卡
+//                         //        Cross_allow_flag = NOT_READY;   //不允许十字
+//                         //        banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+//                         //        Left_Island_pick_and_move(&Island_mode);
+//                         //        break;
+//                         //     }
+//                         //     else if(Left_Island_Finish == FINISH)
+//                         //     {
+//                         //         car_run_mode = 0;
+//                         //         Island_allow_flag = NOT_READY;  //不再允许环岛
+//                         //         find_card_allow = READY;        //允许寻卡
+//                         //         banmaxian_allow_flag = READY;       //允许斑马线
+//                         //         left_island_flag = 0;           //重置环岛识别条件
+//                         //         right_island_flag = 0;          //重置环岛识别条件
+//                         //         if(Left_Crossing_Finish == NOT_FINISH)
+//                         //         {
+//                         //            Cross_allow_flag = READY;   //允许十字     
+//                         //         }
+//                         //         else if(Left_Crossing_Finish == FINISH)//十字未完成
+//                         //         {
+//                         //            Cross_allow_flag = NOT_READY;  //不再允许十字
+//                         //         }
+//                         //         break;       
+//                         //     }
+//                         case 5:             //十字处理
+//                            if(Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
+//                            {
+//                               car_run_mode = 5;               //锁住状态
+//                               Cross_allow_flag = READY;       //允许十字
+//                                find_card_allow = NOT_READY;    //不允许寻卡
+//                                banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+//                                Island_allow_flag = NOT_READY;  //不允许环岛
+//                                left_island_flag = 0;           //干废环岛识别条件
+//                                right_island_flag = 0;          //干废环岛识别条件
+//                                Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                               Left_Crossing_pick_and_move(&Crossing_mode);
+//                               break;
+//                            }
+//                            else if(Left_Crossing_Finish == FINISH)//十字处理完成
+//                            {
+//                               car_run_mode = 0;
+//                               Cross_allow_flag = NOT_READY;   //不再允许十字
+//                               find_card_allow = READY;        //允许寻卡
+//                               if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+//                               {
+//                                  Island_allow_flag = READY;  //允许环岛
+//                               }
+//                               else if(Left_Island_Finish == FINISH)//环岛完成
+//                               { 
+//                                  Island_allow_flag = NOT_READY;  //不再允许环岛
+//                               }    
+                                                   
+//                               banmaxian_allow_flag = READY;       //允许斑马线
+//                               Cross_Handle_Flag = 0;          //重置十字识别条件
+//                               Zebra_catch_flag = 0;           //重置斑马线识别条件
+//                               break;
+//                            }
+//                            case 6:             //捡卡片处理
+//                            if(find_card_allow == READY && find_card_finish == NOT_FINISH)//允许处理十字且十字处理未完成，巡卡常开
+//                            {
+//                               car_run_mode = 6;               //锁住拾取卡片状态
+//                               Cross_allow_flag = READY;       //允许十字
+//                               banmaxian_allow_flag = NOT_READY;//不允许斑马线
+//                               Island_allow_flag = NOT_READY;  //不允许环岛
+//                                left_island_flag = 0;           //干废环岛识别条件
+//                                right_island_flag = 0;          //干废环岛识别条件
+//                                Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                               car_findcard(&car_mode);//模式选择
+//                               break;
+//                            }
+//                            else if(find_card_finish == FINISH)//找卡片处理完成
+//                            {
+//                               car_run_mode = 0;
+//                               Cross_allow_flag = NOT_READY;   //不再允许十字
+//                               find_card_allow = READY;        //允许寻卡
+// 														 find_card_finish = NOT_FINISH;
+//                               if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+//                               {
+//                                 Island_allow_flag = READY;  //允许环岛
+//                               }
+//                               else if(Left_Island_Finish == FINISH)//环岛完成
+//                               { 
+//                                 Island_allow_flag = NOT_READY;  //不再允许环岛
+//                               }        
+//                               banmaxian_allow_flag = READY;       //允许斑马线
+//                               Cross_Handle_Flag = 0;          //重置十字识别条件
+//                               Zebra_catch_flag = 0;           //重置斑马线识别条件
+//                               break;
+//                            }                            
+//                 	}
 
                 //					/*****************测试上边线巡线(仅直道)成功***********************/
                 //        car_run_upline();
@@ -419,152 +834,466 @@ int main(void)
                 //   once=0;
                 // }
                 // }
-                       switch(car_run_mode)
-                	{
-                	 case 0:
-                         if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH || Right_Island_Finish == NOT_FINISH)//环岛识别+未完成+允许处理
-                         {
-                             car_run_mode = 0;                  //对环岛处理
-                             island_stop_flag =1;               //环岛停止检测卡片
-                             car_findcard(&car_mode);
-//                             Island_allow_flag = NOT_READY;
-                        //      find_card_allow = NOT_READY;       //不允许寻卡
-													   find_card_allow = READY;
-//                             Cross_allow_flag = NOT_READY;       //不允许十字
-//                             banmaxian_allow_flag = NOT_READY;   //不允许斑马线
-//													   Island_allow_flag = READY;					 //允许环岛处理
-//                             Cross_Handle_Flag = 0;              //干废十字识别条件
-//                             Zebra_catch_flag = 0;               //干废斑马线识别条件
-                              break;
-                         }
-                         else if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)
-                         {
-                             car_run_mode = 5;               //十字处理
-                             find_card_allow = NOT_READY;    //不允许寻卡
-                             Island_allow_flag = NOT_READY;  //不允许环岛
-                             banmaxian_allow_flag = NOT_READY;   //不允许斑马线
-                             left_island_flag = 0;           //干废环岛识别条件
-                             right_island_flag = 0;          //干废环岛识别条件
-                             Zebra_catch_flag = 0;          //干废斑马线识别条件
-                             break;
-                         }
-                         else if(Zebra_catch_flag == 1 && banmaxian_allow_flag == READY && banmaxian_finish == NOT_FINISH)
-                         {
-                             car_run_mode = 1;               //斑马线处理
-                             find_card_allow = NOT_READY;    //不允许寻卡
-                             Island_allow_flag = NOT_READY;  //不允许环岛
-                             Cross_allow_flag = NOT_READY;   //不允许十字
-                             left_island_flag = 0;           //干废环岛识别条件
-                             right_island_flag = 0;          //干废环岛识别条件
-                             Cross_Handle_Flag = 0;          //干废十字识别条件
-                             break;
-                         }
-                         else if(find_card_allow==READY)
-                         {
-                            car_findcard(&car_mode);//模式选择
-                            car_run_mode=0;
-                            break;
-                         }
-                	 case 1://斑马线处理
-                          if(banmaxian_finish==FINISH)
-                          {
-                             car_run_mode=3;   //只做循迹任务 
-                          }
-                          else
-                          {
-                            car_run_mode=1;    //锁住状态
-                          }
-                             card_final_classify(&classify_mode);
-                	 break;
-                	 case 2:
-                	  ramp_cross(60, 140);//坡道绕行函数
-                	  Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
-                	  if(ramp_finish==1)
-                	    car_run_mode=0;
-                         else
-                	    car_run_mode=2;
-                	 break;
-                         case 3:
-                            car_run_mode = 3;//锁状态
-                            car_run();
-                            break;
-                        //  case 4:             //环岛处理
-                        //     if(Left_Island_Finish == NOT_FINISH && Island_allow_flag == READY )
-                        //     {
-                        //        car_run_mode = 4;               //锁住状态
-                        //        Cross_Handle_Flag = 0;          //干废十字识别条件
-                        //        Zebra_catch_flag = 0;           //干废斑马线识别条件
-                        //        find_card_allow = NOT_READY;    //不允许寻卡
-                        //        Cross_allow_flag = NOT_READY;   //不允许十字
-                        //        banmaxian_allow_flag = NOT_READY;   //不允许斑马线
-                        //        if(left_island_flag == 1)
-                        //        {
-                        //         Left_Island_pick_and_move(&Island_mode);
-                        //         right_island_flag = 0;
-                        //        }
-                        //        else if(right_island_flag == 1)
-                        //        {
-                        //         Right_Island_pick_and_move(&Right_Island_mode);
-                        //         left_island_flag = 0;
-                        //        }
-                        //        break;
-                        //     }
-                        //     else if(Left_Island_Finish == FINISH)
-                        //     {
-                        //         car_run_mode = 0;
-                        //         Island_allow_flag = NOT_READY;  //不再允许环岛
-                        //         find_card_allow = READY;        //允许寻卡
-                        //         banmaxian_allow_flag = READY;       //允许斑马线
-                        //         left_island_flag = 0;           //重置环岛识别条件
-                        //         right_island_flag = 0;          //重置环岛识别条件
-                        //         if(Left_Crossing_Finish == NOT_FINISH)
-                        //         {
-                        //            Cross_allow_flag = READY;   //允许十字     
-                        //         }
-                        //         else if(Left_Crossing_Finish == FINISH)//十字未完成
-                        //         {
-                        //            Cross_allow_flag = NOT_READY;  //不再允许十字
-                        //         }
-                        //         break;       
-                        //     }
-                        case 4:
-                           car_findcard(&car_mode);
-                           break;                             
+                //        switch(car_run_mode)
+                // 	{
+                // 	 case 0:
+                //          if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH || Right_Island_Finish == NOT_FINISH)//环岛识别+未完成+允许处理
+                //          {
+                //              /*******屏蔽所有圆环的写法 */
+                //         //      car_run_mode = 0;                  //对环岛处理
+                //         //      island_stop_flag =1;               //环岛停止检测卡片
+                //         //      car_findcard(&car_mode);
+                //         //      find_card_allow = READY;
+                //         //      break;
+                //              /*************************/
+                //              car_run_mode = 4;
+                //              find_card_allow = NOT_READY;        //不允许寻卡
+                //              Cross_allow_flag = NOT_READY;       //不允许十字
+                //              banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //              ramp_allow = NOT_READY;             //不允许避障
+		// 	     Island_allow_flag = READY;		 //允许环岛处理
+                //              Cross_Handle_Flag = 0;              //干废十字识别条件
+                //              Zebra_catch_flag = 0;               //干废斑马线识别条件
+		// 											 break;
+                //          }
+                //          else if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)
+                //          {
+                //              car_run_mode = 5;                 //十字处理
+                //              find_card_allow = NOT_READY;      //不允许寻卡
+                //              ramp_allow = NOT_READY;             //不允许避障
+                //              Island_allow_flag = NOT_READY;    //不允许环岛
+                //              banmaxian_allow_flag = NOT_READY; //不允许斑马线
+                //              left_island_flag = 0;             //干废环岛识别条件
+                //              right_island_flag = 0;            //干废环岛识别条件
+                //              Zebra_catch_flag = 0;            //干废斑马线识别条件
+                //              break;
+                //          }
+                //          else if(Zebra_catch_flag == 1 && banmaxian_allow_flag == READY && banmaxian_finish == NOT_FINISH)
+                //          {
+                //              car_run_mode = 1;               //斑马线处理
+                //              find_card_allow = NOT_READY;    //不允许寻卡
+                //              ramp_allow = NOT_READY;         //不允许避障
+                //              Island_allow_flag = NOT_READY;  //不允许环岛
+                //              Cross_allow_flag = NOT_READY;   //不允许十字
+                //              left_island_flag = 0;           //干废环岛识别条件
+                //              right_island_flag = 0;          //干废环岛识别条件
+                //              Cross_Handle_Flag = 0;          //干废十字识别条件
+                //              break;
+                //          }
+                //          else if((type == 9 || type == 10) && ramp_allow==READY && ramp_finish == NOT_FINISH)//识别出左路障或者右路障，且允许处理，且未完成
+                //         {
+                //            if(once)
+                //           {
+                //             Angle_ramp=0;    //准备坡道里程计的变量
+                //             ramp_x=0;
+                //             ramp_y=0;
+                //             ramp_step=1;     //坡道调整步数置1
+                // 	    car_stop();      //停车
+                //             find_ramp = OPEN;//坡道里程计打开
+                //             once=0;        
+                //            }
+                //              ramp_allow = READY;              //只允许避障处理  
+                //              find_card_allow = NOT_READY;     //不允许寻卡
+                //              Island_allow_flag = NOT_READY;   //不允许环岛
+                //              Cross_allow_flag = NOT_READY;    //不允许十字
+                //              banmaxian_allow_flag = NOT_READY;//不允许斑马线
+		// 		break;
+                //         }
+                //          else if(find_card_allow==READY)
+                //          {
+                //             car_findcard(&car_mode);//模式选择
+                //             car_run_mode=0;
+                //             break;
+                //          }
+		// 										 break;
+                // 	 case 1://斑马线处理
+                //           if(banmaxian_finish==FINISH)
+                //           {
+                //              car_run_mode=3;   //只做循迹任务 
+                //           }
+                //           else
+                //           {
+                //             car_run_mode=1;    //锁住状态
+                //           }
+                //              card_final_classify(&classify_mode);
+                // 	 break;
+//                	 case 2:
+//                	  if(ramp_finish==FINISH)
+//                          {
+//                             car_run_mode=0;   //回归到捡卡片模式
+//                             Cross_Handle_Flag = 0;          //重置十字识别条件
+//                             Zebra_catch_flag = 0;           //重置斑马线识别条件
+//                             left_island_flag = 0;           //重置环岛识别条件
+//                             right_island_flag = 0;          //重置环岛识别条件
+//                             find_card_allow = NOT_READY;     //不允许寻卡
 
-                        case 5:             //十字处理
-                           if(Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
-                           {
-                              car_run_mode = 5;               //锁住状态
-                              Cross_allow_flag = READY;       //允许十字
-                               find_card_allow = NOT_READY;    //不允许寻卡
-                               banmaxian_allow_flag = NOT_READY;   //不允许斑马线
-                               Island_allow_flag = NOT_READY;  //不允许环岛
-                               left_island_flag = 0;           //干废环岛识别条件
-                               right_island_flag = 0;          //干废环岛识别条件
-                               Zebra_catch_flag = 0;           //干废斑马线识别条件
-                              Left_Crossing_pick_and_move(&Crossing_mode);
-                              break;
-                           }
-                           else if(Left_Crossing_Finish == FINISH)//十字处理完成
-                           {
-                              car_run_mode = 0;
-                              Cross_allow_flag = NOT_READY;   //不再允许十字
-                              find_card_allow = READY;        //允许寻卡
-                              if(Left_Island_Finish == NOT_FINISH)//环岛未完成
-                              {
-                                 Island_allow_flag = READY;  //允许环岛
-                              }
-                              else if(Left_Island_Finish == FINISH)//环岛完成
-                              { 
-                                 Island_allow_flag = NOT_READY;  //不再允许环岛
-                              }    
-                                                   
-                              banmaxian_allow_flag = READY;       //允许斑马线
-                              Cross_Handle_Flag = 0;          //重置十字识别条件
-                              Zebra_catch_flag = 0;           //重置斑马线识别条件
-                              break;
-                           }                            
-                	}
+//                             if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+//                            {
+//                              Island_allow_flag = READY;  //允许环岛
+//                            }
+//                             else if(Left_Island_Finish == FINISH)//环岛完成
+//                            { 
+//                              Island_allow_flag = NOT_READY;  //不再允许环岛
+//                            }         
+//                             if(Left_Crossing_Finish == NOT_FINISH)
+//                            {
+//                              Cross_allow_flag = READY;   //允许十字     
+//                            }
+//                             else if(Left_Crossing_Finish == FINISH)//十字未完成
+//                            {
+//                              Cross_allow_flag = NOT_READY;  //不再允许十字
+//                            }
+//                             banmaxian_allow_flag = READY;//允许斑马线
+//														type = 0;
+//														break;
+//                          }
+//                         else if(ramp_finish==NOT_FINISH)
+//                         {
+//                             car_run_mode=2;
+//                             ramp_cross(60, 70);//坡道绕行函数
+//                	           Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+//                             ramp_allow = READY;              //只允许避障处理  
+//                             find_card_allow = NOT_READY;     //不允许寻卡
+//                             Island_allow_flag = NOT_READY;   //不允许环岛
+//                             Cross_allow_flag = NOT_READY;    //不允许十字
+//                             banmaxian_allow_flag = NOT_READY;//不允许斑马线
+//                             Cross_Handle_Flag = 0;          //干废十字识别条件
+//                             Zebra_catch_flag = 0;           //干废斑马线识别条件
+//                             left_island_flag = 0;           //干废环岛识别条件
+//                             right_island_flag = 0;          //干废环岛识别条件
+//													 break;
+//                         }
+//                	 break;
+                //          case 3:
+                //             car_run_mode = 3;//锁状态
+                //             car_run();
+                //             break;
+                //          case 4:             //左环岛处理
+                //             if(Left_Island_Finish == NOT_FINISH && Island_allow_flag == READY )
+                //             {
+                //                car_run_mode = 4;               //锁住状态
+                //                Cross_Handle_Flag = 0;          //干废十字识别条件
+                //                Zebra_catch_flag = 0;           //干废斑马线识别条件
+                //                ramp_allow = NOT_READY;         //不允许路障处理
+                //                find_card_allow = NOT_READY;    //不允许寻卡
+                //                Cross_allow_flag = NOT_READY;   //不允许十字
+                //                banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //                Left_Island_pick_and_move(&Island_mode);
+                //         //        if(left_island_flag == 1)
+                //         //        {
+                //         //         Left_Island_pick_and_move(&Island_mode);
+                //         //         right_island_flag = 0;
+                //         //        }
+                //         //        else if(right_island_flag == 1)
+                //         //        {
+                //         //         // Right_Island_pick_and_move(&Right_Island_mode);
+                //         //         Left_Island_Finish = FINISH;
+                //         //         left_island_flag = 0;
+                //         //        }
+                //                break;
+                //               }
+                //             else if(Left_Island_Finish == FINISH)
+                //             {
+                //                 car_run_mode = 0;
+                //                 ramp_allow = READY;             //允许路障处理
+                //                 Island_allow_flag = NOT_READY;  //不再允许环岛
+                //                 find_card_allow = READY;        //允许寻卡
+                //                 banmaxian_allow_flag = READY;   //允许斑马线
+                //                 left_island_flag = 0;           //重置环岛识别条件
+                //                 right_island_flag = 0;          //重置环岛识别条件
+                //                 if(Left_Crossing_Finish == NOT_FINISH)
+                //                 {
+                //                    Cross_allow_flag = READY;   //允许十字     
+                //                 }
+                //                 else if(Left_Crossing_Finish == FINISH)//十字未完成
+                //                 {
+                //                    Cross_allow_flag = NOT_READY;  //不再允许十字
+                //                 }
+                //                 if(ramp_finish == FINISH)
+                //                 {
+                //                   ramp_allow = NOT_READY;             //不允许路障处理
+                //                 }
+                //                 else
+                //                 {
+                //                   ramp_allow = READY;             //允许路障处理
+                //                 }
+                //                 type = 0;
+                //                 break;       
+                //             }                        
+                //             break;
+                //         case 5:             //十字处理
+                //            if(Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
+                //            {
+                //                car_run_mode = 5;               //锁住状态
+                //                Cross_allow_flag = READY;       //允许十字
+                //                ramp_allow = NOT_READY;         //不允许路障处理
+                //                find_card_allow = NOT_READY;    //不允许寻卡
+                //                banmaxian_allow_flag = NOT_READY;//不允许斑马线
+                //                Island_allow_flag = NOT_READY;  //不允许环岛
+                //                left_island_flag = 0;           //干废环岛识别条件
+                //                right_island_flag = 0;          //干废环岛识别条件
+                //                Zebra_catch_flag = 0;           //干废斑马线识别条件
+                //               Left_Crossing_pick_and_move(&Crossing_mode);
+                //               break;
+                //            }
+                //            else if(Left_Crossing_Finish == FINISH)//十字处理完成
+                //            {
+                //               car_run_mode = 0;
+                //               Cross_allow_flag = NOT_READY;   //不再允许十字
+                //               find_card_allow = READY;        //允许寻卡
+                //               banmaxian_allow_flag = READY;   //允许斑马线
+                //               if(Left_Island_Finish == FINISH)
+                //               {
+                //                 Island_allow_flag = NOT_READY;  //不再允许环岛
+                //               }
+                //               else
+                //               {
+                //                 Island_allow_flag = READY;     //重新打开环岛
+                //               }
+                //                 if(ramp_finish == FINISH)
+                //               {
+                //                 ramp_allow = NOT_READY;             //不允许路障处理
+                //               }
+                //                 else
+                //               {
+                //                 ramp_allow = READY;             //允许路障处理
+                //               }
+                //               Cross_Handle_Flag = 0;          //重置十字识别条件
+                //               Zebra_catch_flag = 0;           //重置斑马线识别条件
+                //               type = 0;
+                //               break;
+                //            }
+                //            break;                            
+                // 	}
+                // switch(car_run_mode)
+                // 	{
+                // 	 case 0:
+                //          if(left_island_flag || right_island_flag && Island_allow_flag == READY && Left_Island_Finish ==NOT_FINISH)//环岛识别+未完成+允许处理
+                //          {
+                //              car_run_mode = 4;                  //环岛处理
+                //              Island_allow_flag = READY;          //允许环岛处理
+                //              find_card_allow = NOT_READY;       //不允许寻卡
+                //              Cross_allow_flag = NOT_READY;       //不允许十字
+                //              banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //              Cross_Handle_Flag = 0;              //干废十字识别条件
+                //              Zebra_catch_flag = 0;               //干废斑马线识别条件
+                //              break;
+                //          }
+                //          else if(Cross_Handle_Flag == 1 && Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)
+                //          {
+                //              car_run_mode = 5;               //十字处理
+                //              find_card_allow = NOT_READY;    //不允许寻卡
+                //              Island_allow_flag = NOT_READY;  //不允许环岛
+                //              banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //              left_island_flag = 0;           //干废环岛识别条件
+                //              right_island_flag = 0;          //干废环岛识别条件
+                //              Zebra_catch_flag = 0;          //干废斑马线识别条件
+                //              break;
+                //          }
+                //           else if((type == 9 || type == 10) && ramp_allow==READY && ramp_finish == NOT_FINISH)//识别出左路障或者右路障，且允许处理，且未完成
+                //         {
+                //            if(once)
+                //           {
+                //             Angle_ramp=0;    //准备坡道里程计的变量
+                //             ramp_x=0;
+                //             ramp_y=0;
+                //             ramp_step=1;     //坡道调整步数置1
+                // 	    car_stop();      //停车
+                //             find_ramp = OPEN;//坡道里程计打开
+                //             once=0;        
+                //            }
+                //              car_run_mode = 2;
+                //              ramp_allow = READY;              //只允许避障处理  
+                //              find_card_allow = NOT_READY;     //不允许寻卡
+                //              Island_allow_flag = NOT_READY;   //不允许环岛
+                //              Cross_allow_flag = NOT_READY;    //不允许十字
+                //              banmaxian_allow_flag = NOT_READY;//不允许斑马线
+		// 	     break;
+                //         }
+                //          else if(Zebra_catch_flag == 1 && banmaxian_allow_flag == READY && banmaxian_finish == NOT_FINISH)
+                //          {
+                //              car_run_mode = 1;               //斑马线处理
+                //              find_card_allow = NOT_READY;    //不允许寻卡
+                //              Island_allow_flag = NOT_READY;  //不允许环岛
+                //              Cross_allow_flag = NOT_READY;   //不允许十字
+                //              left_island_flag = 0;           //干废环岛识别条件
+                //              right_island_flag = 0;          //干废环岛识别条件
+                //              Cross_Handle_Flag = 0;          //干废十字识别条件
+                //              break;
+                //          }
+                //          else if(find_card_allow==READY)
+                //          {
+                //             car_findcard(&car_mode);//模式选择
+                //             car_run_mode=0;
+                //             break;
+                //          }
+                // 	 case 1://斑马线处理
+                //           if(banmaxian_finish==FINISH)
+                //           {
+                //              car_run_mode=3;   //只做循迹任务 
+                //           }
+                //           else
+                //           {
+                //             car_run_mode=1;    //锁住状态
+                //           }
+                //              card_final_classify(&classify_mode);
+                // 	 break;
+                // 	 case 2:
+                // 	  if(ramp_finish==FINISH)
+                //           {
+                //              car_run_mode=0;                 //回归到捡卡片模式
+                //              Cross_Handle_Flag = 0;          //重置十字识别条件
+                //              Zebra_catch_flag = 0;           //重置斑马线识别条件
+                //              left_island_flag = 0;           //重置环岛识别条件
+                //              right_island_flag = 0;          //重置环岛识别条件
+                //              find_card_allow = READY;        //允许寻卡
+                             
+                //              if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+                //             {
+                //               Island_allow_flag = READY;  //允许环岛
+                //             }
+                //              else if(Left_Island_Finish == FINISH)//环岛完成
+                //             { 
+                //               Island_allow_flag = NOT_READY;  //不再允许环岛
+                //             }         
+                //              if(Left_Crossing_Finish == NOT_FINISH)
+                //             {
+                //               Cross_allow_flag = READY;   //允许十字     
+                //             }
+                //              else if(Left_Crossing_Finish == FINISH)//十字未完成
+                //             {
+                //               Cross_allow_flag = NOT_READY;  //不再允许十字
+                //             }
+                //              if(Left_Crossing_Finish && Left_Crossing_Finish && ramp_finish)    //所有元素都完成
+                //               {
+                //                 banmaxian_allow_flag = READY;       //允许斑马线
+                //               }
+                //               else
+                //               {
+                //                 banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //               } 
+		// 	     type = 0;
+		// 	     break;
+                //           }
+                //          else if(ramp_finish==NOT_FINISH)
+                //          {
+                //              car_run_mode=2;
+                //              ramp_cross(60, 70);//坡道绕行函数
+                // 	     Car_Inverse_kinematics_solution(Vx, Vy, Vz); // 麦轮控制，为target_speed赋值
+                //              ramp_allow = READY;              //只允许避障处理  
+                //              find_card_allow = NOT_READY;     //不允许寻卡
+                //              Island_allow_flag = NOT_READY;   //不允许环岛
+                //              Cross_allow_flag = NOT_READY;    //不允许十字
+                //              banmaxian_allow_flag = NOT_READY;//不允许斑马线
+                //              Cross_Handle_Flag = 0;          //干废十字识别条件
+                //              Zebra_catch_flag = 0;           //干废斑马线识别条件
+                //              left_island_flag = 0;           //干废环岛识别条件
+                //              right_island_flag = 0;          //干废环岛识别条件
+		// 	     break;
+                //          }
+                // 	 break;
+                //          case 3:
+                //             car_run_mode = 3;//锁状态
+                //             car_run();
+                //             break;
+                //          case 4:             //环岛处理
+                //             if(Left_Island_Finish == NOT_FINISH && Island_allow_flag == READY )
+                //             {
+                //                 if(left_island_flag==1 && one_time)//只判断一次
+                //                {
+                //                 Island_dir=0;//0为左环岛
+                //                 right_island_flag = 0;
+                //                 one_time=0;
+                //                }
+                //                else if(right_island_flag==1 && one_time)
+                //                {
+                //                  Island_dir=1;//1为右环岛
+                //                  left_island_flag = 0;
+                //                  one_time = 0;
+                //                }
+                //                car_run_mode = 4;               //锁住状态
+                //                Cross_Handle_Flag = 0;          //干废十字识别条件
+                //                Zebra_catch_flag = 0;           //干废斑马线识别条件
+                //                Island_allow_flag = READY;     //允许环岛
+                //                find_card_allow = NOT_READY;    //不允许寻卡
+                //                Cross_allow_flag = NOT_READY;   //不允许十字
+                //                banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //                switch (Island_dir)
+                //               {
+                //                 case 1:
+                //                  Left_Island_pick_and_move(&Island_mode);       //左环岛
+                //                  break;
+                //                 case 2:
+                //                  Right_Island_pick_and_move(&Right_Island_mode);//右环岛
+                //                  break;
+                //               }
+                //                break;
+                //             }
+                //             else if(Left_Island_Finish == FINISH)
+                //             {
+                //                 car_run_mode = 0;
+                //                 Island_allow_flag = NOT_READY;  //不再允许环岛
+                //                 find_card_allow = READY;        //允许寻卡
+                //                 left_island_flag = 0;           //重置环岛识别条件
+                //                 right_island_flag = 0;          //重置环岛识别条件
+                //                 if(Left_Crossing_Finish && Left_Crossing_Finish && ramp_finish)    //所有元素都完成
+                //               {
+                //                 banmaxian_allow_flag = READY;       //允许斑马线
+                //               }
+                //               else
+                //               {
+                //                 banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //               } 
+                //                 if(Left_Crossing_Finish == NOT_FINISH)
+                //                 {
+                //                    Cross_allow_flag = READY;   //允许十字     
+                //                 }
+                //                 else if(Left_Crossing_Finish == FINISH)//十字未完成
+                //                 {
+                //                    Cross_allow_flag = NOT_READY;  //不再允许十字
+                //                 }
+                //                 break;       
+                //             }
+                //         case 5:             //十字处理
+                //            if(Cross_allow_flag == READY && Left_Crossing_Finish == NOT_FINISH)//允许处理十字且十字处理未完成
+                //            {
+                //               car_run_mode = 5;               //锁住状态
+                //               Cross_allow_flag = READY;       //允许十字
+                //                find_card_allow = NOT_READY;    //不允许寻卡
+                //                banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //                Island_allow_flag = NOT_READY;  //不允许环岛
+                //                left_island_flag = 0;           //干废环岛识别条件
+                //                right_island_flag = 0;          //干废环岛识别条件
+                //                Zebra_catch_flag = 0;           //干废斑马线识别条件
+                //               Left_Crossing_pick_and_move(&Crossing_mode);
+                //               break;
+                //            }
+                //            else if(Left_Crossing_Finish == FINISH)//十字处理完成
+                //            {
+                //               car_run_mode = 0;
+                //               Cross_allow_flag = NOT_READY;   //不再允许十字
+                //               find_card_allow = READY;        //允许寻卡
+                //               if(Left_Island_Finish == NOT_FINISH)//环岛未完成
+                //               {
+                //                  Island_allow_flag = READY;  //允许环岛
+                //               }
+                //               else if(Left_Island_Finish == FINISH)//环岛完成
+                //               { 
+                //                  Island_allow_flag = NOT_READY;  //不再允许环岛
+                //               }    
+                //               if(Left_Crossing_Finish && Left_Crossing_Finish && ramp_finish)    //所有元素都完成
+                //               {
+                //                 banmaxian_allow_flag = READY;       //允许斑马线
+                //               }
+                //               else
+                //               {
+                //                 banmaxian_allow_flag = NOT_READY;   //不允许斑马线
+                //               }                 
+                //               Cross_Handle_Flag = 0;          //重置十字识别条件
+                //               Zebra_catch_flag = 0;           //重置斑马线识别条件
+                //               break;
+                //            }                            
+                // 	}
                 //     ips114_show_int(0,0,car_run_mode,4);
                 //     ips114_show_int(0,20,target_type,4);
                 //     ips114_show_int(0,40,near_card_x/10,4);
@@ -592,7 +1321,7 @@ int main(void)
                 //                {
                 //                   if(once)
                 //                   {
-                //                     Angle_ramp=0;
+                //                     Angle_ramp=0; //
                 //                     ramp_x=0;
                 //                     ramp_y=0;
                 //                     ramp_step=1;

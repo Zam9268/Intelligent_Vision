@@ -197,8 +197,10 @@ extern int correct_x_flag,correct_y_flag;
 extern int correct_step;
 extern int correct_art2_flag;
 extern uint8 find_ramp;
+extern uint8 ramp_allow;
 extern float ramp_x,ramp_y;
 extern uint8 ramp_step;
+extern uint8 ramp_allow;
 extern uint8 ramp_finish;
 extern uint8 Traffic;        //交通工具类
 extern uint8 Weapon;         //武器类
@@ -255,6 +257,7 @@ extern int zebra_card_x,zebra_card_y;
 extern uint8 Zebra_card_count;
 extern int Right_Island_mode;
 extern uint8 Right_Island_Finish;
+extern uint8 find_card_finish;
 
 extern int pid_motor[4];
 
@@ -282,9 +285,6 @@ void Distance_PidInit(void);
 void increment_pid(void);
 float Location_pid(pid_info *pid, float Encoder, float Target);
 void clear_encoder_sum(void);
-void Set_Distence_m(float distance);
-void Drive_Motor();
-void turnloc_pid(void);
 void motor_close_control(void);
 void Turn_Angle_PD(float Tar_angle_Z);
 void Encoder_odometer(void);

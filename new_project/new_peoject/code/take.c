@@ -7,7 +7,7 @@
 
 uint16 servo1_duty = 50;
 uint16 servo2_duty = 50;
-uint16 servo3_duty = 50;//初始电机
+uint16 servo3_duty = 92;//初始电机，360°舵机
 
 uint16 servo4_duty = 50;//侧面舵机
 
@@ -97,31 +97,31 @@ void servo_slow_ctrl(uint16 _servo1_angle, uint16 _servo2_angle, float _step_cou
   }
 }
 //-------------------------------------------------------------------------------------------------------------------
-// 函数简介     侧面舵机连续控制函数
+// 函数简介     360舵机连续控制函数
 // 参数说明     _servo3_angle               舵机3的目标角度
 // 返回参数     _step_count                 舵机连续控制间隔次数
 // 使用示例     side_servo_slow_ctrl(90, 100);
 // 备注信息     
 //-------------------------------------------------------------------------------------------------------------------
-void side_servo_slow_ctrl(uint16 _servo4_angle,float _step_count)
+void side_servo_slow_ctrl(uint16 _servo3_angle,float _step_count)
 {
- float servo4_start = (float)servo4_duty;//设置初始角度值
- float servo4_step = (float)(_servo4_angle - servo4_duty) / _step_count;//每一步需要执行的步数
+ float servo3_start = (float)servo3_duty;//设置初始角度值
+ float servo3_step = (float)(_servo3_angle - servo3_duty) / _step_count;//每一步需要执行的步数
  while (1)
  {
    system_delay_ms(5);
 		//fabsf()函数求浮点数绝对值
-   if (fabsf(servo4_start - (float)_servo4_angle) >= servo4_step)//执行角度比设定的单步角度要大
-     servo4_start += servo4_step;
+   if (fabsf(servo3_start - (float)_servo3_angle) >= servo3_step)//执行角度比设定的单步角度要大
+     servo3_start += servo3_step;
    else//角度比设定的单步角度要小
-     servo4_start = _servo4_angle;//直接更新为目标角度
+     servo3_start = _servo3_angle;//直接更新为目标角度
 		
-   servo4_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo4_start);//pwm值
-   pwm_set_duty(SERVO_MOTOR_PWM4, (uint32)SERVO_MOTOR_DUTY((uint16)servo4_start));//SERVO_MOTOR_DUTY舵机角度转化成pwm值
+   servo3_pwm = (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start);//pwm值
+   pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)servo3_start));//SERVO_MOTOR_DUTY舵机角度转化成pwm值
 
-   if (fabsf(servo4_start - (float)_servo4_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
+   if (fabsf(servo3_start - (float)_servo3_angle) <= 1)//1为误差范围，不设置0的原因是浮点数存在程序上的误差
    {
-     servo4_duty = (uint16)_servo4_angle;//更新角度
+     servo3_duty = (uint16)_servo3_angle;//更新角度
      return;
    }
  }
@@ -203,13 +203,13 @@ void classify_360(uint8 card_classify_type)
   switch(card_classify_type)
   {
   case 1:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_1_angle));
+    side_servo_slow_ctrl(class_3_angle, 70);
     break;
   case 2:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_2_angle));
+    side_servo_slow_ctrl(class_2_angle, 70);
     break;
   case 3:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_3_angle));
+    side_servo_slow_ctrl(class_3_angle, 70);
     break;  
   }
 }
@@ -225,19 +225,19 @@ void classify_little_360(uint8 card_little_classify_type)
   switch(card_little_classify_type)
   {
   case 0:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_first_angle));
+    side_servo_slow_ctrl(class_first_angle, 70);
     break;
   case 1:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_second_angle));
+    side_servo_slow_ctrl(class_second_angle, 70);
     break;
   case 2:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_third_angle));
+    side_servo_slow_ctrl(class_third_angle, 70);
     break;
   case 3:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_fouth_angle));
+    side_servo_slow_ctrl(class_fouth_angle, 70);
     break;
   case 4:
-    pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_fifth_angle));
+    side_servo_slow_ctrl(class_fifth_angle, 70);
     break;
   }
 }
@@ -246,14 +246,14 @@ void test_arm(void)
 {
 	if(pick_count<1)
 	{
-//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_A_angle));
-//		system_delay_ms(1000);
-//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_B_angle));
-//		system_delay_ms(1000);
-//		pwm_set_duty(SERVO_MOTOR_PWM3, (uint32)SERVO_MOTOR_DUTY((uint16)class_C_angle));
-//    system_delay_ms(1000);
-		arm_control(2);//放卡片
-	  arm_control(4);//默认模式
+		// arm_control(2);//放卡片
+	  // arm_control(4);//默认模式
+    side_servo_slow_ctrl(class_3_angle, 70);
+		system_delay_ms(1000);
+    side_servo_slow_ctrl(class_2_angle, 70);
+		system_delay_ms(1000);
+    side_servo_slow_ctrl(class_3_angle, 70);
+		system_delay_ms(1000);
 		pick_count++;
 	}
 }

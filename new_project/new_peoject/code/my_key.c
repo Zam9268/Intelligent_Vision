@@ -1,5 +1,5 @@
 #include "my_key.h"
-
+#include "zf_common_headfile.h"
 struct key keys[4]; // 定义结构体
 
 /*按键扫描函数*/
@@ -108,6 +108,7 @@ void my_key_handle(void)
     else if (keys[2].single_flag == 1)
     {
         test_flag ++;
+        ips114_clear();
         visual_show2 = 1;
         keys[2].single_flag = 0;
     }

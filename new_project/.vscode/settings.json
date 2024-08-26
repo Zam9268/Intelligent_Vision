@@ -5,7 +5,8 @@
         "communication.h": "c",
         "camera.h": "c",
         "my_key.h": "c",
-        "zf_device_mt9v03x.h": "c"
+        "zf_device_mt9v03x.h": "c",
+        "zf_device_key.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
