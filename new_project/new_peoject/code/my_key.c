@@ -114,7 +114,7 @@ void my_key_handle(void)
     }
     else if (keys[3].single_flag == 1)
     {
-        test_flag --;
+        test_flag--;
         visual_show2 = 0;
         keys[3].single_flag = 0;
     }
@@ -131,12 +131,12 @@ void my_key_handle(void)
 
 uint8 guangbiao_position = 1; // 光标位置，初始化为1
 
-uint8 choose_mode_flag = 0;   // 选择模式标志位
-uint8 return_flag = 0;        // 返回标志位
-uint8 reset_flag = 0;         // 复位标志位
-uint8 cengji_count = 0;       // 层级计数
-uint8 first_mode = 1;   //第一级
-char mode_name[10][20]={"Edge_threshold","normal_speed","top_line_speed","cross_island","MT9V034_light"};
+uint8 choose_mode_flag = 0; // 选择模式标志位
+uint8 return_flag = 0;      // 返回标志位
+uint8 reset_flag = 0;       // 复位标志位
+uint8 cengji_count = 0;     // 层级计数
+uint8 first_mode = 1;       // 第一级
+char mode_name[10][20] = {"Edge_threshold", "normal_speed", "top_line_speed", "cross_island", "MT9V034_light"};
 extern float target_all_speed;       // 正常循迹目标速度
 extern float target_upline_speed;    // 巡线上边界目标速度
 uint8 muce_left_or_right_pick = 0;   // 目测捡卡片的是左环岛还是右十字，0默认为左十字
@@ -146,25 +146,25 @@ void my_key_handle_plus(void)
 {
     if (keys[0].single_flag == 1)
     {
-        ips114_clear(); // 清屏
+        ips114_clear();          // 清屏
         guangbiao_position++;    // 光标位置加1
         keys[0].single_flag = 0; // 清除标志
     }
     else if (keys[1].single_flag == 1)
     {
-        ips114_clear();//清屏
+        ips114_clear();       // 清屏
         guangbiao_position--; // 光标位置减1
         keys[1].single_flag = 0;
     }
     else if (keys[2].single_flag == 1)
     {
-        ips114_clear();//清屏
+        ips114_clear();       // 清屏
         choose_mode_flag = 1; // 光标位置减1
         keys[2].single_flag = 0;
     }
     else if (keys[3].single_flag == 1)
     {
-        ips114_clear();//清屏
+        ips114_clear(); // 清屏
         reset_flag = 1;
         keys[3].single_flag = 0;
     }
@@ -242,7 +242,7 @@ void my_key_handle_plus(void)
             }
             break;
 
-            case 5://选择曝光度模式
+            case 5: // 选择曝光度模式
             {
                 if (guangbiao_position == 1)
                 {
@@ -250,80 +250,141 @@ void my_key_handle_plus(void)
                 }
                 else if (guangbiao_position == 2)
                 {
-                    target_upline_speed -= 1;//削减对应的亮度
+                    target_upline_speed -= 1; // 削减对应的亮度
                 }
             }
             break;
+
+            case 6: // 上边线左侧比例系数调节
+            {
+                if (guangbiao_position == 1)
+                {
+                    left_top_kp += 0.05f;
+                }
+                else if (guangbiao_position == 2)
+                {
+                    left_top_kp -= 0.05f;
+                }
+            }
+            break;
+
+            case 7:
+            {
+                if (guangbiao_position == 1)
+                {
+                    right_top_kp += 0.05f;
+                }
+                else if (guangbiao_position == 2)
+                {
+                    right_top_kp -= 0.05f;
+                }
+            }
+            break;
+
+            case 8:
+            {
+                if (guangbiao_position == 1)
+                {
+                    left_top_kd += 0.05f;
+                }
+                else if (guangbiao_position == 2)
+                {
+                    left_top_kd -= 0.05f;
+                }
+            }
+            break;
+            case 8:
+            {
+                if (guangbiao_position == 1)
+                {
+                    right_top_kd += 0.05f;
+                }
+                else if (guangbiao_position == 2)
+                {
+                    right_top_kd -= 0.05f;
+                }
+            }
+            break;
+            case 9:
+            {
+                if (guangbiao_position == 1)
+                {
+                    run_flag = 1; // 开始启动车辆
+                }
+            }
+            default:
+                break;
             }
         }
     }
 
-    uint8 firt_mode_show=first_mode%3;//取余，只能在0-2之间
+    uint8 firt_mode_show = first_mode % 3; // 取余，只能在0-2之间
     /*菜单选择界面显示：只选择同时显示3行变量*/
-    if(choose_mode_flag==1)//如果是第一级菜单
+    if (choose_mode_flag == 1) // 如果是第一级菜单
     {
         /*显示部分菜单*/
-        if(first_mode==1)
+        if (first_mode == 1)
         {
-            ips114_show_string(0,0,&mode_name[0][20]);
-            ips114_show_string(0,20,&mode_name[1][20]);
-            ips114_show_string(0,40,&mode_name[2][20]);
+            ips114_show_string(0, 0, &mode_name[0][20]);
+            ips114_show_string(0, 20, &mode_name[1][20]);
+            ips114_show_string(0, 40, &mode_name[2][20]);
 
             /*光标显示*/
-            ips114_show_string(0,90,"<------");
+            ips114_show_string(0, 90, "<------");
         }
         else
         {
-            ips114_show_string(0,0,&mode_name[first_mode-1][20]);
-            ips114_show_string(0,20,&mode_name[first_mode][20]);
-            ips114_show_string(0,40,&mode_name[first_mode+1][20]);
+            ips114_show_string(0, 0, &mode_name[first_mode - 1][20]);
+            ips114_show_string(0, 20, &mode_name[first_mode][20]);
+            ips114_show_string(0, 40, &mode_name[first_mode + 1][20]);
 
             /*光标显示*/
-            ips114_show_string(0,20,"<------");
+            ips114_show_string(0, 20, "<------");
         }
     }
-    else if(choose_mode_flag==2)//进入单级菜单调节
+    else if (choose_mode_flag == 2) // 进入单级菜单调节
     {
-			switch(first_mode)
-			{
-        case  1://阈值调节
+        switch (first_mode)
         {
-            ips114_show_string(0,0,"+100");
-            ips114_show_string(0,20,"-100");
-            ips114_show_int(0,40,Edge_threshold,4);
-					
-        }break;
+        case 1: // 阈值调节
+        {
+            ips114_show_string(0, 0, "+100");
+            ips114_show_string(0, 20, "-100");
+            ips114_show_int(0, 40, Edge_threshold, 4);
+        }
+        break;
         case 2:
         {
-            ips114_show_string(0,0,"+1.00");
-            ips114_show_string(0,20,"-1.00");
-            ips114_show_float(0,40,target_all_speed,3,3);
-					break;
+            ips114_show_string(0, 0, "+1.00");
+            ips114_show_string(0, 20, "-1.00");
+            ips114_show_float(0, 40, target_all_speed, 3, 3);
+            break;
         }
         case 3:
         {
-            ips114_show_string(0,0,"+1.00");
-            ips114_show_string(0,20,"-1.00");
-            ips114_show_float(0,40,target_upline_speed,3,3);
-					break;
+            ips114_show_string(0, 0, "+1.00");
+            ips114_show_string(0, 20, "-1.00");
+            ips114_show_float(0, 40, target_upline_speed, 3, 3);
+            break;
         }
-        
+
         case 4:
         {
-            ips114_show_string(0,0,"crossing");
-            ips114_show_string(0,20,"island");
-            ips114_show_string(0,40,"cross_or_isand");
-					break;
+            ips114_show_string(0, 0, "crossing");
+            ips114_show_string(0, 20, "island");
+            ips114_show_string(0, 40, "cross_or_isand");
+            break;
         }
         case 5:
         {
-            ips114_show_string(0,0,"+1");
-            ips114_show_string(0,20,"-1");
-            ips114_show_uint(0,40,MT9V30X_pugaodu+32,3);//32是固定值
-					break;
+            ips114_show_string(0, 0, "+1");
+            ips114_show_string(0, 20, "-1");
+            ips114_show_uint(0, 40, MT9V30X_pugaodu + 32, 3); // 32是固定值
+            break;
         }
-        
-        default:break;
-			}
+
+        default:
+            break;
+        }
     }
 }
